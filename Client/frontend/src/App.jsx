@@ -1,6 +1,11 @@
 import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ClientLayout from './layouts/ClientLayout';
 import ClientHome from './pages/ClientHome';
+import MenuProgramacion from './pages/MenuProgramacion';
+import Quejas from './pages/Quejas';
+import Sugerencias from './pages/Sugerencias';
+import MiCuenta from './pages/MiCuenta';
 import Login from './pages/Login';
 
 function App() {
@@ -22,9 +27,18 @@ function App() {
   }
 
   return (
-    <ClientLayout>
-      <ClientHome />
-    </ClientLayout>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<ClientLayout />}>
+          <Route index element={<Navigate to="/inicio" />} />
+          <Route path="/inicio" element={<ClientHome />} />
+          <Route path="/programacion-menu" element={<MenuProgramacion />} />
+          <Route path="/quejas" element={<Quejas />} />
+          <Route path="/sugerencias" element={<Sugerencias />} />
+          <Route path="/mi-cuenta" element={<MiCuenta />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

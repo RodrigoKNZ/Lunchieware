@@ -29,6 +29,10 @@ If you are developing a production application, we recommend using TypeScript wi
 
 Cualquier otra combinación mostrará un error de credenciales incorrectas.
 
+## Fechas de ejemplo
+
+- Para la pantalla de programación del menú, usa la fecha **23/08/2025** para ver el contenido de prueba.
+
 ---
 
 Este archivo README contiene información útil para desarrolladores del frontend.
