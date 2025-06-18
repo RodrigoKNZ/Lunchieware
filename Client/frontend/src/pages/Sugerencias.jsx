@@ -1,5 +1,5 @@
 import {
-  Box, Typography, Breadcrumbs, TextField, Divider, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, useMediaQuery
+  Box, Typography, Breadcrumbs, TextField, Divider, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, useMediaQuery, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import HomeIcon from '@mui/icons-material/Home';
@@ -16,7 +16,6 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { Link as RouterLink } from 'react-router-dom';
 import TablePagination from '@mui/material/TablePagination';
 import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -36,6 +35,12 @@ const dataPrueba = [
   { codigo: '1235126', asunto: 'Opciones sin gluten', fecha: '02/08/2025' },
 ];
 
+const estados = [
+  { value: 'todos', label: 'Todos' },
+  { value: 'resuelto', label: 'Resuelto' },
+  { value: 'sin_resolver', label: 'Sin resolver' },
+];
+
 const Sugerencias = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -43,7 +48,7 @@ const Sugerencias = () => {
   const [filtroDesde, setFiltroDesde] = React.useState(null);
   const [filtroHasta, setFiltroHasta] = React.useState(null);
   const [page, setPage] = React.useState(0);
-  const rowsPerPage = 5;
+  const rowsPerPage = 4;
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [menuRowIdx, setMenuRowIdx] = React.useState(null);
   const openMenu = Boolean(anchorEl);
@@ -60,6 +65,51 @@ const Sugerencias = () => {
 
   // Para la edición local de sugerencias (solo para demo)
   const [sugerencias, setSugerencias] = React.useState(dataPrueba);
+
+  // 1. Estados para filtros y control de bloqueo
+  const [filtrosAplicados, setFiltrosAplicados] = React.useState(false);
+  const filtrosIniciales = {
+    asunto: '',
+    desde: null,
+    hasta: null,
+  };
+
+  // 2. Determinar si los filtros están en su estado inicial
+  const filtrosEnEstadoInicial =
+    filtroAsunto === filtrosIniciales.asunto &&
+    !filtroDesde &&
+    !filtroHasta;
+
+  // 3. Lógica de filtrado
+  const filtrarSugerencias = () => {
+    return sugerencias.filter(s => {
+      const matchAsunto = !filtroAsunto || s.asunto.toLowerCase().includes(filtroAsunto.toLowerCase());
+      let matchDesde = true, matchHasta = true;
+      if (filtroDesde) {
+        const fechaS = dayjs(s.fecha, 'DD/MM/YYYY');
+        matchDesde = fechaS.isSameOrAfter(dayjs(filtroDesde), 'day');
+      }
+      if (filtroHasta) {
+        const fechaS = dayjs(s.fecha, 'DD/MM/YYYY');
+        matchHasta = fechaS.isSameOrBefore(dayjs(filtroHasta), 'day');
+      }
+      return matchAsunto && matchDesde && matchHasta;
+    });
+  };
+  const [sugerenciasFiltradas, setSugerenciasFiltradas] = React.useState(sugerencias);
+
+  // 4. Handlers de botones
+  const handleAplicarFiltros = () => {
+    setSugerenciasFiltradas(filtrarSugerencias());
+    setFiltrosAplicados(true);
+  };
+  const handleLimpiarFiltros = () => {
+    setFiltroAsunto(filtrosIniciales.asunto);
+    setFiltroDesde(filtrosIniciales.desde);
+    setFiltroHasta(filtrosIniciales.hasta);
+    setSugerenciasFiltradas(sugerencias);
+    setFiltrosAplicados(false);
+  };
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -114,8 +164,8 @@ const Sugerencias = () => {
     setSugerenciaSeleccionada(null);
   };
 
-  // Filtrado (aún sin lógica, solo paginación)
-  const rowsToShow = sugerencias.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  // 6. Cambiar fuente de datos de la tabla
+  const rowsToShow = sugerenciasFiltradas.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <Box sx={{ width: '100%', p: 0, pl: isMobile ? 1 : 3, pb: { xs: 7, md: 0 } }}>
@@ -131,11 +181,12 @@ const Sugerencias = () => {
         Mis sugerencias
       </Typography>
       <Divider sx={{ mb: 4, width: '100%' }} />
+      {/* Filtros y botón de nueva sugerencia en una sola fila en desktop, en columna en móvil */}
       <Box sx={{
         display: 'flex',
         flexDirection: isMobile ? 'column' : 'row',
         gap: 2,
-        mb: 2,
+        mb: 1,
         alignItems: isMobile ? 'stretch' : 'center',
         width: '100%',
         maxWidth: 900,
@@ -145,51 +196,86 @@ const Sugerencias = () => {
           value={filtroAsunto}
           onChange={e => setFiltroAsunto(e.target.value)}
           size="small"
-          fullWidth={false}
+          fullWidth={isMobile}
           sx={{ minWidth: isMobile ? 'unset' : 320, flex: 2, height: 40 }}
+          disabled={filtrosAplicados}
         />
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <DatePicker
-            label="Desde"
-            value={filtroDesde}
-            onChange={setFiltroDesde}
-            renderInput={(params) => <TextField {...params} size="small" fullWidth={isMobile} sx={{ minWidth: isMobile ? 'unset' : 180, height: 40 }} />}
-            inputFormat="DD/MM/YYYY"
-            slots={{ openPickerIcon: undefined }}
-            slotProps={{ textField: { InputProps: { endAdornment: undefined } } }}
-          />
-        </LocalizationProvider>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <DatePicker
-            label="Hasta"
-            value={filtroHasta}
-            onChange={setFiltroHasta}
-            renderInput={(params) => <TextField {...params} size="small" fullWidth={isMobile} sx={{ minWidth: isMobile ? 'unset' : 180, height: 40 }} />}
-            inputFormat="DD/MM/YYYY"
-            slots={{ openPickerIcon: undefined }}
-            slotProps={{ textField: { InputProps: { endAdornment: undefined } } }}
-          />
-        </LocalizationProvider>
+        {isMobile ? (
+          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, width: '100%' }}>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="Desde"
+                value={filtroDesde}
+                onChange={setFiltroDesde}
+                renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
+                inputFormat="DD/MM/YYYY"
+              />
+            </LocalizationProvider>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="Hasta"
+                value={filtroHasta}
+                onChange={setFiltroHasta}
+                renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
+                inputFormat="DD/MM/YYYY"
+              />
+            </LocalizationProvider>
+          </Box>
+        ) : (
+          <>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="Desde"
+                value={filtroDesde}
+                onChange={setFiltroDesde}
+                renderInput={(params) => <TextField {...params} size="small" fullWidth={isMobile} sx={{ minWidth: 180, height: 40 }} disabled={filtrosAplicados} />}
+                inputFormat="DD/MM/YYYY"
+              />
+            </LocalizationProvider>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="Hasta"
+                value={filtroHasta}
+                onChange={setFiltroHasta}
+                renderInput={(params) => <TextField {...params} size="small" fullWidth={isMobile} sx={{ minWidth: 180, height: 40 }} disabled={filtrosAplicados} />}
+                inputFormat="DD/MM/YYYY"
+              />
+            </LocalizationProvider>
+          </>
+        )}
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           sx={{
-            ml: isMobile ? 0 : 'auto',
-            mt: isMobile ? 1 : 0,
-            width: isMobile ? '100%' : 220,
-            minWidth: isMobile ? 'unset' : 220,
+            width: isMobile ? '100%' : 200,
+            minWidth: isMobile ? 'unset' : 200,
             height: 40,
             borderRadius: 1,
             fontWeight: 600,
             fontSize: 15,
             bgcolor: '#1976d2',
-            boxShadow: 1,
+            boxShadow: isMobile ? 1 : 0,
             textTransform: 'none',
+            ml: isMobile ? 0 : 'auto',
+            mt: isMobile ? 2 : 0,
+            px: isMobile ? undefined : 3,
+            whiteSpace: isMobile ? undefined : 'nowrap',
           }}
           onClick={handleOpenModal}
         >
           Nueva sugerencia
         </Button>
+      </Box>
+      {/* Segunda fila: botones de filtros */}
+      <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, mb: 2, width: '100%', maxWidth: 900 }}>
+        <Button variant="contained" color="primary" sx={{ fontWeight: 600 }}
+          disabled={filtrosEnEstadoInicial || filtrosAplicados}
+          onClick={handleAplicarFiltros}
+        >Aplicar filtros</Button>
+        <Button variant="outlined" color="primary" sx={{ fontWeight: 600 }}
+          disabled={filtrosEnEstadoInicial || !filtrosAplicados}
+          onClick={handleLimpiarFiltros}
+        >Limpiar filtros</Button>
       </Box>
       <TableContainer component={Paper} sx={{ maxWidth: 900, mx: 'auto', boxShadow: 2, maxHeight: 480, overflowY: 'auto' }}>
         <Table size={isMobile ? 'small' : 'medium'} stickyHeader>
@@ -245,7 +331,7 @@ const Sugerencias = () => {
         </Table>
         <TablePagination
           component="div"
-          count={sugerencias.length}
+          count={sugerenciasFiltradas.length}
           page={page}
           onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}
