@@ -1,23 +1,31 @@
-import { Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Box, Typography, Avatar, useMediaQuery, BottomNavigation, BottomNavigationAction } from '@mui/material';
+import { Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Box, Typography, Avatar, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import RestaurantIcon from '@mui/icons-material/Restaurant';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
-import PersonIcon from '@mui/icons-material/Person';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import WidgetsIcon from '@mui/icons-material/Widgets';
+import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import React from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 
 const drawerWidth = 260;
 
 const menuItems = [
-  { text: 'Programación del Menú', icon: <RestaurantIcon />, path: '/programacion-menu' },
-  { text: 'Quejas', icon: <ChatBubbleOutlineIcon />, path: '/quejas' },
-  { text: 'Sugerencias', icon: <LightbulbOutlinedIcon />, path: '/sugerencias' },
-  { text: 'Mi cuenta', icon: <PersonIcon />, path: '/mi-cuenta' },
+  { text: 'Venta', icon: <PointOfSaleIcon />, path: '/admin/venta' },
+  { text: 'Clientes', icon: <PeopleAltIcon />, path: '/admin/clientes' },
+  { text: 'Caja chica', icon: <AccountBalanceWalletIcon />, path: '/admin/caja-chica' },
+  { text: 'Reportes', icon: <AssessmentIcon />, path: '/admin/reportes' },
+  { text: 'Cuentas bancarias', icon: <AccountBalanceIcon />, path: '/admin/cuentas-bancarias' },
+  { text: 'Productos', icon: <WidgetsIcon />, path: '/admin/productos' },
+  { text: 'Programación del menú', icon: <RestaurantMenuIcon />, path: '/admin/programacion-menu' },
+  { text: 'Quejas y sugerencias', icon: <ChatBubbleOutlineIcon />, path: '/admin/quejas-sugerencias' },
 ];
 
-const ClientLayout = () => {
+const AdminLayout = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [navValue, setNavValue] = React.useState(0);
@@ -25,7 +33,7 @@ const ClientLayout = () => {
   const location = useLocation();
 
   React.useEffect(() => {
-    const idx = menuItems.findIndex(item => item.path === location.pathname);
+    const idx = menuItems.findIndex(item => location.pathname.startsWith(item.path));
     setNavValue(idx === -1 ? 0 : idx);
   }, [location.pathname]);
 
@@ -62,9 +70,9 @@ const ClientLayout = () => {
                 <ListItem
                   button
                   key={item.text}
-                  sx={{ mb: 0.5, borderRadius: 2, mx: 1, backgroundColor: location.pathname === item.path ? '#f5f5f5' : 'inherit' }}
+                  sx={{ mb: 0.5, borderRadius: 2, mx: 1, backgroundColor: location.pathname.startsWith(item.path) ? '#f5f5f5' : 'inherit' }}
                   onClick={() => navigate(item.path)}
-                  selected={location.pathname === item.path}
+                  selected={location.pathname.startsWith(item.path)}
                 >
                   <ListItemIcon sx={{ minWidth: 36, color: '#757575' }}>{item.icon}</ListItemIcon>
                   <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: 16 }} />
@@ -94,48 +102,11 @@ const ClientLayout = () => {
           </Box>
         </Drawer>
       )}
-      <Box component="main" sx={{
-        flex: '1 1 auto',
-        height: '100vh',
-        p: 0,
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'flex-start',
-        bgcolor: '#fff',
-        pb: isMobile ? 7 : 0,
-      }}>
-        <Box
-          sx={{
-            width: '100%',
-            maxWidth: isMobile ? 340 : 'none',
-            mx: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            pt: isMobile ? 4 : 0,
-          }}
-        >
-          <Outlet />
-        </Box>
+      <Box component="main" sx={{ flex: '1 1 auto', height: '100vh', overflowY: 'auto', bgcolor: '#fafbfc', p: { xs: 2, md: 4 } }}>
+        <Outlet />
       </Box>
-      {isMobile && (
-        <BottomNavigation
-          value={navValue}
-          onChange={(event, newValue) => {
-            setNavValue(newValue);
-            navigate(menuItems[newValue].path);
-          }}
-          showLabels
-          sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, borderTop: '1px solid #f0f0f0', zIndex: 1300, bgcolor: '#fff' }}
-        >
-          {menuItems.map((item) => (
-            <BottomNavigationAction key={item.text} label={item.text.split(' ')[0]} icon={item.icon} />
-          ))}
-        </BottomNavigation>
-      )}
     </Box>
   );
 };
 
-export default ClientLayout; 
+export default AdminLayout; 

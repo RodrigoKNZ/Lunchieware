@@ -7,39 +7,66 @@ import Quejas from './pages/Quejas';
 import Sugerencias from './pages/Sugerencias';
 import MiCuenta from './pages/MiCuenta';
 import Login from './pages/Login';
+import AdminLayout from './layouts/AdminLayout';
+import AdminHome from './pages/AdminHome';
+import AdminVenta from './pages/AdminVenta';
+import AdminCuentasBancarias from './pages/AdminCuentasBancarias';
 
 function App() {
   const [user, setUser] = useState(null);
 
   // Función para manejar el login exitoso
   const handleLogin = (usuario) => {
-    // Solo permitimos acceso a la vista cliente si el usuario es "cliente"
+    // Acceso según tipo de usuario
     if (usuario === 'cliente') {
       setUser({ tipo: 'cliente', usuario });
+    } else if (usuario === 'admin') {
+      setUser({ tipo: 'admin', usuario });
     } else {
-      // Aquí podrías manejar otros tipos de usuario en el futuro
       setUser({ tipo: 'otro', usuario });
     }
   };
 
-  if (!user || user.tipo !== 'cliente') {
+  if (!user) {
     return <Login onLogin={handleLogin} />;
   }
 
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<ClientLayout />}>
-          <Route index element={<Navigate to="/inicio" />} />
-          <Route path="/inicio" element={<ClientHome />} />
-          <Route path="/programacion-menu" element={<MenuProgramacion />} />
-          <Route path="/quejas" element={<Quejas />} />
-          <Route path="/sugerencias" element={<Sugerencias />} />
-          <Route path="/mi-cuenta" element={<MiCuenta />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  );
+  if (user.tipo === 'admin') {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminHome />} />
+            <Route path="venta" element={<AdminVenta />} />
+            <Route path="cuentas-bancarias" element={<AdminCuentasBancarias />} />
+            {/* Aquí se agregarán las demás rutas del admin */}
+          </Route>
+          {/* Redirigir cualquier otra ruta a /admin */}
+          <Route path="*" element={<Navigate to="/admin" />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  if (user.tipo === 'cliente') {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<ClientLayout />}>
+            <Route index element={<Navigate to="/inicio" />} />
+            <Route path="/inicio" element={<ClientHome />} />
+            <Route path="/programacion-menu" element={<MenuProgramacion />} />
+            <Route path="/quejas" element={<Quejas />} />
+            <Route path="/sugerencias" element={<Sugerencias />} />
+            <Route path="/mi-cuenta" element={<MiCuenta />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  // Si el usuario es de otro tipo, podrías mostrar otra vista o mensaje
+  return <Login onLogin={handleLogin} />;
 }
 
 export default App;
