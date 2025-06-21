@@ -332,44 +332,22 @@ const AdminCuentasBancarias = () => {
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 2 }}>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-              <TextField 
-                label="Código" 
-                size="small" 
-                placeholder="Ingrese el código" 
-                value={filtroCodigoBanco}
-                onChange={e => setFiltroCodigoBanco(e.target.value)}
-                disabled={filtrosAplicadosBanco}
-              />
-              <TextField 
-                label="Nombre del banco" 
-                size="small" 
-                placeholder="Ingrese el nombre del banco" 
-                sx={{ flex: 1, minWidth: 140 }}
-                value={filtroNombreBanco}
-                onChange={e => setFiltroNombreBanco(e.target.value)}
-                disabled={filtrosAplicadosBanco}
-              />
-              <TextField 
-                label="Siglas" 
-                size="small" 
-                sx={{ minWidth: 100, maxWidth: 120, width: 100 }} 
-                value={filtroSiglasBanco}
-                onChange={e => setFiltroSiglasBanco(e.target.value)}
-                disabled={filtrosAplicadosBanco}
-              />
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Disponibilidad</InputLabel>
-                <Select 
-                  label="Disponibilidad" 
-                  value={filtroDisponibilidadBanco} 
-                  onChange={e => setFiltroDisponibilidadBanco(e.target.value)}
-                  disabled={filtrosAplicadosBanco}
-                >
-                  <MenuItem value="todos">Todos</MenuItem>
-                  <MenuItem value="disponible">Disponible</MenuItem>
-                  <MenuItem value="no_disponible">No Disponible</MenuItem>
-                </Select>
-              </FormControl>
+              <Button 
+                variant="contained" 
+                sx={{ fontWeight: 600 }} 
+                onClick={handleAplicarFiltrosBanco}
+                disabled={filtrosEnEstadoInicialBanco || filtrosAplicadosBanco}
+              >
+                APLICAR FILTROS
+              </Button>
+              <Button 
+                variant="outlined" 
+                sx={{ fontWeight: 600 }} 
+                onClick={handleLimpiarFiltrosBanco}
+                disabled={!filtrosAplicadosBanco}
+              >
+                LIMPIAR FILTROS
+              </Button>
             </Box>
             <Button 
               variant="contained" 
@@ -381,23 +359,46 @@ const AdminCuentasBancarias = () => {
               + NUEVO BANCO
             </Button>
           </Box>
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <Button 
-              variant="contained" 
-              sx={{ fontWeight: 600 }} 
-              onClick={handleAplicarFiltrosBanco}
-              disabled={filtrosEnEstadoInicialBanco || filtrosAplicadosBanco}
-            >
-              APLICAR FILTROS
-            </Button>
-            <Button 
-              variant="outlined" 
-              sx={{ fontWeight: 600 }} 
-              onClick={handleLimpiarFiltrosBanco}
-              disabled={filtrosEnEstadoInicialBanco || !filtrosAplicadosBanco}
-            >
-              LIMPIAR FILTROS
-            </Button>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            <TextField 
+              label="Código" 
+              size="small" 
+              placeholder="Ingrese el código" 
+              value={filtroCodigoBanco}
+              onChange={e => setFiltroCodigoBanco(e.target.value)}
+              disabled={filtrosAplicadosBanco}
+              sx={{ width: 100 }}
+            />
+            <TextField 
+              label="Nombre del banco" 
+              size="small" 
+              placeholder="Ingrese el nombre del banco" 
+              sx={{ flexGrow: 1, minWidth: 250 }}
+              value={filtroNombreBanco}
+              onChange={e => setFiltroNombreBanco(e.target.value)}
+              disabled={filtrosAplicadosBanco}
+            />
+            <TextField 
+              label="Siglas" 
+              size="small" 
+              sx={{ width: 120 }} 
+              value={filtroSiglasBanco}
+              onChange={e => setFiltroSiglasBanco(e.target.value)}
+              disabled={filtrosAplicadosBanco}
+            />
+            <FormControl size="small" sx={{ width: 150 }}>
+              <InputLabel>Disponibilidad</InputLabel>
+              <Select 
+                label="Disponibilidad" 
+                value={filtroDisponibilidadBanco} 
+                onChange={e => setFiltroDisponibilidadBanco(e.target.value)}
+                disabled={filtrosAplicadosBanco}
+              >
+                <MenuItem value="todos">Todos</MenuItem>
+                <MenuItem value="disponible">Disponible</MenuItem>
+                <MenuItem value="no_disponible">No Disponible</MenuItem>
+              </Select>
+            </FormControl>
           </Box>
         </Box>
         <Divider sx={{ my: 2 }} />
@@ -474,50 +475,22 @@ const AdminCuentasBancarias = () => {
             <Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 2 }}>
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <TextField 
-                    label="Código de cuenta" 
-                    size="small" 
-                    placeholder="Ingrese el código" 
-                    sx={{ flex: 1, minWidth: 150 }}
-                    value={filtroCodigoCuenta}
-                    onChange={e => setFiltroCodigoCuenta(e.target.value)}
-                    disabled={filtrosAplicadosCuenta}
-                  />
-                  <TextField 
-                    label="Código de agencia" 
-                    size="small" 
-                    sx={{ width: 160 }}
-                    value={filtroCodigoAgencia}
-                    onChange={e => setFiltroCodigoAgencia(e.target.value)}
-                    disabled={filtrosAplicadosCuenta}
-                  />
-                  <FormControl size="small" sx={{ width: 200 }}>
-                    <InputLabel>Tipo de cuenta</InputLabel>
-                    <Select 
-                      label="Tipo de cuenta" 
-                      value={filtroTipoCuenta} 
-                      onChange={e => setFiltroTipoCuenta(e.target.value)}
-                      disabled={filtrosAplicadosCuenta}
-                    >
-                      <MenuItem value="">Todos</MenuItem>
-                      <MenuItem value="recaudacion">Cuenta de recaudación</MenuItem>
-                      <MenuItem value="corriente">Cuenta corriente</MenuItem>
-                      <MenuItem value="aplicativo">Aplicativo</MenuItem>
-                    </Select>
-                  </FormControl>
-                  <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <InputLabel>Disponibilidad</InputLabel>
-                    <Select 
-                      label="Disponibilidad" 
-                      value={filtroDisponibilidadCuenta} 
-                      onChange={e => setFiltroDisponibilidadCuenta(e.target.value)}
-                      disabled={filtrosAplicadosCuenta}
-                    >
-                      <MenuItem value="todos">Todos</MenuItem>
-                      <MenuItem value="disponible">Disponible</MenuItem>
-                      <MenuItem value="no_disponible">No Disponible</MenuItem>
-                    </Select>
-                  </FormControl>
+                  <Button 
+                    variant="contained" 
+                    sx={{ fontWeight: 600 }} 
+                    onClick={handleAplicarFiltrosCuenta}
+                    disabled={filtrosEnEstadoInicialCuenta || filtrosAplicadosCuenta}
+                  >
+                    APLICAR FILTROS
+                  </Button>
+                  <Button 
+                    variant="outlined" 
+                    sx={{ fontWeight: 600 }} 
+                    onClick={handleLimpiarFiltrosCuenta}
+                    disabled={!filtrosAplicadosCuenta}
+                  >
+                    LIMPIAR FILTROS
+                  </Button>
                 </Box>
                 <Button 
                   variant="contained" 
@@ -529,23 +502,51 @@ const AdminCuentasBancarias = () => {
                   + NUEVA CUENTA
                 </Button>
               </Box>
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                <Button 
-                  variant="contained" 
-                  sx={{ fontWeight: 600 }} 
-                  onClick={handleAplicarFiltrosCuenta}
-                  disabled={filtrosEnEstadoInicialCuenta || filtrosAplicadosCuenta}
-                >
-                  APLICAR FILTROS
-                </Button>
-                <Button 
-                  variant="outlined" 
-                  sx={{ fontWeight: 600 }} 
-                  onClick={handleLimpiarFiltrosCuenta}
-                  disabled={filtrosEnEstadoInicialCuenta || !filtrosAplicadosCuenta}
-                >
-                  LIMPIAR FILTROS
-                </Button>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                <TextField 
+                  label="Código de cuenta" 
+                  size="small" 
+                  placeholder="Ingrese el código" 
+                  sx={{ flexGrow: 1, minWidth: 200 }}
+                  value={filtroCodigoCuenta}
+                  onChange={e => setFiltroCodigoCuenta(e.target.value)}
+                  disabled={filtrosAplicadosCuenta}
+                />
+                <TextField 
+                  label="Código de agencia" 
+                  size="small" 
+                  sx={{ width: 150 }}
+                  value={filtroCodigoAgencia}
+                  onChange={e => setFiltroCodigoAgencia(e.target.value)}
+                  disabled={filtrosAplicadosCuenta}
+                />
+                <FormControl size="small" sx={{ width: 200 }}>
+                  <InputLabel>Tipo de cuenta</InputLabel>
+                  <Select 
+                    label="Tipo de cuenta" 
+                    value={filtroTipoCuenta} 
+                    onChange={e => setFiltroTipoCuenta(e.target.value)}
+                    disabled={filtrosAplicadosCuenta}
+                  >
+                    <MenuItem value="">Todos</MenuItem>
+                    <MenuItem value="recaudacion">Cuenta de recaudación</MenuItem>
+                    <MenuItem value="corriente">Cuenta corriente</MenuItem>
+                    <MenuItem value="aplicativo">Aplicativo</MenuItem>
+                  </Select>
+                </FormControl>
+                <FormControl size="small" sx={{ width: 150 }}>
+                  <InputLabel>Disponibilidad</InputLabel>
+                  <Select 
+                    label="Disponibilidad" 
+                    value={filtroDisponibilidadCuenta} 
+                    onChange={e => setFiltroDisponibilidadCuenta(e.target.value)}
+                    disabled={filtrosAplicadosCuenta}
+                  >
+                    <MenuItem value="todos">Todos</MenuItem>
+                    <MenuItem value="disponible">Disponible</MenuItem>
+                    <MenuItem value="no_disponible">No Disponible</MenuItem>
+                  </Select>
+                </FormControl>
               </Box>
             </Box>
             <Divider sx={{ my: 2 }} />

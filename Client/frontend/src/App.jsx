@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import AdminLayout from './layouts/AdminLayout';
 import AdminHome from './pages/AdminHome';
 import AdminVenta from './pages/AdminVenta';
+import AdminProductos from './pages/AdminProductos';
 import AdminCuentasBancarias from './pages/AdminCuentasBancarias';
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminHome />} />
             <Route path="venta" element={<AdminVenta />} />
+            <Route path="productos" element={<AdminProductos />} />
             <Route path="cuentas-bancarias" element={<AdminCuentasBancarias />} />
             {/* Aquí se agregarán las demás rutas del admin */}
           </Route>
