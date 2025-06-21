@@ -12,6 +12,8 @@ import AdminHome from './pages/AdminHome';
 import AdminVenta from './pages/AdminVenta';
 import AdminProductos from './pages/AdminProductos';
 import AdminCuentasBancarias from './pages/AdminCuentasBancarias';
+import AdminCajaChica from './pages/AdminCajaChica';
+import AdminCajaChicaDetalle from './pages/AdminCajaChicaDetalle';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -41,6 +43,8 @@ function App() {
             <Route path="venta" element={<AdminVenta />} />
             <Route path="productos" element={<AdminProductos />} />
             <Route path="cuentas-bancarias" element={<AdminCuentasBancarias />} />
+            <Route path="caja-chica" element={<AdminCajaChica />} />
+            <Route path="caja-chica/:id" element={<AdminCajaChicaDetalle />} />
             {/* Aquí se agregarán las demás rutas del admin */}
           </Route>
           {/* Redirigir cualquier otra ruta a /admin */}
