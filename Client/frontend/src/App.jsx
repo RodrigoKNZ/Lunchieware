@@ -15,6 +15,7 @@ import AdminCuentasBancarias from './pages/AdminCuentasBancarias';
 import AdminCajaChica from './pages/AdminCajaChica';
 import AdminCajaChicaDetalle from './pages/AdminCajaChicaDetalle';
 import AdminMenuProgramacion from './pages/AdminMenuProgramacion';
+import AdminQuejasSugerencias from './pages/AdminQuejasSugerencias';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -47,6 +48,7 @@ function App() {
             <Route path="caja-chica" element={<AdminCajaChica />} />
             <Route path="caja-chica/:id" element={<AdminCajaChicaDetalle />} />
             <Route path="programacion-menu" element={<AdminMenuProgramacion />} />
+            <Route path="quejas-sugerencias" element={<AdminQuejasSugerencias />} />
             {/* Aquí se agregarán las demás rutas del admin */}
           </Route>
           {/* Redirigir cualquier otra ruta a /admin */}

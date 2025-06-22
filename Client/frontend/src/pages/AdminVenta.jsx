@@ -1,11 +1,15 @@
 import React from 'react';
 import {
-  Box, Paper, Typography, TextField, Button, Divider, IconButton, MenuItem, Select, InputLabel, FormControl, RadioGroup, FormControlLabel, Radio, Table, TableBody, TableCell, TableContainer, TableHead, TableRow
+  Box, Paper, Typography, TextField, Button, Divider, IconButton, MenuItem, Select, InputLabel, FormControl, RadioGroup, FormControlLabel, Radio, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Breadcrumbs
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import HomeIcon from '@mui/icons-material/Home';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import { Link as RouterLink } from 'react-router-dom';
 
 const productos = [
   { value: 'menu', label: 'Menú', codigo: '0001', precio: 14.00 },
@@ -34,17 +38,24 @@ const AdminVenta = () => {
   const vuelto = medioPago === 'efectivo' ? (parseFloat(montoRecibido) - total).toFixed(2) : '0.00';
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#fafbfc', p: 0, display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 3, mb: 1, ml: 4 }}>
-        <Typography color="text.secondary" fontSize={18}>/</Typography>
-        <Typography color="text.secondary" fontSize={18}>Venta</Typography>
+    <React.Fragment>
+      <Box>
+        <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb" sx={{ mb: 2 }}>
+          <IconButton component={RouterLink} to="/admin" size="small" sx={{ color: 'inherit', p: 0.5 }}>
+            <HomeIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', color: 'inherit' }}>
+            <PointOfSaleIcon sx={{ mr: 0.5, fontSize: 20 }} />
+            <Typography color="text.primary">Venta</Typography>
+          </Box>
+        </Breadcrumbs>
+        <Typography variant="h4" fontWeight={600} sx={{ mb: 2 }}>Venta</Typography>
+        <Divider />
       </Box>
-      <Typography variant="h4" fontWeight={600} sx={{ ml: 4, mb: 2 }}>Venta</Typography>
-      <Divider sx={{ mb: 3, ml: 4, mr: 4 }} />
-      <Box sx={{ display: 'flex', gap: 3, px: 4, alignItems: 'flex-start' }}>
+      <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start', mt: 2 }}>
         <Box sx={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Información del cliente */}
-          <Paper elevation={2} sx={{ p: 3, mb: 1 }}>
+          <Paper elevation={0} sx={{ p: 3, border: '1px solid #e0e0e0' }}>
             <Typography variant="h6" fontWeight={500} sx={{ mb: 2 }}>Información del cliente</Typography>
             <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
               <TextField label="Código" size="small" value={cliente.codigo} sx={{ flex: 1 }} />
@@ -65,7 +76,7 @@ const AdminVenta = () => {
             />
           </Paper>
           {/* Detalle de venta */}
-          <Paper elevation={2} sx={{ p: 3 }}>
+          <Paper elevation={0} sx={{ p: 3, border: '1px solid #e0e0e0' }}>
             <Typography variant="h6" fontWeight={500} sx={{ mb: 2 }}>Detalle de venta</Typography>
             <TableContainer>
               <Table size="small">
@@ -122,7 +133,7 @@ const AdminVenta = () => {
           </Paper>
         </Box>
         {/* Panel lateral derecho */}
-        <Paper elevation={2} sx={{ flex: 1, p: 3, minWidth: 320, maxWidth: 340 }}>
+        <Paper elevation={0} sx={{ flex: 1, p: 3, minWidth: 320, maxWidth: 340, border: '1px solid #e0e0e0' }}>
           <Typography variant="h6" fontWeight={500} sx={{ mb: 2 }}>Forma de pago</Typography>
           <RadioGroup
             value={formaPago}
@@ -173,7 +184,7 @@ const AdminVenta = () => {
           </Button>
         </Paper>
       </Box>
-    </Box>
+    </React.Fragment>
   );
 };
 
