@@ -31,7 +31,8 @@ Cualquier otra combinación mostrará un error de credenciales incorrectas.
 
 ## Fechas de ejemplo
 
-- Para la pantalla de programación del menú, usa la fecha **23/08/2025** para ver el contenido de prueba.
+- Para la pantalla de programación del menú (vista de cliente), usa la fecha **23/08/2025** para ver el contenido de prueba.
+- Para la pantalla de programación del menú (vista de administrador), usa la fecha **27/09/2025** para ver el contenido de prueba.
 
 ---
 
