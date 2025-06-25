@@ -1,34 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Box, Paper, Typography, TextField, Button, Divider, IconButton, MenuItem, Select, InputLabel, FormControl, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Tooltip, Breadcrumbs, TablePagination
+  Box, Paper, Typography, TextField, Button, Divider, IconButton, MenuItem, Select, InputLabel, FormControl, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Tooltip, Breadcrumbs, TablePagination, Alert, Snackbar
 } from '@mui/material';
 import { Edit, Delete } from '@mui/icons-material';
 import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import WidgetsIcon from '@mui/icons-material/Widgets';
 import { Link as RouterLink } from 'react-router-dom';
-
-// Datos de prueba
-const productsData = [
-  { id: 1, code: '0001', name: 'Menú', shortName: 'Menú', type: 'Menú', cost: 12.00, igv: 'No', status: 'Disponible' },
-  { id: 2, code: '0002', name: 'Plato a la carta', shortName: 'Plato carta', type: 'Plato a la carta', cost: 18.00, igv: 'No', status: 'Disponible' },
-  { id: 3, code: '0003', name: 'Taper Menú', shortName: 'Taper', type: 'Diversos', cost: 10.00, igv: 'No', status: 'Disponible' },
-  { id: 4, code: '0004', name: 'Entrada Menú', shortName: 'Entrada', type: 'Diversos', cost: 4.00, igv: 'No', status: 'No Disponible' },
-  { id: 5, code: '0005', name: 'Plato de fondo Menú', shortName: 'Plato fondo', type: 'Diversos', cost: 10.00, igv: 'No', status: 'Disponible' },
-  { id: 6, code: '0006', name: 'Postre Menú', shortName: 'Postre', type: 'Diversos', cost: 2.00, igv: 'No', status: 'Disponible' },
-  { id: 7, code: '0007', name: 'Refresco Menú', shortName: 'Refresco', type: 'Diversos', cost: 1.00, igv: 'No', status: 'Disponible' },
-  { id: 8, code: '0008', name: 'Servicio Delivery', shortName: 'Delivery', type: 'Diversos', cost: 3.00, igv: 'Sí', status: 'Disponible' },
-  { id: 9, code: '0009', name: 'Gaseosa Personal', shortName: 'Gaseosa', type: 'Diversos', cost: 2.50, igv: 'Sí', status: 'Disponible' },
-  { id: 10, code: '0010', name: 'Agua Mineral', shortName: 'Agua', type: 'Diversos', cost: 2.00, igv: 'Sí', status: 'No Disponible' },
-  { id: 11, code: '0011', name: 'Porción de Arroz', shortName: 'Arroz', type: 'Diversos', cost: 3.00, igv: 'No', status: 'Disponible' },
-  { id: 12, code: '0012', name: 'Ensalada Adicional', shortName: 'Ensalada', type: 'Diversos', cost: 5.00, igv: 'No', status: 'Disponible' },
-  { id: 13, code: '0013', name: 'Jugo Especial', shortName: 'Jugo', type: 'Diversos', cost: 8.00, igv: 'Sí', status: 'Disponible' },
-];
+import productosService from '../services/productosService';
 
 const AdminProductos = () => {
   // Estados para datos
-  const [productos, setProductos] = useState(productsData);
-  const [productosFiltrados, setProductosFiltrados] = useState(productsData);
+  const [productos, setProductos] = useState([]);
+  const [productosFiltrados, setProductosFiltrados] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Estados para filtros
   const [filtroCodigo, setFiltroCodigo] = useState('');
@@ -64,17 +50,59 @@ const AdminProductos = () => {
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
 
   // Estados para campos de modales
-  const [nuevoProducto, setNuevoProducto] = useState({ name: '', shortName: '', type: '', cost: '', igv: 'No', status: 'Disponible' });
-  const [editProducto, setEditProducto] = useState({ id: null, code: '', name: '', shortName: '', type: '', cost: '', igv: 'No', status: 'Disponible' });
+  const [nuevoProducto, setNuevoProducto] = useState({ 
+    codigoProducto: '', 
+    nombreProducto: '', 
+    nombreCorto: '', 
+    tipoProducto: 'C', 
+    costoUnitario: '', 
+    afectoIGV: true, 
+    disponible: true 
+  });
+  const [editProducto, setEditProducto] = useState({ 
+    idProducto: null, 
+    codigoProducto: '', 
+    nombreProducto: '', 
+    nombreCorto: '', 
+    tipoProducto: 'C', 
+    costoUnitario: '', 
+    afectoIGV: true, 
+    disponible: true 
+  });
+
+  // Estados para notificaciones
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  // Cargar productos al montar el componente
+  useEffect(() => {
+    cargarProductos();
+  }, []);
+
+  const cargarProductos = async () => {
+    try {
+      setLoading(true);
+      const response = await productosService.obtenerTodos();
+      setProductos(response.data);
+      setProductosFiltrados(response.data);
+      setError(null);
+    } catch (err) {
+      setError('Error al cargar los productos');
+      console.error('Error cargando productos:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Lógica de filtros
   const handleAplicarFiltros = () => {
     let filtrados = productos.filter(p => {
-      const matchCodigo = !filtroCodigo || p.code.toLowerCase().includes(filtroCodigo.toLowerCase());
-      const matchNombre = !filtroNombre || p.name.toLowerCase().includes(filtroNombre.toLowerCase());
-      const matchNombreCorto = !filtroNombreCorto || p.shortName.toLowerCase().includes(filtroNombreCorto.toLowerCase());
-      const matchTipo = filtroTipo === 'todos' || p.type === filtroTipo;
-      const matchDisponibilidad = filtroDisponibilidad === 'todos' || p.status === filtroDisponibilidad;
+      const matchCodigo = !filtroCodigo || p.codigoProducto.toLowerCase().includes(filtroCodigo.toLowerCase());
+      const matchNombre = !filtroNombre || p.nombreProducto.toLowerCase().includes(filtroNombre.toLowerCase());
+      const matchNombreCorto = !filtroNombreCorto || p.nombreCorto.toLowerCase().includes(filtroNombreCorto.toLowerCase());
+      const matchTipo = filtroTipo === 'todos' || p.tipoProducto === filtroTipo;
+      const matchDisponibilidad = filtroDisponibilidad === 'todos' || 
+        (filtroDisponibilidad === 'Disponible' && p.disponible) ||
+        (filtroDisponibilidad === 'No Disponible' && !p.disponible);
       return matchCodigo && matchNombre && matchNombreCorto && matchTipo && matchDisponibilidad;
     });
     setProductosFiltrados(filtrados);
@@ -107,34 +135,74 @@ const AdminProductos = () => {
 
   // Handlers para modales
   const handleNuevo = () => {
-    setNuevoProducto({ name: '', shortName: '', type: '', cost: '', igv: 'No', status: 'Disponible' });
+    setNuevoProducto({ 
+      codigoProducto: '', 
+      nombreProducto: '', 
+      nombreCorto: '', 
+      tipoProducto: 'C', 
+      costoUnitario: '', 
+      afectoIGV: true, 
+      disponible: true 
+    });
     setNuevoModalOpen(true);
   };
 
-  const handleGuardarNuevo = () => {
-    const nuevo = {
-      ...nuevoProducto,
-      id: Math.max(...productos.map(p => p.id)) + 1,
-      code: String(Math.max(...productos.map(p => parseInt(p.code))) + 1).padStart(4, '0'),
-      cost: parseFloat(nuevoProducto.cost) || 0,
-    };
-    setProductos(prev => [...prev, nuevo]);
-    setProductosFiltrados(prev => [...prev, nuevo]);
-    setNuevoModalOpen(false);
+  const handleGuardarNuevo = async () => {
+    try {
+      const productoData = {
+        ...nuevoProducto,
+        costoUnitario: parseFloat(nuevoProducto.costoUnitario) || 0
+      };
+      
+      const response = await productosService.crear(productoData);
+      setProductos(prev => [...prev, response.data]);
+      setProductosFiltrados(prev => [...prev, response.data]);
+      setNuevoModalOpen(false);
+      mostrarNotificacion('Producto creado exitosamente', 'success');
+    } catch (err) {
+      mostrarNotificacion('Error al crear el producto', 'error');
+      console.error('Error creando producto:', err);
+    }
   };
 
   const handleEditar = (producto) => {
     setProductoSeleccionado(producto);
-    setEditProducto(producto);
+    setEditProducto({
+      idProducto: producto.idProducto,
+      codigoProducto: producto.codigoProducto,
+      nombreProducto: producto.nombreProducto,
+      nombreCorto: producto.nombreCorto,
+      tipoProducto: producto.tipoProducto,
+      costoUnitario: producto.costoUnitario.toString(),
+      afectoIGV: producto.afectoIGV,
+      disponible: producto.disponible
+    });
     setEditarModalOpen(true);
   };
 
-  const handleGuardarEdicion = () => {
-    const actualizados = productos.map(p => p.id === editProducto.id ? { ...editProducto, cost: parseFloat(editProducto.cost) || 0 } : p);
-    setProductos(actualizados);
-    setProductosFiltrados(actualizados);
-    setEditarModalOpen(false);
-    setProductoSeleccionado(null);
+  const handleGuardarEdicion = async () => {
+    try {
+      const productoData = {
+        ...editProducto,
+        costoUnitario: parseFloat(editProducto.costoUnitario) || 0,
+        afectoIGV: Boolean(editProducto.afectoIGV),
+        disponible: Boolean(editProducto.disponible),
+        activo: editProducto.activo !== undefined ? Boolean(editProducto.activo) : true
+      };
+      
+      const response = await productosService.actualizar(editProducto.idProducto, productoData);
+      const actualizados = productos.map(p => 
+        p.idProducto === editProducto.idProducto ? response.data : p
+      );
+      setProductos(actualizados);
+      setProductosFiltrados(actualizados);
+      setEditarModalOpen(false);
+      setProductoSeleccionado(null);
+      mostrarNotificacion('Producto actualizado exitosamente', 'success');
+    } catch (err) {
+      mostrarNotificacion('Error al actualizar el producto', 'error');
+      console.error('Error actualizando producto:', err);
+    }
   };
 
   const handleEliminar = (producto) => {
@@ -142,13 +210,68 @@ const AdminProductos = () => {
     setEliminarModalOpen(true);
   };
 
-  const handleConfirmarEliminar = () => {
-    const filtrados = productos.filter(p => p.id !== productoSeleccionado.id);
-    setProductos(filtrados);
-    setProductosFiltrados(filtrados);
-    setEliminarModalOpen(false);
-    setProductoSeleccionado(null);
+  const handleConfirmarEliminar = async () => {
+    try {
+      await productosService.eliminar(productoSeleccionado.idProducto);
+      const filtrados = productos.filter(p => p.idProducto !== productoSeleccionado.idProducto);
+      setProductos(filtrados);
+      setProductosFiltrados(filtrados);
+      setEliminarModalOpen(false);
+      setProductoSeleccionado(null);
+      mostrarNotificacion('Producto eliminado exitosamente', 'success');
+    } catch (err) {
+      mostrarNotificacion('Error al eliminar el producto', 'error');
+      console.error('Error eliminando producto:', err);
+    }
   };
+
+  const mostrarNotificacion = (message, severity) => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const cerrarNotificacion = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  // Función para mapear tipos de producto
+  const mapearTipoProducto = (tipo) => {
+    const tipos = {
+      'M': 'Menú',
+      'C': 'Plato a la carta',
+      'D': 'Diversos'
+    };
+    return tipos[tipo] || tipo;
+  };
+
+  // Validación de campos obligatorios para nuevo producto
+  const esNuevoProductoValido = () => {
+    return (
+      nuevoProducto.codigoProducto &&
+      nuevoProducto.nombreProducto &&
+      nuevoProducto.nombreCorto &&
+      nuevoProducto.tipoProducto &&
+      parseFloat(nuevoProducto.costoUnitario) > 0
+    );
+  };
+
+  // Validación de campos obligatorios para edición
+  const esEditProductoValido = () => {
+    return (
+      editProducto.codigoProducto &&
+      editProducto.nombreProducto &&
+      editProducto.nombreCorto &&
+      editProducto.tipoProducto &&
+      parseFloat(editProducto.costoUnitario) > 0
+    );
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography>Cargando productos...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#fafbfc', p: 0, display: 'flex', flexDirection: 'column' }}>
@@ -163,6 +286,12 @@ const AdminProductos = () => {
       </Breadcrumbs>
       <Typography variant="h4" fontWeight={600} sx={{ ml: 4, mb: 2 }}>Productos</Typography>
       <Divider sx={{ mb: 3, ml: 4, mr: 4 }} />
+
+      {error && (
+        <Alert severity="error" sx={{ m: 4, mt: 0 }}>
+          {error}
+        </Alert>
+      )}
 
       <Paper elevation={0} sx={{ p: 2, border: '1px solid #e0e0e0', m: 4, mt: 0 }}>
         <Box>
@@ -181,9 +310,9 @@ const AdminProductos = () => {
               <InputLabel>Tipo de producto</InputLabel>
               <Select label="Tipo de producto" value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}>
                 <MenuItem value="todos">Todos</MenuItem>
-                <MenuItem value="Menú">Menú</MenuItem>
-                <MenuItem value="Plato a la carta">Plato a la carta</MenuItem>
-                <MenuItem value="Diversos">Diversos</MenuItem>
+                <MenuItem value="M">Menú</MenuItem>
+                <MenuItem value="C">Plato a la carta</MenuItem>
+                <MenuItem value="D">Diversos</MenuItem>
               </Select>
             </FormControl>
             <FormControl size="small" disabled={filtrosAplicados} sx={{ width: 150 }}>
@@ -198,52 +327,40 @@ const AdminProductos = () => {
         </Box>
         <Divider sx={{ my: 2 }} />
         <TableContainer>
-          <Table size="small">
+          <Table>
             <TableHead>
               <TableRow>
-                <TableCell align="center" sx={{ width: '5%' }}>Código</TableCell>
-                <TableCell align="center">Nombre del producto</TableCell>
-                <TableCell align="center">Nombre corto</TableCell>
-                <TableCell align="center">Tipo de producto</TableCell>
-                <TableCell align="center">Costo Unitario</TableCell>
-                <TableCell align="center" sx={{ width: '5%' }}>Afecto a IGV</TableCell>
-                <TableCell align="center">Disponibilidad</TableCell>
-                <TableCell align="center">Acciones</TableCell>
+                <TableCell>Código</TableCell>
+                <TableCell>Nombre del producto</TableCell>
+                <TableCell>Nombre corto</TableCell>
+                <TableCell>Tipo</TableCell>
+                <TableCell>Costo unitario</TableCell>
+                <TableCell>IGV</TableCell>
+                <TableCell>Disponibilidad</TableCell>
+                <TableCell>Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedProducts.map((product) => (
-                <TableRow key={product.id} hover>
-                  <TableCell align="center">{product.code}</TableCell>
-                  <TableCell align="center">{product.name}</TableCell>
-                  <TableCell align="center">{product.shortName}</TableCell>
-                  <TableCell align="center">{product.type}</TableCell>
-                  <TableCell align="center">S/. {product.cost.toFixed(2)}</TableCell>
-                  <TableCell align="center">{product.igv}</TableCell>
-                  <TableCell align="center">
-                    <Box
-                      sx={{
-                        bgcolor: product.status === 'Disponible' ? 'success.main' : 'error.main',
-                        color: 'white',
-                        px: 1.2,
-                        py: 0.2,
-                        borderRadius: '12px',
-                        display: 'inline-block',
-                        fontSize: '0.75rem',
-                      }}
-                    >
-                      {product.status}
-                    </Box>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-                      <Tooltip title="Editar">
-                        <IconButton size="small" onClick={() => handleEditar(product)}><Edit fontSize="small" /></IconButton>
-                      </Tooltip>
-                      <Tooltip title="Eliminar">
-                        <IconButton size="small" onClick={() => handleEliminar(product)}><Delete fontSize="small" /></IconButton>
-                      </Tooltip>
-                    </Box>
+              {paginatedProducts.map((producto) => (
+                <TableRow key={producto.idProducto}>
+                  <TableCell>{producto.codigoProducto}</TableCell>
+                  <TableCell>{producto.nombreProducto}</TableCell>
+                  <TableCell>{producto.nombreCorto}</TableCell>
+                  <TableCell>{mapearTipoProducto(producto.tipoProducto)}</TableCell>
+                  <TableCell>S/. {parseFloat(producto.costoUnitario).toFixed(2)}</TableCell>
+                  <TableCell>{producto.afectoIGV ? 'Sí' : 'No'}</TableCell>
+                  <TableCell>{producto.disponible ? 'Disponible' : 'No Disponible'}</TableCell>
+                  <TableCell>
+                    <Tooltip title="Editar">
+                      <IconButton onClick={() => handleEditar(producto)} size="small">
+                        <Edit />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Eliminar">
+                      <IconButton onClick={() => handleEliminar(producto)} size="small" color="error">
+                        <Delete />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -251,103 +368,207 @@ const AdminProductos = () => {
           </Table>
         </TableContainer>
         <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
           component="div"
           count={productosFiltrados.length}
-          rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleChangeRowsPerPage}
           labelRowsPerPage="Filas por página:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
         />
       </Paper>
 
       {/* Modal Nuevo Producto */}
       <Dialog open={nuevoModalOpen} onClose={() => setNuevoModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 600, fontSize: 22 }}>Nuevo Producto</DialogTitle>
+        <DialogTitle>Nuevo Producto</DialogTitle>
         <DialogContent>
-          <TextField autoFocus margin="dense" label="Nombre del producto" type="text" fullWidth size="small" value={nuevoProducto.name} onChange={e => setNuevoProducto({...nuevoProducto, name: e.target.value})} />
-          <TextField margin="dense" label="Nombre corto" type="text" fullWidth size="small" value={nuevoProducto.shortName} onChange={e => setNuevoProducto({...nuevoProducto, shortName: e.target.value})} />
-          <FormControl fullWidth margin="dense" size="small">
-            <InputLabel>Tipo de producto</InputLabel>
-            <Select label="Tipo de producto" value={nuevoProducto.type} onChange={e => setNuevoProducto({...nuevoProducto, type: e.target.value})}>
-              <MenuItem value="Menú">Menú</MenuItem>
-              <MenuItem value="Plato a la carta">Plato a la carta</MenuItem>
-              <MenuItem value="Diversos">Diversos</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField margin="dense" label="Costo Unitario" type="number" fullWidth size="small" value={nuevoProducto.cost} onChange={e => setNuevoProducto({...nuevoProducto, cost: e.target.value})} />
-          <FormControl fullWidth margin="dense" size="small">
-            <InputLabel>Afecto a IGV</InputLabel>
-            <Select label="Afecto a IGV" value={nuevoProducto.igv} onChange={e => setNuevoProducto({...nuevoProducto, igv: e.target.value})}>
-              <MenuItem value="Sí">Sí</MenuItem>
-              <MenuItem value="No">No</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl fullWidth margin="dense" size="small">
-            <InputLabel>Disponibilidad</InputLabel>
-            <Select label="Disponibilidad" value={nuevoProducto.status} onChange={e => setNuevoProducto({...nuevoProducto, status: e.target.value})}>
-              <MenuItem value="Disponible">Disponible</MenuItem>
-              <MenuItem value="No Disponible">No Disponible</MenuItem>
-            </Select>
-          </FormControl>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <TextField
+              label="Código del producto"
+              value={nuevoProducto.codigoProducto}
+              onChange={(e) => setNuevoProducto({...nuevoProducto, codigoProducto: e.target.value})}
+              fullWidth
+            />
+            <TextField
+              label="Nombre del producto"
+              value={nuevoProducto.nombreProducto}
+              onChange={(e) => setNuevoProducto({...nuevoProducto, nombreProducto: e.target.value})}
+              fullWidth
+            />
+            <TextField
+              label="Nombre corto"
+              value={nuevoProducto.nombreCorto}
+              onChange={(e) => setNuevoProducto({...nuevoProducto, nombreCorto: e.target.value})}
+              fullWidth
+            />
+            <FormControl fullWidth>
+              <InputLabel>Tipo de producto</InputLabel>
+              <Select
+                value={nuevoProducto.tipoProducto}
+                onChange={(e) => setNuevoProducto({...nuevoProducto, tipoProducto: e.target.value})}
+                label="Tipo de producto"
+              >
+                <MenuItem value="M">Menú</MenuItem>
+                <MenuItem value="C">Plato a la carta</MenuItem>
+                <MenuItem value="D">Diversos</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              label="Costo unitario"
+              type="number"
+              value={nuevoProducto.costoUnitario}
+              onChange={(e) => {
+                let value = e.target.value;
+                // Limitar a máximo 2 decimales
+                if (/^\d*(\.\d{0,2})?$/.test(value)) {
+                  // No permitir negativos ni cero
+                  if (parseFloat(value) > 0 || value === "") {
+                    setNuevoProducto({...nuevoProducto, costoUnitario: value});
+                  }
+                }
+              }}
+              inputProps={{ min: 0.01, step: 0.01 }}
+              fullWidth
+            />
+            <FormControl fullWidth>
+              <InputLabel>Afecto a IGV</InputLabel>
+              <Select
+                value={nuevoProducto.afectoIGV}
+                onChange={(e) => setNuevoProducto({...nuevoProducto, afectoIGV: e.target.value})}
+                label="Afecto a IGV"
+              >
+                <MenuItem value={true}>Sí</MenuItem>
+                <MenuItem value={false}>No</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Disponible</InputLabel>
+              <Select
+                value={nuevoProducto.disponible}
+                onChange={(e) => setNuevoProducto({...nuevoProducto, disponible: e.target.value})}
+                label="Disponible"
+              >
+                <MenuItem value={true}>Sí</MenuItem>
+                <MenuItem value={false}>No</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ pr: 3, pb: 2 }}>
-          <Button onClick={() => setNuevoModalOpen(false)} sx={{ fontWeight: 600 }}>Cancelar</Button>
-          <Button onClick={handleGuardarNuevo} sx={{ fontWeight: 600 }} disabled={!nuevoProducto.name || !nuevoProducto.shortName || !nuevoProducto.type || !nuevoProducto.cost}>Guardar</Button>
+        <DialogActions>
+          <Button onClick={() => setNuevoModalOpen(false)}>Cancelar</Button>
+          <Button onClick={handleGuardarNuevo} variant="contained" disabled={!esNuevoProductoValido()}>Guardar</Button>
         </DialogActions>
       </Dialog>
 
       {/* Modal Editar Producto */}
       <Dialog open={editarModalOpen} onClose={() => setEditarModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 600, fontSize: 22 }}>Editar Producto</DialogTitle>
+        <DialogTitle>Editar Producto</DialogTitle>
         <DialogContent>
-          <TextField margin="dense" label="Código" type="text" fullWidth size="small" value={editProducto.code} disabled />
-          <TextField autoFocus margin="dense" label="Nombre del producto" type="text" fullWidth size="small" value={editProducto.name} onChange={e => setEditProducto({...editProducto, name: e.target.value})} />
-          <TextField margin="dense" label="Nombre corto" type="text" fullWidth size="small" value={editProducto.shortName} onChange={e => setEditProducto({...editProducto, shortName: e.target.value})} />
-          <FormControl fullWidth margin="dense" size="small">
-            <InputLabel>Tipo de producto</InputLabel>
-            <Select label="Tipo de producto" value={editProducto.type} onChange={e => setEditProducto({...editProducto, type: e.target.value})}>
-              <MenuItem value="Menú">Menú</MenuItem>
-              <MenuItem value="Plato a la carta">Plato a la carta</MenuItem>
-              <MenuItem value="Diversos">Diversos</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField margin="dense" label="Costo Unitario" type="number" fullWidth size="small" value={editProducto.cost} onChange={e => setEditProducto({...editProducto, cost: e.target.value})} />
-          <FormControl fullWidth margin="dense" size="small">
-            <InputLabel>Afecto a IGV</InputLabel>
-            <Select label="Afecto a IGV" value={editProducto.igv} onChange={e => setEditProducto({...editProducto, igv: e.target.value})}>
-              <MenuItem value="Sí">Sí</MenuItem>
-              <MenuItem value="No">No</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl fullWidth margin="dense" size="small">
-            <InputLabel>Disponibilidad</InputLabel>
-            <Select label="Disponibilidad" value={editProducto.status} onChange={e => setEditProducto({...editProducto, status: e.target.value})}>
-              <MenuItem value="Disponible">Disponible</MenuItem>
-              <MenuItem value="No Disponible">No Disponible</MenuItem>
-            </Select>
-          </FormControl>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <TextField
+              label="Código del producto"
+              value={editProducto.codigoProducto}
+              onChange={(e) => setEditProducto({...editProducto, codigoProducto: e.target.value})}
+              fullWidth
+            />
+            <TextField
+              label="Nombre del producto"
+              value={editProducto.nombreProducto}
+              onChange={(e) => setEditProducto({...editProducto, nombreProducto: e.target.value})}
+              fullWidth
+            />
+            <TextField
+              label="Nombre corto"
+              value={editProducto.nombreCorto}
+              onChange={(e) => setEditProducto({...editProducto, nombreCorto: e.target.value})}
+              fullWidth
+            />
+            <FormControl fullWidth>
+              <InputLabel>Tipo de producto</InputLabel>
+              <Select
+                value={editProducto.tipoProducto}
+                onChange={(e) => setEditProducto({...editProducto, tipoProducto: e.target.value})}
+                label="Tipo de producto"
+              >
+                <MenuItem value="M">Menú</MenuItem>
+                <MenuItem value="C">Plato a la carta</MenuItem>
+                <MenuItem value="D">Diversos</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              label="Costo unitario"
+              type="number"
+              value={editProducto.costoUnitario}
+              onChange={(e) => {
+                let value = e.target.value;
+                // Limitar a máximo 2 decimales
+                if (/^\d*(\.\d{0,2})?$/.test(value)) {
+                  // No permitir negativos ni cero
+                  if (parseFloat(value) > 0 || value === "") {
+                    setEditProducto({...editProducto, costoUnitario: value});
+                  }
+                }
+              }}
+              inputProps={{ min: 0.01, step: 0.01 }}
+              fullWidth
+            />
+            <FormControl fullWidth>
+              <InputLabel>Afecto a IGV</InputLabel>
+              <Select
+                value={editProducto.afectoIGV}
+                onChange={(e) => setEditProducto({...editProducto, afectoIGV: e.target.value})}
+                label="Afecto a IGV"
+              >
+                <MenuItem value={true}>Sí</MenuItem>
+                <MenuItem value={false}>No</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Disponible</InputLabel>
+              <Select
+                value={editProducto.disponible}
+                onChange={(e) => setEditProducto({...editProducto, disponible: e.target.value})}
+                label="Disponible"
+              >
+                <MenuItem value={true}>Sí</MenuItem>
+                <MenuItem value={false}>No</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ pr: 3, pb: 2 }}>
-          <Button onClick={() => setEditarModalOpen(false)} sx={{ fontWeight: 600 }}>Cancelar</Button>
-          <Button onClick={handleGuardarEdicion} sx={{ fontWeight: 600 }} disabled={!editProducto.name || !editProducto.shortName || !editProducto.type || !editProducto.cost}>Guardar</Button>
+        <DialogActions>
+          <Button onClick={() => setEditarModalOpen(false)}>Cancelar</Button>
+          <Button onClick={handleGuardarEdicion} variant="contained" disabled={!esEditProductoValido()}>Guardar</Button>
         </DialogActions>
       </Dialog>
 
       {/* Modal Eliminar Producto */}
-      <Dialog open={eliminarModalOpen} onClose={() => setEliminarModalOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 600, fontSize: 20 }}>Eliminar Producto</DialogTitle>
+      <Dialog open={eliminarModalOpen} onClose={() => setEliminarModalOpen(false)}>
+        <DialogTitle>Confirmar Eliminación</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {`¿Estás seguro de que quieres eliminar el producto "${productoSeleccionado?.name}"?`}
+            ¿Está seguro que desea eliminar el producto "{productoSeleccionado?.nombreProducto}"?
+            Esta acción no se puede deshacer.
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ pr: 3, pb: 2 }}>
-          <Button onClick={() => setEliminarModalOpen(false)} sx={{ fontWeight: 600 }}>Cancelar</Button>
-          <Button onClick={handleConfirmarEliminar} color="error" sx={{ fontWeight: 600 }}>Eliminar</Button>
+        <DialogActions>
+          <Button onClick={() => setEliminarModalOpen(false)}>Cancelar</Button>
+          <Button onClick={handleConfirmarEliminar} color="error" variant="contained">Eliminar</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar para notificaciones */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={cerrarNotificacion}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={cerrarNotificacion} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

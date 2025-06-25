@@ -3,15 +3,19 @@ import {
   Box, Typography, Breadcrumbs, Tabs, Tab, Paper, Button, Divider, IconButton, TextField,
   Select, MenuItem, InputLabel, FormControl,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, Checkbox, Tooltip,
-  Dialog, DialogActions, DialogContent, DialogTitle
+  Dialog, DialogActions, DialogContent, DialogTitle, Popover, InputAdornment
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { Link as RouterLink } from 'react-router-dom';
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
+import { DateRange } from 'react-date-range';
+import 'react-date-range/dist/styles.css'; // main style file
+import 'react-date-range/dist/theme/default.css'; // theme css file
+import es from 'date-fns/locale/es';
 
 // Mock Data
 const mockQuejas = [
@@ -40,6 +44,14 @@ const QuejasSugerenciasContent = ({ data, isQuejas }) => {
     const [openDetailModal, setOpenDetailModal] = useState(false);
     const [openResolveModal, setOpenResolveModal] = useState(false);
     const [currentItem, setCurrentItem] = useState(null);
+
+    // Estados para DateRangePicker
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [rangoFecha, setRangoFecha] = useState([{
+        startDate: null,
+        endDate: null,
+        key: 'selection'
+    }]);
 
     const handleSelectAllClick = (event) => {
         if (event.target.checked) {
@@ -85,6 +97,17 @@ const QuejasSugerenciasContent = ({ data, isQuejas }) => {
     const handleOpenResolve = () => {
         setOpenResolveModal(true);
     };
+
+    const handleOpenPopover = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClosePopover = () => {
+        setAnchorEl(null);
+    };
+
+    const open = Boolean(anchorEl);
+    const idPopover = open ? 'date-range-popover' : undefined;
     
     return (
         <Paper sx={{ p: 2, border: '1px solid #e0e0e0', mt: 2 }} elevation={0}>
@@ -98,9 +121,25 @@ const QuejasSugerenciasContent = ({ data, isQuejas }) => {
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
                 <TextField label="Código" size="small" sx={{ width: 120 }}/>
                 <TextField label="Asunto" size="small" sx={{flex: 1, minWidth: 220}} />
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DatePicker label="Fecha creación" renderInput={(params) => <TextField {...params} size="small" sx={{ width: 170 }} />} />
-                </LocalizationProvider>
+                <TextField
+                    label="Fecha creación"
+                    size="small"
+                    value={
+                        rangoFecha[0].startDate && rangoFecha[0].endDate
+                        ? `${dayjs(rangoFecha[0].startDate).format('DD/MM/YYYY')} - ${dayjs(rangoFecha[0].endDate).format('DD/MM/YYYY')}`
+                        : ''
+                    }
+                    onClick={handleOpenPopover}
+                    readOnly
+                    sx={{ width: 220 }}
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <CalendarTodayIcon sx={{ color: 'action.active', cursor: 'pointer' }} />
+                            </InputAdornment>
+                        ),
+                    }}
+                />
                 <TextField label="Nombre cliente asociado" size="small" sx={{flex: 1, minWidth: 220}}/>
                 {isQuejas && (
                     <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -192,6 +231,25 @@ const QuejasSugerenciasContent = ({ data, isQuejas }) => {
                     <Button onClick={() => setOpenResolveModal(false)} variant="contained">ACEPTAR</Button>
                 </DialogActions>
             </Dialog>
+
+            <Popover
+                id={idPopover}
+                open={open}
+                anchorEl={anchorEl}
+                onClose={handleClosePopover}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                }}
+            >
+                <DateRange
+                    editableDateInputs={true}
+                    onChange={item => setRangoFecha([item.selection])}
+                    moveRangeOnFirstSelection={false}
+                    ranges={rangoFecha}
+                    locale={es}
+                />
+            </Popover>
         </Paper>
     );
 };

@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import {
-  Box, Paper, Typography, Button, Divider, IconButton, Breadcrumbs, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, TablePagination
+  Box, Paper, Typography, Button, Divider, IconButton, Breadcrumbs, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, TablePagination, Popover, InputAdornment
 } from '@mui/material';
 import { Link as RouterLink, useParams, useNavigate } from 'react-router-dom';
 import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import { Edit, Delete, Add } from '@mui/icons-material';
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import Add from '@mui/icons-material/Add';
+import Edit from '@mui/icons-material/Edit';
+import Delete from '@mui/icons-material/Delete';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 
 // Mock Data
@@ -203,17 +206,6 @@ const AdminCajaChicaDetalle = () => {
       <Dialog open={openEditModal} onClose={() => setOpenEditModal(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Editar datos de la caja chica</DialogTitle>
         <DialogContent>
-          <TextField margin="dense" label="Número de liquidación" defaultValue={data.numero} fullWidth size="small" disabled/>
-          <TextField 
-            margin="dense"
-            label="Saldo inicial"
-            defaultValue={data.saldoInicial.toFixed(2)}
-            fullWidth
-            size="small"
-            disabled
-            type="text"
-            inputMode="decimal"
-          />
           <TextField 
             margin="dense" 
             label="Observaciones" 

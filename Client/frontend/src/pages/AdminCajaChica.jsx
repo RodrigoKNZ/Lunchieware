@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import {
-  Box, Paper, Typography, TextField, Button, Divider, IconButton, MenuItem, Select, InputLabel, FormControl, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Tooltip, Breadcrumbs, TablePagination
+  Box, Paper, Typography, TextField, Button, Divider, IconButton, MenuItem, Select, InputLabel, FormControl, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Tooltip, Breadcrumbs, TablePagination, Popover, InputAdornment
 } from '@mui/material';
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { Visibility, Add } from '@mui/icons-material';
 import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import Visibility from '@mui/icons-material/Visibility';
 import { Link as RouterLink } from 'react-router-dom';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import dayjs from 'dayjs';
+import { DateRange } from 'react-date-range';
+import 'react-date-range/dist/styles.css'; // main style file
+import 'react-date-range/dist/theme/default.css'; // theme css file
+import es from 'date-fns/locale/es';
 
 // Datos mock
 const cajasMock = [
@@ -27,37 +31,33 @@ const estados = [
 ];
 
 const AdminCajaChica = () => {
-  // Filtros
+  // Estados de filtros
   const [filtroNumero, setFiltroNumero] = useState('');
-  const [filtroFechaApertura, setFiltroFechaApertura] = useState(null);
-  const [filtroFechaLiquidacion, setFiltroFechaLiquidacion] = useState(null);
+  const [filtroFechaApertura, setFiltroFechaApertura] = useState([{
+    startDate: null,
+    endDate: null,
+    key: 'selection'
+  }]);
+  const [filtroFechaLiquidacion, setFiltroFechaLiquidacion] = useState([{
+    startDate: null,
+    endDate: null,
+    key: 'selection'
+  }]);
   const [filtroSaldoInicialMin, setFiltroSaldoInicialMin] = useState('');
   const [filtroSaldoInicialMax, setFiltroSaldoInicialMax] = useState('');
   const [filtroSaldoFinalMin, setFiltroSaldoFinalMin] = useState('');
   const [filtroSaldoFinalMax, setFiltroSaldoFinalMax] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
-
-  const handleNumericChange = (setter) => (e) => {
-    let value = e.target.value.replace(/,/g, '');
-    value = value.replace(/-/g, '');
-    // Truncar a dos decimales si es necesario
-    if (value.includes('.')) {
-      const [intPart, decPart] = value.split('.');
-      value = intPart + '.' + (decPart ? decPart.slice(0, 2) : '');
-    }
-    // Permitir solo números y punto
-    if (!/^\d*(\.?\d{0,2})?$/.test(value)) {
-      return;
-    }
-    setter(value);
-  };
-
-  // Control de filtros
   const [filtrosAplicados, setFiltrosAplicados] = useState(false);
+
+  // Estados para Popover
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [popoverType, setPopoverType] = useState('');
+
   const filtrosIniciales = {
     numero: '',
-    fechaApertura: null,
-    fechaLiquidacion: null,
+    fechaApertura: [{ startDate: null, endDate: null, key: 'selection' }],
+    fechaLiquidacion: [{ startDate: null, endDate: null, key: 'selection' }],
     saldoInicialMin: '',
     saldoInicialMax: '',
     saldoFinalMin: '',
@@ -66,8 +66,8 @@ const AdminCajaChica = () => {
   };
   const filtrosEnEstadoInicial =
     filtroNumero === filtrosIniciales.numero &&
-    filtroFechaApertura === filtrosIniciales.fechaApertura &&
-    filtroFechaLiquidacion === filtrosIniciales.fechaLiquidacion &&
+    filtroFechaApertura[0].startDate === null && filtroFechaApertura[0].endDate === null &&
+    filtroFechaLiquidacion[0].startDate === null && filtroFechaLiquidacion[0].endDate === null &&
     filtroSaldoInicialMin === filtrosIniciales.saldoInicialMin &&
     filtroSaldoInicialMax === filtrosIniciales.saldoInicialMax &&
     filtroSaldoFinalMin === filtrosIniciales.saldoFinalMin &&
@@ -85,12 +85,35 @@ const AdminCajaChica = () => {
   const [nuevoSaldoInicial, setNuevoSaldoInicial] = useState('');
   const [nuevaObs, setNuevaObs] = useState('');
 
+  // Handlers Popover
+  const handleOpenPopover = (event, type) => {
+    setAnchorEl(event.currentTarget);
+    setPopoverType(type);
+  };
+
+  const handleClosePopover = () => {
+    setAnchorEl(null);
+    setPopoverType('');
+  };
+
+  const open = Boolean(anchorEl);
+  const idPopover = open ? 'date-range-popover' : undefined;
+
   // Filtros
   const handleAplicarFiltros = () => {
     let filtradas = cajas.filter(c => {
       const matchNumero = !filtroNumero || c.numero.includes(filtroNumero);
-      const matchFechaApertura = !filtroFechaApertura || c.fechaApertura === filtroFechaApertura;
-      const matchFechaLiquidacion = !filtroFechaLiquidacion || c.fechaLiquidacion === filtroFechaLiquidacion;
+      
+      const fechaAperturaCaja = dayjs(c.fechaApertura, 'DD/MM/YYYY');
+      const [rangoApertura] = filtroFechaApertura;
+      const matchFechaApertura = (!rangoApertura.startDate || fechaAperturaCaja.isSame(dayjs(rangoApertura.startDate), 'day') || fechaAperturaCaja.isAfter(dayjs(rangoApertura.startDate))) &&
+                                 (!rangoApertura.endDate || fechaAperturaCaja.isSame(dayjs(rangoApertura.endDate), 'day') || fechaAperturaCaja.isBefore(dayjs(rangoApertura.endDate)));
+      
+      const fechaLiquidacionCaja = c.fechaLiquidacion ? dayjs(c.fechaLiquidacion, 'DD/MM/YYYY') : null;
+      const [rangoLiquidacion] = filtroFechaLiquidacion;
+      const matchFechaLiquidacion = !fechaLiquidacionCaja || (!rangoLiquidacion.startDate || fechaLiquidacionCaja.isSame(dayjs(rangoLiquidacion.startDate), 'day') || fechaLiquidacionCaja.isAfter(dayjs(rangoLiquidacion.startDate))) &&
+                                    (!rangoLiquidacion.endDate || fechaLiquidacionCaja.isSame(dayjs(rangoLiquidacion.endDate), 'day') || fechaLiquidacionCaja.isBefore(dayjs(rangoLiquidacion.endDate)));
+      
       const matchSaldoInicial = (!filtroSaldoInicialMin || c.saldoInicial >= parseFloat(filtroSaldoInicialMin)) && (!filtroSaldoInicialMax || c.saldoInicial <= parseFloat(filtroSaldoInicialMax));
       const matchSaldoFinal = (!filtroSaldoFinalMin || c.saldoFinal >= parseFloat(filtroSaldoFinalMin)) && (!filtroSaldoFinalMax || c.saldoFinal <= parseFloat(filtroSaldoFinalMax));
       const matchEstado = filtroEstado === 'todos' || c.estado === filtroEstado;
@@ -102,8 +125,8 @@ const AdminCajaChica = () => {
   };
   const handleLimpiarFiltros = () => {
     setFiltroNumero('');
-    setFiltroFechaApertura(null);
-    setFiltroFechaLiquidacion(null);
+    setFiltroFechaApertura([{ startDate: null, endDate: null, key: 'selection' }]);
+    setFiltroFechaLiquidacion([{ startDate: null, endDate: null, key: 'selection' }]);
     setFiltroSaldoInicialMin('');
     setFiltroSaldoInicialMax('');
     setFiltroSaldoFinalMin('');
@@ -148,36 +171,60 @@ const AdminCajaChica = () => {
             </Button>
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'center' }}>
-                <TextField label="Nro. liquidación" size="small" value={filtroNumero} onChange={e => setFiltroNumero(e.target.value)} disabled={filtrosAplicados} sx={{ width: 140 }}/>
-                <DatePicker
-                  label="Fecha apertura"
-                  value={filtroFechaApertura}
-                  onChange={(newValue) => setFiltroFechaApertura(newValue)}
-                  disabled={filtrosAplicados}
-                  renderInput={(params) => <TextField {...params} size="small" sx={{ width: 170 }} />}
-                />
-                <DatePicker
-                  label="Fecha liquidación"
-                  value={filtroFechaLiquidacion}
-                  onChange={(newValue) => setFiltroFechaLiquidacion(newValue)}
-                  disabled={filtrosAplicados}
-                  renderInput={(params) => <TextField {...params} size="small" sx={{ width: 180 }} />}
-                />
-                <FormControl size="small" sx={{ width: 120 }} disabled={filtrosAplicados}>
-                  <InputLabel>Estado</InputLabel>
-                  <Select label="Estado" value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}>
-                    {estados.map(e => <MenuItem key={e.value} value={e.value}>{e.label}</MenuItem>)}
-                  </Select>
-                </FormControl>
-              </Box>
-            </LocalizationProvider>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'center' }}>
-              <TextField label="Saldo inicial mín." size="small" value={filtroSaldoInicialMin} onChange={handleNumericChange(setFiltroSaldoInicialMin)} disabled={filtrosAplicados} sx={{ width: 150 }} type="text" inputMode="decimal"/>
-              <TextField label="Saldo inicial máx." size="small" value={filtroSaldoInicialMax} onChange={handleNumericChange(setFiltroSaldoInicialMax)} disabled={filtrosAplicados} sx={{ width: 170 }} type="text" inputMode="decimal"/>
-              <TextField label="Saldo final mín." size="small" value={filtroSaldoFinalMin} onChange={handleNumericChange(setFiltroSaldoFinalMin)} disabled={filtrosAplicados} sx={{ width: 150 }} type="text" inputMode="decimal"/>
-              <TextField label="Saldo final máx." size="small" value={filtroSaldoFinalMax} onChange={handleNumericChange(setFiltroSaldoFinalMax)} disabled={filtrosAplicados} sx={{ width: 150 }} type="text" inputMode="decimal"/>
+              <TextField label="Nro. liquidación" size="small" value={filtroNumero} onChange={e => setFiltroNumero(e.target.value)} disabled={filtrosAplicados} sx={{ width: 140 }}/>
+              <TextField
+                label="Fecha apertura"
+                size="small"
+                value={
+                  filtroFechaApertura[0].startDate && filtroFechaApertura[0].endDate
+                  ? `${dayjs(filtroFechaApertura[0].startDate).format('DD/MM/YYYY')} - ${dayjs(filtroFechaApertura[0].endDate).format('DD/MM/YYYY')}`
+                  : ''
+                }
+                onClick={(e) => handleOpenPopover(e, 'apertura')}
+                readOnly
+                sx={{ width: 220 }}
+                disabled={filtrosAplicados}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <CalendarTodayIcon sx={{ color: 'action.active', cursor: 'pointer' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <TextField
+                label="Fecha liquidación"
+                size="small"
+                value={
+                  filtroFechaLiquidacion[0].startDate && filtroFechaLiquidacion[0].endDate
+                  ? `${dayjs(filtroFechaLiquidacion[0].startDate).format('DD/MM/YYYY')} - ${dayjs(filtroFechaLiquidacion[0].endDate).format('DD/MM/YYYY')}`
+                  : ''
+                }
+                onClick={(e) => handleOpenPopover(e, 'liquidacion')}
+                readOnly
+                sx={{ width: 220 }}
+                disabled={filtrosAplicados}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <CalendarTodayIcon sx={{ color: 'action.active', cursor: 'pointer' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <FormControl size="small" sx={{ width: 120 }} disabled={filtrosAplicados}>
+                <InputLabel>Estado</InputLabel>
+                <Select label="Estado" value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}>
+                  {estados.map(e => <MenuItem key={e.value} value={e.value}>{e.label}</MenuItem>)}
+                </Select>
+              </FormControl>
+            </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'center' }}>
+              <TextField label="Saldo inicial mín." size="small" value={filtroSaldoInicialMin} onChange={e => setFiltroSaldoInicialMin(e.target.value)} disabled={filtrosAplicados} sx={{ width: 150 }} type="text" inputMode="decimal"/>
+              <TextField label="Saldo inicial máx." size="small" value={filtroSaldoInicialMax} onChange={e => setFiltroSaldoInicialMax(e.target.value)} disabled={filtrosAplicados} sx={{ width: 170 }} type="text" inputMode="decimal"/>
+              <TextField label="Saldo final mín." size="small" value={filtroSaldoFinalMin} onChange={e => setFiltroSaldoFinalMin(e.target.value)} disabled={filtrosAplicados} sx={{ width: 150 }} type="text" inputMode="decimal"/>
+              <TextField label="Saldo final máx." size="small" value={filtroSaldoFinalMax} onChange={e => setFiltroSaldoFinalMax(e.target.value)} disabled={filtrosAplicados} sx={{ width: 150 }} type="text" inputMode="decimal"/>
             </Box>
           </Box>
         </Box>
@@ -244,7 +291,7 @@ const AdminCajaChica = () => {
             fullWidth
             size="small"
             value={nuevoSaldoInicial}
-            onChange={handleNumericChange(setNuevoSaldoInicial)}
+            onChange={e => setNuevoSaldoInicial(e.target.value)}
           />
           <TextField margin="dense" label="Observaciones" type="text" fullWidth size="small" multiline minRows={3} value={nuevaObs} onChange={e => setNuevaObs(e.target.value)} />
         </DialogContent>
@@ -253,6 +300,31 @@ const AdminCajaChica = () => {
           <Button onClick={() => setModalApertura(false)} sx={{ fontWeight: 600 }} disabled={!nuevoSaldoInicial}>Guardar</Button>
         </DialogActions>
       </Dialog>
+
+      <Popover
+        id={idPopover}
+        open={open}
+        anchorEl={anchorEl}
+        onClose={handleClosePopover}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+      >
+        <DateRange
+          editableDateInputs={true}
+          onChange={item => {
+            if (popoverType === 'apertura') setFiltroFechaApertura([item.selection]);
+            else if (popoverType === 'liquidacion') setFiltroFechaLiquidacion([item.selection]);
+          }}
+          moveRangeOnFirstSelection={false}
+          ranges={
+            popoverType === 'apertura' ? filtroFechaApertura :
+            filtroFechaLiquidacion
+          }
+          locale={es}
+        />
+      </Popover>
     </Box>
   );
 };

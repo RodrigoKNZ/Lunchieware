@@ -16,6 +16,9 @@ import AdminCajaChica from './pages/AdminCajaChica';
 import AdminCajaChicaDetalle from './pages/AdminCajaChicaDetalle';
 import AdminMenuProgramacion from './pages/AdminMenuProgramacion';
 import AdminQuejasSugerencias from './pages/AdminQuejasSugerencias';
+import AdminClientes from './pages/AdminClientes';
+import AdminClienteDetalle from './pages/AdminClienteDetalle';
+import AdminContratoDetalle from './pages/AdminContratoDetalle';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -43,6 +46,9 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminHome />} />
             <Route path="venta" element={<AdminVenta />} />
+            <Route path="clientes" element={<AdminClientes />} />
+            <Route path="clientes/:id" element={<AdminClienteDetalle />} />
+            <Route path="clientes/:id/contrato/:contratoId" element={<AdminContratoDetalle />} />
             <Route path="productos" element={<AdminProductos />} />
             <Route path="cuentas-bancarias" element={<AdminCuentasBancarias />} />
             <Route path="caja-chica" element={<AdminCajaChica />} />
