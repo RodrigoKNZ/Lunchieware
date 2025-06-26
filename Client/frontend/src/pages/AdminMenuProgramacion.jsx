@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Box, Typography, Breadcrumbs, Tabs, Tab, Paper, Button, Divider, IconButton, TextField, useMediaQuery } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, Breadcrumbs, Tabs, Tab, Paper, Button, Divider, IconButton, TextField, useMediaQuery, Snackbar, Alert } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
@@ -8,8 +8,14 @@ import { useTheme } from '@mui/material/styles';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, Alert } from '@mui/material';
+import 'dayjs/locale/es';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import programacionMenuService from '../services/programacionMenuService';
+import { esES } from '@mui/x-date-pickers/locales';
+
+// Configurar dayjs para usar español
+dayjs.locale('es');
 
 const TabPanel = (props) => {
   const { children, value, index, ...other } = props;
@@ -38,30 +44,53 @@ const AdminMenuProgramacion = () => {
   const [openEditModal, setOpenEditModal] = useState(false);
   const [menuEditado, setMenuEditado] = useState({});
   const [openImportModal, setOpenImportModal] = useState(false);
-  const [importStep, setImportStep] = useState('upload'); // 'upload', 'preview', 'error_format', 'error_structure', 'error_data'
+  const [importStep, setImportStep] = useState('upload');
   const [errorDetail, setErrorDetail] = useState([]);
   const [previewData, setPreviewData] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [menuSeleccionado, setMenuSeleccionado] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [loading, setLoading] = useState(false);
+
+  // Cargar menú real del backend al seleccionar fecha
+  useEffect(() => {
+    const fetchMenu = async () => {
+      if (!fecha) {
+        setMenuSeleccionado(null);
+        return;
+      }
+      setLoading(true);
+      try {
+        const fechaStr = dayjs(fecha).format('YYYY-MM-DD');
+        console.log('Consultando menú para fecha:', fechaStr, 'tipo:', typeof fecha, fecha);
+        const res = await programacionMenuService.obtenerPorFecha(fechaStr);
+        setMenuSeleccionado(res.data);
+      } catch (err) {
+        setMenuSeleccionado(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMenu();
+  }, [fecha]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
-  
-  const menuDelDia = {
-    '2025-09-27': {
-        entrada: 'Tequeños',
-        platoMenu: 'Ají de gallina',
-        platoCarta: 'Arroz con pollo',
-        refresco: 'Emoliente',
-        postre: 'Mazamorra morada'
-    }
-  };
-
-  const menuSeleccionado = fecha ? menuDelDia[dayjs(fecha).format('YYYY-MM-DD')] : null;
 
   const handleOpenEditModal = () => {
-    setMenuEditado(menuSeleccionado);
+    if (menuSeleccionado) {
+      setMenuEditado({
+        entrada: menuSeleccionado.entrada,
+        platoMenu: menuSeleccionado.plato,
+        platoCarta: menuSeleccionado.platoALaCarta,
+        refresco: menuSeleccionado.refresco,
+        postre: menuSeleccionado.postre
+      });
+    } else {
+      setMenuEditado({ entrada: '', platoMenu: '', platoCarta: '', refresco: '', postre: '' });
+    }
     setOpenEditModal(true);
   };
 
@@ -69,11 +98,31 @@ const AdminMenuProgramacion = () => {
     setOpenEditModal(false);
   };
 
-  const handleGuardarMenu = () => {
-    // Aquí iría la lógica para guardar los cambios
-    handleCloseEditModal();
+  const handleGuardarMenu = async () => {
+    try {
+      const menuData = {
+        fecha: dayjs(fecha).format('YYYY-MM-DD'),
+        entrada: menuEditado.entrada,
+        plato: menuEditado.platoMenu,
+        platoALaCarta: menuEditado.platoCarta,
+        refresco: menuEditado.refresco,
+        postre: menuEditado.postre
+      };
+      if (menuSeleccionado) {
+        const res = await programacionMenuService.actualizar(menuSeleccionado.idMenu, menuData);
+        setSnackbar({ open: true, message: 'Menú actualizado exitosamente', severity: 'success' });
+        setMenuSeleccionado(res.data);
+      } else {
+        const res = await programacionMenuService.crear(menuData);
+        setSnackbar({ open: true, message: 'Menú creado exitosamente', severity: 'success' });
+        setMenuSeleccionado(res.data);
+      }
+      setOpenEditModal(false);
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Error al guardar el menú', severity: 'error' });
+    }
   };
-  
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setMenuEditado(prev => ({...prev, [name]: value}));
@@ -89,33 +138,89 @@ const AdminMenuProgramacion = () => {
   const handleCloseImportModal = () => {
     setOpenImportModal(false);
   };
-  
+
+  // Parsear CSV y validar estructura
+  const parseCSV = (text) => {
+    const lines = text.trim().split(/\r?\n/);
+    const headers = lines[0].split(',').map(h => h.trim());
+    const expectedHeaders = ['fecha','entrada','platoMenu','platoCarta','refresco','postre'];
+    if (headers.length !== 6 || !expectedHeaders.every((h, i) => headers[i] === h)) {
+      return { error: 'structure' };
+    }
+    const data = [];
+    const errors = [];
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i].split(',');
+      if (row.length !== 6) {
+        errors.push({ row: i+1, error: 'Estructura de fila incorrecta' });
+        continue;
+      }
+      let [fecha, entrada, platoMenu, platoCarta, refresco, postre] = row.map(x => x.trim());
+      const rowErrors = {};
+      // Validaciones básicas para dd/mm/yyyy
+      let fechaISO = '';
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(fecha)) {
+        // Convertir a YYYY-MM-DD
+        const [dd, mm, yyyy] = fecha.split('/');
+        fechaISO = `${yyyy}-${mm}-${dd}`;
+      } else {
+        rowErrors.fecha = 'Formato inválido (dd/mm/yyyy)';
+      }
+      if (/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9 .,'-]/.test(entrada)) rowErrors.entrada = 'Caracteres no permitidos';
+      if (/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9 .,'-]/.test(platoMenu)) rowErrors.platoMenu = 'Caracteres no permitidos';
+      if (/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9 .,'-]/.test(platoCarta)) rowErrors.platoCarta = 'Caracteres no permitidos';
+      if (/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9 .,'-]/.test(refresco)) rowErrors.refresco = 'Caracteres no permitidos';
+      if (/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9 .,'-]/.test(postre)) rowErrors.postre = 'Caracteres no permitidos';
+      if (Object.keys(rowErrors).length > 0) {
+        errors.push({ fecha, entrada, platoMenu, platoCarta, refresco, postre, errors: rowErrors });
+      } else {
+        data.push({ fecha: fechaISO, entrada, platoMenu, platoCarta, refresco, postre });
+      }
+    }
+    if (errors.length > 0) return { error: 'data', errors };
+    return { data };
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Mock logic based on filename
-    if (file.name.includes("error_format")) {
-        setImportStep('error_format');
-    } else if (file.name.includes("error_structure")) {
+    if (!file.name.endsWith('.csv')) {
+      setImportStep('error_format');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      const parsed = parseCSV(text);
+      if (parsed.error === 'structure') {
         setImportStep('error_structure');
-    } else if (file.name.includes("error_data")) {
-        setErrorDetail([
-            { fecha: '02/09/20', entrada: 'Ensalada napolitana', platoMenu: 'Pollo al horno', platoCarta: 'Arroz con pato', refresco: 'Maracuyá', postre: 'Gelatina', errors: { fecha: 'Formato inválido' } },
-            { fecha: '03/09/2025', entrada: 'Ensalada napolitana*', platoMenu: 'Pollo al horno', platoCarta: 'Arroz con pato', refresco: 'Maracuyá', postre: 'Gelatina', errors: { entrada: 'Contiene caracteres especiales' } },
-            { fecha: '08/20/2025', entrada: 'Ensalada napolitana', platoMenu: 'Pollo al horno', platoCarta: 'Arroz con pato*', refresco: 'Maracuyá', postre: 'Gelatina', errors: { fecha: 'Formato inválido', platoCarta: 'Contiene caracteres especiales' } },
-        ]);
+      } else if (parsed.error === 'data') {
+        setErrorDetail(parsed.errors);
         setImportStep('error_data');
-    } else {
-        setPreviewData(Array.from({ length: 25 }, (_, i) => ({
-            fecha: `0${i+1}/09/2025`,
-            entrada: 'Ensalada napolitana',
-            platoMenu: 'Pollo al horno',
-            platoCarta: 'Arroz con pato',
-            refresco: 'Maracuyá',
-            postre: 'Gelatina',
-        })));
+      } else {
+        setPreviewData(parsed.data);
         setImportStep('preview');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImportarMenus = async () => {
+    try {
+      for (const row of previewData) {
+        await programacionMenuService.crear({
+          fecha: row.fecha,
+          entrada: row.entrada,
+          plato: row.platoMenu,
+          platoALaCarta: row.platoCarta,
+          refresco: row.refresco,
+          postre: row.postre
+        });
+      }
+      setSnackbar({ open: true, message: 'Importación exitosa', severity: 'success' });
+      setOpenImportModal(false);
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Error al importar los menús', severity: 'error' });
     }
   };
 
@@ -182,7 +287,7 @@ const AdminMenuProgramacion = () => {
         case 'error_data':
              return (
                 <>
-                    <Alert severity="error" sx={{mb: 2}}>El archivo csv subido no cuenta con la estructura adecuada pero se encontraron errores en los datos.</Alert>
+                    <Alert severity="error" sx={{mb: 2}}>El archivo csv subido tiene errores en los datos.</Alert>
                      <Typography variant="h6" sx={{mb: 2, textAlign: 'center'}}>Detalle de errores</Typography>
                     <TableContainer component={Paper}>
                         <Table size="small">
@@ -216,7 +321,9 @@ const AdminMenuProgramacion = () => {
             );
         default: return null;
     }
-  }
+  };
+
+  const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
 
   return (
     <React.Fragment>
@@ -243,7 +350,17 @@ const AdminMenuProgramacion = () => {
 
         <TabPanel value={tabValue} index={0}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <LocalizationProvider 
+                  dateAdapter={AdapterDayjs} 
+                  adapterLocale="es"
+                  localeText={{
+                    cancelButtonLabel: 'CANCELAR',
+                    okButtonLabel: 'ACEPTAR',
+                    clearButtonLabel: 'LIMPIAR',
+                    todayButtonLabel: 'HOY',
+                    ...esES.components.MuiLocalizationProvider.defaultProps.localeText
+                  }}
+                >
                     <DatePicker
                         label="Seleccione la fecha"
                         value={fecha}
@@ -251,8 +368,8 @@ const AdminMenuProgramacion = () => {
                         renderInput={(params) => <TextField {...params} size="small" sx={{ width: 250, mb: 2 }} />}
                     />
                 </LocalizationProvider>
-                
-                {fecha && menuSeleccionado ? (
+                {loading && <Typography sx={{ mt: 2 }}>Cargando menú...</Typography>}
+                {fecha && !loading && menuSeleccionado ? (
                     <Box sx={{ width: '100%'}}>
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
                             <Button variant="contained" onClick={handleOpenEditModal}>EDITAR</Button>
@@ -263,11 +380,11 @@ const AdminMenuProgramacion = () => {
                         </Paper>
                         <Paper elevation={2} sx={{ p: 2, mb: 1 }}>
                             <Typography variant="subtitle1" fontWeight="bold">Plato (Menú)</Typography>
-                            <Typography>{menuSeleccionado.platoMenu}</Typography>
+                            <Typography>{menuSeleccionado.plato}</Typography>
                         </Paper>
                         <Paper elevation={2} sx={{ p: 2, mb: 1 }}>
                             <Typography variant="subtitle1" fontWeight="bold">Plato a la carta</Typography>
-                            <Typography>{menuSeleccionado.platoCarta}</Typography>
+                            <Typography>{menuSeleccionado.platoALaCarta}</Typography>
                         </Paper>
                         <Paper elevation={2} sx={{ p: 2, mb: 1 }}>
                             <Typography variant="subtitle1" fontWeight="bold">Refresco</Typography>
@@ -278,9 +395,10 @@ const AdminMenuProgramacion = () => {
                             <Typography>{menuSeleccionado.postre}</Typography>
                         </Paper>
                     </Box>
-                ) : fecha ? (
+                ) : fecha && !loading ? (
                     <Box sx={{ textAlign: 'center', width: '100%', mt: 4 }}>
                         <Typography variant="h6" color="text.secondary">No hay un menú programado para esta fecha.</Typography>
+                        <Button variant="contained" sx={{ mt: 2 }} onClick={handleOpenEditModal}>CREAR MENÚ</Button>
                     </Box>
                 ) : (
                     <Box sx={{ textAlign: 'center', width: '100%', mt: 4 }}>
@@ -319,10 +437,15 @@ const AdminMenuProgramacion = () => {
                 <Button onClick={handleCloseImportModal}>
                     {importStep === 'preview' ? 'Cancelar' : 'Cerrar'}
                 </Button>
-                {importStep === 'preview' && <Button variant="contained">Aceptar</Button>}
+                {importStep === 'preview' && <Button variant="contained" onClick={handleImportarMenus}>Aceptar</Button>}
             </DialogActions>
         </Dialog>
 
+        <Snackbar open={snackbar.open} autoHideDuration={5000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+            <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+                {snackbar.message}
+            </Alert>
+        </Snackbar>
     </React.Fragment>
   );
 };

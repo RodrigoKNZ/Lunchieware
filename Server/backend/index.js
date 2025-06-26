@@ -8,6 +8,9 @@ const programacionMenuRoutes = require('./routes/programacionMenu');
 const clientesRoutes = require('./routes/clientes');
 const quejasRoutes = require('./routes/quejas');
 const productosRoutes = require('./routes/productos');
+const cajaChicaRoutes = require('./routes/cajaChica');
+const movimientoCajaChicaRoutes = require('./routes/movimientoCajaChica');
+const sugerenciasRoutes = require('./routes/sugerencias');
 
 const app = express();
 
@@ -27,7 +30,10 @@ app.get('/', (req, res) => {
       programacionMenu: '/api/programacion-menu',
       clientes: '/api/clientes',
       quejas: '/api/quejas',
+      sugerencias: '/api/sugerencias',
       productos: '/api/productos',
+      cajaChica: '/api/cajachica',
+      movimientosCajaChica: '/api/movimientos-cajachica',
       test: '/api/test'
     }
   });
@@ -50,11 +56,6 @@ app.get('/api/test', async (req, res) => {
   }
 });
 
-// Ruta simple de autenticación
-app.post('/api/auth/login', (req, res) => {
-  res.json({ message: 'Login endpoint funcionando' });
-});
-
 // Ruta simple de menú
 app.get('/api/menu', (req, res) => {
   res.json({ message: 'Menu endpoint funcionando' });
@@ -65,7 +66,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/programacion-menu', programacionMenuRoutes);
 app.use('/api/clientes', clientesRoutes);
 app.use('/api/quejas', quejasRoutes);
+app.use('/api/sugerencias', sugerenciasRoutes);
 app.use('/api/productos', productosRoutes);
+app.use('/api/cajachica', cajaChicaRoutes);
+app.use('/api/movimientos-cajachica', movimientoCajaChicaRoutes);
 
 // Middleware para manejar rutas no encontradas
 app.use('*', (req, res) => {
@@ -91,5 +95,8 @@ app.listen(PORT, () => {
   console.log(`🍽️  Endpoints de menú: http://localhost:${PORT}/api/programacion-menu`);
   console.log(`👥 Endpoints de clientes: http://localhost:${PORT}/api/clientes`);
   console.log(`📝 Endpoints de quejas: http://localhost:${PORT}/api/quejas`);
+  console.log(`📦 Endpoints de sugerencias: http://localhost:${PORT}/api/sugerencias`);
   console.log(`📦 Endpoints de productos: http://localhost:${PORT}/api/productos`);
+  console.log(`💰 Endpoints de caja chica: http://localhost:${PORT}/api/cajachica`);
+  console.log(`📊 Endpoints de movimientos caja chica: http://localhost:${PORT}/api/movimientos-cajachica`);
 });

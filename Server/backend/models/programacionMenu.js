@@ -63,6 +63,13 @@ const programacionMenuModel = {
       activo
     } = datos;
 
+    // Si 'activo' no viene, obtener el valor actual
+    let activoFinal = activo;
+    if (typeof activoFinal === 'undefined') {
+      const actual = await this.obtenerPorId(idMenu);
+      activoFinal = actual ? actual.activo : true;
+    }
+
     const query = `
       UPDATE "ProgramacionMenu"
       SET "fecha" = $1, "entrada" = $2, "plato" = $3, "platoALaCarta" = $4, 
@@ -70,7 +77,7 @@ const programacionMenuModel = {
       WHERE "idMenu" = $8
       RETURNING *
     `;
-    const values = [fecha, entrada, plato, platoALaCarta, postre, refresco, activo, idMenu];
+    const values = [fecha, entrada, plato, platoALaCarta, postre, refresco, activoFinal, idMenu];
     const result = await pool.query(query, values);
     return result.rows[0];
   },

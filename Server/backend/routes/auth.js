@@ -20,15 +20,15 @@ const generarToken = (usuario) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { nombreUsuario, contraseña } = req.body;
+    const { nombreUsuario, password } = req.body;
 
-    if (!nombreUsuario || !contraseña) {
+    if (!nombreUsuario || !password) {
       return res.status(400).json({ 
         message: 'Usuario y contraseña son requeridos' 
       });
     }
 
-    const usuario = await usuariosModel.verificarCredenciales(nombreUsuario, contraseña);
+    const usuario = await usuariosModel.verificarCredenciales(nombreUsuario, password);
     
     if (!usuario) {
       return res.status(401).json({ 
@@ -62,9 +62,9 @@ router.post('/login', async (req, res) => {
 // Registro
 router.post('/registro', async (req, res) => {
   try {
-    const { nombreUsuario, contraseña, rol } = req.body;
+    const { nombreUsuario, password, rol } = req.body;
 
-    if (!nombreUsuario || !contraseña || !rol) {
+    if (!nombreUsuario || !password || !rol) {
       return res.status(400).json({ 
         message: 'Todos los campos son requeridos' 
       });
@@ -80,7 +80,7 @@ router.post('/registro', async (req, res) => {
 
     const nuevoUsuario = await usuariosModel.crear({
       nombreUsuario,
-      contraseña,
+      password,
       rol
     });
 

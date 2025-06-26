@@ -22,18 +22,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContentText from '@mui/material/DialogContentText';
 import Menu from '@mui/material/Menu';
-
-const dataPrueba = [
-  { codigo: '0321321', asunto: 'Saldo de yape no abonado al contrato', fecha: '02/08/2025', estado: 'Resuelto' },
-  { codigo: '0321321', asunto: 'Saldo de yape no abonado al contrato', fecha: '02/08/2025', estado: 'Resuelto' },
-  { codigo: '0321321', asunto: 'Saldo de yape no abonado al contrato', fecha: '02/08/2025', estado: 'Sin resolver' },
-  { codigo: '0321321', asunto: 'Saldo de yape no abonado al contrato', fecha: '02/08/2025', estado: 'Resuelto' },
-  { codigo: '0321321', asunto: 'Saldo de yape no abonado al contrato', fecha: '02/08/2025', estado: 'Resuelto' },
-  { codigo: '0321321', asunto: 'Saldo de yape no abonado al contrato', fecha: '02/08/2025', estado: 'Resuelto' },
-  { codigo: '0321321', asunto: 'Saldo de yape no abonado al contrato', fecha: '02/08/2025', estado: 'Resuelto' },
-  { codigo: '0321321', asunto: 'Saldo de yape no abonado al contrato', fecha: '02/08/2025', estado: 'Resuelto' },
-  { codigo: '0321321', asunto: 'Saldo de yape no abonado al contrato', fecha: '02/08/2025', estado: 'Resuelto' },
-];
+import quejasService from '../services/quejasService';
 
 const estados = [
   { value: 'todos', label: 'Todos' },
@@ -76,22 +65,26 @@ const Quejas = () => {
 
   // 3. Lógica de filtrado
   const filtrarQuejas = () => {
-    return dataPrueba.filter(s => {
-      const matchAsunto = !filtroAsunto || s.asunto.toLowerCase().includes(filtroAsunto.toLowerCase());
-      const matchEstado = !filtroEstado || filtroEstado === 'todos' || (filtroEstado === 'resuelto' ? s.estado === 'Resuelto' : s.estado === 'Sin resolver');
+    return quejas.filter(q => {
+      const matchAsunto = !filtroAsunto || q.asunto.toLowerCase().includes(filtroAsunto.toLowerCase());
+      const matchEstado = !filtroEstado || filtroEstado === 'todos' || (filtroEstado === 'resuelto' ? q.resuelto : !q.resuelto);
       let matchDesde = true, matchHasta = true;
       if (filtroDesde) {
-        const fechaS = dayjs(s.fecha, 'DD/MM/YYYY');
-        matchDesde = fechaS.isSameOrAfter(dayjs(filtroDesde), 'day');
+        const fechaQ = dayjs(q.fechaCreacion);
+        const desde = dayjs(filtroDesde).startOf('day');
+        matchDesde = fechaQ.isSame(desde, 'day') || fechaQ.isAfter(desde, 'day');
       }
       if (filtroHasta) {
-        const fechaS = dayjs(s.fecha, 'DD/MM/YYYY');
-        matchHasta = fechaS.isSameOrBefore(dayjs(filtroHasta), 'day');
+        const fechaQ = dayjs(q.fechaCreacion);
+        const hasta = dayjs(filtroHasta).endOf('day');
+        matchHasta = fechaQ.isSame(hasta, 'day') || fechaQ.isBefore(hasta, 'day');
       }
       return matchAsunto && matchEstado && matchDesde && matchHasta;
     });
   };
-  const [quejasFiltradas, setQuejasFiltradas] = React.useState(dataPrueba);
+
+  const [quejas, setQuejas] = React.useState([]);
+  const [quejasFiltradas, setQuejasFiltradas] = React.useState([]);
 
   // 4. Handlers de botones
   const handleAplicarFiltros = () => {
@@ -103,7 +96,7 @@ const Quejas = () => {
     setFiltroDesde(filtrosIniciales.desde);
     setFiltroHasta(filtrosIniciales.hasta);
     setFiltroEstado(filtrosIniciales.estado);
-    setQuejasFiltradas(dataPrueba);
+    setQuejasFiltradas(quejas);
     setFiltrosAplicados(false);
   };
 
@@ -111,7 +104,7 @@ const Quejas = () => {
     setPage(newPage);
   };
 
-  // Paginación simple (sin lógica de filtro aún)
+  // Paginación
   const rowsToShow = quejasFiltradas.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const [detalleOpen, setDetalleOpen] = React.useState(false);
@@ -120,7 +113,6 @@ const Quejas = () => {
   const [quejaSeleccionada, setQuejaSeleccionada] = React.useState(null);
   const [editAsunto, setEditAsunto] = React.useState('');
   const [editDetalle, setEditDetalle] = React.useState('');
-  const [quejas, setQuejas] = React.useState(dataPrueba);
 
   const handleDetalle = (row) => {
     setQuejaSeleccionada(row);
@@ -135,20 +127,6 @@ const Quejas = () => {
   const handleEliminar = (row) => {
     setQuejaSeleccionada(row);
     setEliminarOpen(true);
-  };
-  const handleGuardarEdicion = () => {
-    setQuejas(prev => prev.map(q =>
-      q === quejaSeleccionada
-        ? { ...q, asunto: editAsunto, detalle: editDetalle }
-        : q
-    ));
-    setEditarOpen(false);
-    setQuejaSeleccionada(null);
-  };
-  const handleConfirmarEliminar = () => {
-    setQuejas(prev => prev.filter(q => q !== quejaSeleccionada));
-    setEliminarOpen(false);
-    setQuejaSeleccionada(null);
   };
 
   const [openModal, setOpenModal] = React.useState(false);
@@ -172,6 +150,105 @@ const Quejas = () => {
   const handleMenuClose = () => {
     setAnchorEl(null);
     setMenuRowIdx(null);
+  };
+
+  // Cargar quejas desde la API al montar el componente
+  React.useEffect(() => {
+    const fetchQuejas = async () => {
+      try {
+        const res = await quejasService.obtenerTodas();
+        console.log('Quejas cargadas del backend:', res.data);
+        setQuejas(res.data);
+        setQuejasFiltradas(res.data);
+      } catch (err) {
+        console.error('Error cargando quejas:', err);
+        setQuejas([]);
+        setQuejasFiltradas([]);
+      }
+    };
+    fetchQuejas();
+  }, []);
+
+  // Crear queja
+  const handleCrearQueja = async () => {
+    try {
+      // Obtener el usuario logueado desde localStorage
+      const usuarioLogueado = JSON.parse(localStorage.getItem('user') || '{}');
+      const idUsuario = usuarioLogueado.id;
+      
+      if (!idUsuario) {
+        alert('Error: No se pudo obtener la información del usuario');
+        return;
+      }
+      
+      // Crear queja sin código primero
+      const nueva = {
+        asunto: nuevoAsunto,
+        detalle: nuevoDetalle,
+        idUsuario
+      };
+      
+      const respuesta = await quejasService.crear(nueva);
+      console.log('Respuesta de creación:', respuesta);
+      
+      // Generar código basado en el ID de la queja creada
+      const idQueja = respuesta.data.idQueja;
+      const codigoQueja = idQueja.toString().padStart(5, '0');
+      
+      console.log('ID generado:', idQueja, 'Código:', codigoQueja);
+      
+      // Actualizar la queja con el código generado
+      await quejasService.actualizar(idQueja, {
+        codigoQueja,
+        asunto: nuevoAsunto,
+        detalle: nuevoDetalle,
+        resuelto: false,
+        activo: true
+      });
+      
+      // Recargar quejas
+      const res = await quejasService.obtenerTodas();
+      setQuejas(res.data);
+      setQuejasFiltradas(res.data);
+      handleCloseModal();
+    } catch (err) {
+      console.error('Error al crear queja:', err);
+      alert('Error al registrar queja');
+    }
+  };
+
+  // Editar queja
+  const handleGuardarEdicion = async () => {
+    try {
+      await quejasService.actualizar(quejaSeleccionada.idQueja, {
+        codigoQueja: quejaSeleccionada.codigoQueja,
+        asunto: editAsunto,
+        detalle: editDetalle,
+        resuelto: quejaSeleccionada.resuelto,
+        activo: true
+      });
+      const res = await quejasService.obtenerTodas();
+      setQuejas(res.data);
+      setQuejasFiltradas(res.data);
+      setEditarOpen(false);
+      setQuejaSeleccionada(null);
+    } catch (err) {
+      alert('Error al editar queja');
+    }
+  };
+
+  // Eliminar queja
+  const handleConfirmarEliminar = async () => {
+    try {
+      await quejasService.eliminar(quejaSeleccionada.idQueja);
+      const res = await quejasService.obtenerTodas();
+      setQuejas(res.data);
+      setQuejasFiltradas(res.data);
+      setEliminarOpen(false);
+      setQuejaSeleccionada(null);
+    } catch (err) {
+      alert('Error al eliminar queja');
+    }
   };
 
   return (
@@ -288,16 +365,26 @@ const Quejas = () => {
           Nueva queja
         </Button>
       </Box>
-      {/* Segunda fila: botones de filtros */}
+      {/* Botones de filtros en una fila aparte */}
       <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, mb: 2, width: '100%', maxWidth: 900 }}>
-        <Button variant="contained" color="primary" sx={{ fontWeight: 600 }}
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{ fontWeight: 600, minWidth: 140, height: 40 }}
           disabled={filtrosEnEstadoInicial || filtrosAplicados}
           onClick={handleAplicarFiltros}
-        >Aplicar filtros</Button>
-        <Button variant="outlined" color="primary" sx={{ fontWeight: 600 }}
+        >
+          Aplicar filtros
+        </Button>
+        <Button
+          variant="outlined"
+          color="primary"
+          sx={{ fontWeight: 600, minWidth: 140, height: 40 }}
           disabled={filtrosEnEstadoInicial || !filtrosAplicados}
           onClick={handleLimpiarFiltros}
-        >Limpiar filtros</Button>
+        >
+          Limpiar filtros
+        </Button>
       </Box>
       <TableContainer component={Paper} sx={{ maxWidth: 900, mx: 'auto', boxShadow: 2, maxHeight: 480, overflowY: 'auto' }}>
         <Table size={isMobile ? 'small' : 'medium'} stickyHeader>
@@ -313,21 +400,26 @@ const Quejas = () => {
           <TableBody>
             {rowsToShow.map((row, idx) => (
               <TableRow key={idx}>
-                {!isMobile && <TableCell>{row.codigo}</TableCell>}
+                {!isMobile && <TableCell>{row.codigoQueja || 'N/A'}</TableCell>}
                 <TableCell sx={isMobile ? { py: 0.5 } : {}}>{row.asunto}</TableCell>
-                <TableCell sx={isMobile ? { py: 0.2 } : {}}>{isMobile ? (row.fecha.slice(0, 6) + row.fecha.slice(-2)) : row.fecha}</TableCell>
+                <TableCell sx={isMobile ? { py: 0.2 } : {}}>
+                  {isMobile 
+                    ? (dayjs(row.fechaCreacion).format('DD/MM/YY')) 
+                    : dayjs(row.fechaCreacion).format('DD/MM/YYYY')
+                  }
+                </TableCell>
                 <TableCell sx={isMobile ? { py: 0.2 } : {}}>
                   <Box sx={{
                     display: 'inline-block',
                     px: isMobile ? 1 : 1.5,
                     py: isMobile ? 0.2 : 0.5,
                     borderRadius: 2,
-                    bgcolor: row.estado === 'Resuelto' ? '#43a047' : '#e53935',
+                    bgcolor: row.resuelto ? '#43a047' : '#e53935',
                     color: '#fff',
                     fontWeight: 600,
                     fontSize: isMobile ? 11 : 13
                   }}>
-                    {row.estado === 'Resuelto' ? 'Resuelto' : 'Sin resolver'}
+                    {row.resuelto ? 'Resuelto' : 'Sin resolver'}
                   </Box>
                 </TableCell>
                 <TableCell align="center" sx={isMobile ? { py: 0.2 } : {}}>
@@ -385,7 +477,7 @@ const Quejas = () => {
             <Box>
               <TextField
                 label="Código"
-                value={quejaSeleccionada.codigo}
+                value={quejaSeleccionada.codigoQueja || 'N/A'}
                 fullWidth
                 margin="normal"
                 size="small"
@@ -401,7 +493,7 @@ const Quejas = () => {
               />
               <TextField
                 label="Fecha"
-                value={quejaSeleccionada.fecha}
+                value={dayjs(quejaSeleccionada.fechaCreacion).format('DD/MM/YYYY')}
                 fullWidth
                 margin="normal"
                 size="small"
@@ -409,7 +501,7 @@ const Quejas = () => {
               />
               <TextField
                 label="Estado"
-                value={quejaSeleccionada.estado}
+                value={quejaSeleccionada.resuelto ? 'Resuelto' : 'Sin resolver'}
                 fullWidth
                 margin="normal"
                 size="small"
@@ -440,7 +532,7 @@ const Quejas = () => {
         <DialogContent sx={{ pt: 1 }}>
           <TextField
             label="Código"
-            value={quejaSeleccionada?.codigo || ''}
+            value={quejaSeleccionada?.codigoQueja || 'N/A'}
             fullWidth
             margin="normal"
             size="small"
@@ -456,7 +548,7 @@ const Quejas = () => {
           />
           <TextField
             label="Fecha"
-            value={quejaSeleccionada?.fecha || ''}
+            value={quejaSeleccionada ? dayjs(quejaSeleccionada.fechaCreacion).format('DD/MM/YYYY') : ''}
             fullWidth
             margin="normal"
             size="small"
@@ -464,7 +556,7 @@ const Quejas = () => {
           />
           <TextField
             label="Estado"
-            value={quejaSeleccionada?.estado || ''}
+            value={quejaSeleccionada?.resuelto ? 'Resuelto' : 'Sin resolver'}
             fullWidth
             margin="normal"
             size="small"
@@ -536,7 +628,7 @@ const Quejas = () => {
           <Button onClick={handleCloseModal} color="primary" sx={{ fontWeight: 600 }}>
             Cancelar
           </Button>
-          <Button onClick={handleCloseModal} color="primary" sx={{ fontWeight: 600 }} disabled={!nuevoAsunto || !nuevoDetalle}>
+          <Button onClick={handleCrearQueja} color="primary" sx={{ fontWeight: 600 }} disabled={!nuevoAsunto || !nuevoDetalle}>
             Registrar
           </Button>
         </DialogActions>

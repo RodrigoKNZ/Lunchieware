@@ -85,7 +85,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Crear nueva programación de menú
+// Crear nueva programación de menú (con sobreescritura)
 router.post('/', async (req, res) => {
   try {
     const {
@@ -107,8 +107,19 @@ router.post('/', async (req, res) => {
     // Verificar si ya existe un menú para esa fecha
     const menuExistente = await programacionMenuModel.obtenerPorFecha(fecha);
     if (menuExistente) {
-      return res.status(400).json({ 
-        message: 'Ya existe un menú programado para esta fecha' 
+      // Sobreescribir (update)
+      const actualizado = await programacionMenuModel.actualizar(menuExistente.idMenu, {
+        fecha,
+        entrada,
+        plato,
+        platoALaCarta,
+        postre,
+        refresco,
+        activo: typeof activo === 'undefined' ? menuExistente.activo : activo
+      });
+      return res.json({
+        message: 'Programación del menú actualizada exitosamente (sobreescritura)',
+        data: actualizado
       });
     }
 

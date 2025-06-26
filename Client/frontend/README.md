@@ -5,7 +5,7 @@ This template provides a minimal setup to get React working in Vite with HMR and
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
 ## Expanding the ESLint configuration
 
@@ -13,26 +13,20 @@ If you are developing a production application, we recommend using TypeScript wi
 
 # Lunchieware - Frontend
 
-## Credenciales de prueba para el login simulado
+## Credenciales de prueba para el login funcional
 
-- **Cliente**
-  - Usuario: cliente
-  - Contraseña: cliente123
+**Estudiante (Cliente):**
+- Usuario: `20071231`
+- Contraseña: `passwordEstudiante`
 
-- **Administrador de caja**
-  - Usuario: cajero
-  - Contraseña: caja123
-
-- **Administrador**
-  - Usuario: admin
-  - Contraseña: 1234
-
-Cualquier otra combinación mostrará un error de credenciales incorrectas.
+**Administrador:**
+- Usuario: `admin`
+- Contraseña: `ad`
 
 ## Fechas de ejemplo
 
-- Para la pantalla de programación del menú (vista de cliente), usa la fecha **23/08/2025** para ver el contenido de prueba.
-- Para la pantalla de programación del menú (vista de administrador), usa la fecha **27/09/2025** para ver el contenido de prueba.
+- Para la pantalla de programación del menú (vista de cliente), usa la fecha **15/08/2025** para ver el contenido de prueba.
+- Para la pantalla de programación del menú (vista de administrador), usa la fecha **15/09/2025** para ver el contenido de prueba.
 
 ---
 

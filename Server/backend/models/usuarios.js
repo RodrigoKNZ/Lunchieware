@@ -6,16 +6,16 @@ const usuariosModel = {
   async crear(datos) {
     const {
       nombreUsuario,
-      contraseña,
+      password,
       rol,
       accesoRealizado = false,
       activo = true
     } = datos;
 
-    const hashedPassword = await bcrypt.hash(contraseña, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
     
     const query = `
-      INSERT INTO "Usuario" ("nombreUsuario", "contraseña", "rol", "accesoRealizado", "activo")
+      INSERT INTO "Usuario" ("nombreUsuario", "password", "rol", "accesoRealizado", "activo")
       VALUES ($1, $2, $3, $4, $5)
       RETURNING "idUsuario", "nombreUsuario", "rol", "accesoRealizado", "activo"
     `;
@@ -39,11 +39,11 @@ const usuariosModel = {
   },
 
   // Verificar credenciales
-  async verificarCredenciales(nombreUsuario, contraseña) {
+  async verificarCredenciales(nombreUsuario, password) {
     const user = await this.buscarPorUsuario(nombreUsuario);
     if (!user) return null;
     
-    const isValid = await bcrypt.compare(contraseña, user.contraseña);
+    const isValid = await bcrypt.compare(password, user.password);
     return isValid ? user : null;
   },
 
@@ -74,12 +74,12 @@ const usuariosModel = {
     return result.rows[0];
   },
 
-  // Cambiar contraseña
-  async cambiarContraseña(idUsuario, nuevaContraseña) {
-    const hashedPassword = await bcrypt.hash(nuevaContraseña, 10);
+  // Cambiar password
+  async cambiarPassword(idUsuario, nuevaPassword) {
+    const hashedPassword = await bcrypt.hash(nuevaPassword, 10);
     const query = `
       UPDATE "Usuario" 
-      SET "contraseña" = $1
+      SET "password" = $1
       WHERE "idUsuario" = $2
       RETURNING "idUsuario", "nombreUsuario", "rol"
     `;

@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS "FilaDetalleComprobante" (
 CREATE TABLE IF NOT EXISTS "Usuario" (
   "idUsuario" SERIAL PRIMARY KEY,
   "nombreUsuario" VARCHAR(100) NOT NULL,
-  "contraseña" VARCHAR(255) NOT NULL,
+  "password" VARCHAR(255) NOT NULL,
   "accesoRealizado" BOOLEAN NOT NULL DEFAULT false,
   "rol" VARCHAR(50) NOT NULL,
   "activo" BOOLEAN NOT NULL DEFAULT true

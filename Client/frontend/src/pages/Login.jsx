@@ -1,18 +1,6 @@
 import { Box, Button, TextField, Typography, Paper, Avatar, useTheme, useMediaQuery, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { useState } from 'react';
-
-const fakeLogin = async (usuario, password) => {
-  await new Promise(res => setTimeout(res, 500));
-  if (
-    (usuario === "admin" && password === "1234") ||
-    (usuario === "cliente" && password === "cliente123") ||
-    (usuario === "cajero" && password === "caja123")
-  ) {
-    return { success: true, usuario };
-  } else {
-    throw new Error("Credenciales incorrectas");
-  }
-};
+import axios from 'axios';
 
 const Login = ({ onLogin }) => {
   const theme = useTheme();
@@ -25,10 +13,21 @@ const Login = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError(false); // Limpiar errores previos
     try {
-      const res = await fakeLogin(usuario, password);
-      if (onLogin) onLogin(usuario);
+      const res = await axios.post('http://localhost:5000/api/auth/login', {
+        nombreUsuario: usuario,
+        password: password
+      });
+      const userData = res.data.usuario;
+      console.log('Respuesta del login:', res.data); // Para debugging
+      
+      // Guardar usuario en localStorage
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      if (onLogin) onLogin(userData);
     } catch (err) {
+      console.error('Error en login:', err); // Para debugging
       setError(true);
     } finally {
       setLoading(false);

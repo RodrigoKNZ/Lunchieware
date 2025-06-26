@@ -22,18 +22,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContentText from '@mui/material/DialogContentText';
 import dayjs from 'dayjs';
-
-const dataPrueba = [
-  { codigo: '0321321', asunto: 'Conseguir un microondas adicional', fecha: '02/08/2025' },
-  { codigo: '0321312', asunto: 'Ampliar los espacios', fecha: '02/08/2025' },
-  { codigo: '0213213', asunto: 'Más variedad de platos', fecha: '02/08/2025' },
-  { codigo: '2132421', asunto: 'Acerca de la atención', fecha: '02/08/2025' },
-  { codigo: '5342123', asunto: 'Acerca del postre', fecha: '02/08/2025' },
-  { codigo: '5412312', asunto: 'Acerca de los refrescos', fecha: '02/08/2025' },
-  { codigo: '1254231', asunto: 'Acerca de  las entradas', fecha: '02/08/2025' },
-  { codigo: '2312257', asunto: 'Opciones veganas', fecha: '02/08/2025' },
-  { codigo: '1235126', asunto: 'Opciones sin gluten', fecha: '02/08/2025' },
-];
+import sugerenciasService from '../services/sugerenciasService';
 
 const estados = [
   { value: 'todos', label: 'Todos' },
@@ -62,9 +51,8 @@ const Sugerencias = () => {
   const [editAsunto, setEditAsunto] = React.useState('');
   const [editFecha, setEditFecha] = React.useState(dayjs());
   const [editDetalle, setEditDetalle] = React.useState('');
-
-  // Para la edición local de sugerencias (solo para demo)
-  const [sugerencias, setSugerencias] = React.useState(dataPrueba);
+  const [sugerencias, setSugerencias] = React.useState([]);
+  const [sugerenciasFiltradas, setSugerenciasFiltradas] = React.useState([]);
 
   // 1. Estados para filtros y control de bloqueo
   const [filtrosAplicados, setFiltrosAplicados] = React.useState(false);
@@ -80,23 +68,81 @@ const Sugerencias = () => {
     !filtroDesde &&
     !filtroHasta;
 
+  // Función de prueba para verificar comparaciones de fechas
+  const probarComparacionFechas = () => {
+    console.log('=== PRUEBA DE COMPARACIÓN DE FECHAS ===');
+    
+    // Ejemplo con fechas conocidas
+    const fecha1 = dayjs('2024-01-15');
+    const fecha2 = dayjs('2024-01-20');
+    
+    console.log('Fecha 1:', fecha1.format('YYYY-MM-DD'));
+    console.log('Fecha 2:', fecha2.format('YYYY-MM-DD'));
+    console.log('¿Fecha 1 es anterior a Fecha 2?', fecha1.isBefore(fecha2, 'day'));
+    console.log('¿Fecha 1 es igual o anterior a Fecha 2?', fecha1.isSameOrBefore(fecha2, 'day'));
+    console.log('¿Fecha 2 es posterior a Fecha 1?', fecha2.isAfter(fecha1, 'day'));
+    console.log('¿Fecha 2 es igual o posterior a Fecha 1?', fecha2.isSameOrAfter(fecha1, 'day'));
+    
+    // Probar con las fechas reales de las sugerencias
+    if (sugerencias.length > 0) {
+      console.log('=== PRUEBA CON FECHAS REALES ===');
+      const primeraSugerencia = sugerencias[0];
+      console.log('Primera sugerencia:', primeraSugerencia);
+      console.log('Fecha de sugerencia:', primeraSugerencia.fechaCreacion);
+      
+      const fechaSugerencia = dayjs(primeraSugerencia.fechaCreacion);
+      console.log('Fecha parseada:', fechaSugerencia.format('YYYY-MM-DD'));
+      console.log('¿Es válida?', fechaSugerencia.isValid());
+      
+      if (filtroDesde) {
+        const fechaDesde = dayjs(filtroDesde);
+        console.log('Filtro desde parseado:', fechaDesde.format('YYYY-MM-DD'));
+        console.log('¿Es válida?', fechaDesde.isValid());
+        console.log('¿Sugerencia es igual o posterior al filtro desde?', fechaSugerencia.isSameOrAfter(fechaDesde, 'day'));
+      }
+    }
+    
+    console.log('=== FIN PRUEBA ===');
+  };
+
   // 3. Lógica de filtrado
   const filtrarSugerencias = () => {
     return sugerencias.filter(s => {
       const matchAsunto = !filtroAsunto || s.asunto.toLowerCase().includes(filtroAsunto.toLowerCase());
       let matchDesde = true, matchHasta = true;
       if (filtroDesde) {
-        const fechaS = dayjs(s.fecha, 'DD/MM/YYYY');
-        matchDesde = fechaS.isSameOrAfter(dayjs(filtroDesde), 'day');
+        const fechaS = dayjs(s.fechaCreacion);
+        const desde = dayjs(filtroDesde).startOf('day');
+        matchDesde = fechaS.isSame(desde, 'day') || fechaS.isAfter(desde, 'day');
       }
       if (filtroHasta) {
-        const fechaS = dayjs(s.fecha, 'DD/MM/YYYY');
-        matchHasta = fechaS.isSameOrBefore(dayjs(filtroHasta), 'day');
+        const fechaS = dayjs(s.fechaCreacion);
+        const hasta = dayjs(filtroHasta).endOf('day');
+        matchHasta = fechaS.isSame(hasta, 'day') || fechaS.isBefore(hasta, 'day');
       }
       return matchAsunto && matchDesde && matchHasta;
     });
   };
-  const [sugerenciasFiltradas, setSugerenciasFiltradas] = React.useState(sugerencias);
+
+  // Función de prueba simple para el botón
+  const handleAplicarFiltrosSimple = () => {
+    alert('Botón funcionando! Filtros: ' + JSON.stringify({
+      asunto: filtroAsunto,
+      desde: filtroDesde,
+      hasta: filtroHasta
+    }));
+  };
+
+  // LOGS EN CADA RENDER
+  React.useEffect(() => {
+    console.log('--- RENDER SUGERENCIAS ---');
+    console.log('filtrosAplicados:', filtrosAplicados);
+    console.log('filtrosEnEstadoInicial:', filtrosEnEstadoInicial);
+    console.log('filtroAsunto:', filtroAsunto);
+    console.log('filtroDesde:', filtroDesde);
+    console.log('filtroHasta:', filtroHasta);
+    console.log('--------------------------');
+  });
 
   // 4. Handlers de botones
   const handleAplicarFiltros = () => {
@@ -147,21 +193,104 @@ const Sugerencias = () => {
     setSugerenciaSeleccionada(row);
     setEliminarOpen(true);
   };
-  // Guardar edición (solo demo)
-  const handleGuardarEdicion = () => {
-    setSugerencias(prev => prev.map(s =>
-      s.codigo === sugerenciaSeleccionada.codigo
-        ? { ...s, asunto: editAsunto, fecha: editFecha.format('DD/MM/YYYY'), detalle: editDetalle }
-        : s
-    ));
-    setEditarOpen(false);
-    setSugerenciaSeleccionada(null);
+
+  // Cargar sugerencias desde la API al montar el componente
+  React.useEffect(() => {
+    const fetchSugerencias = async () => {
+      try {
+        const res = await sugerenciasService.obtenerTodas();
+        console.log('Sugerencias cargadas del backend:', res.data);
+        console.log('Ejemplo de fecha de sugerencia:', res.data[0]?.fechaCreacion);
+        console.log('Tipo de fecha:', typeof res.data[0]?.fechaCreacion);
+        setSugerencias(res.data);
+        setSugerenciasFiltradas(res.data);
+      } catch (err) {
+        console.error('Error cargando sugerencias:', err);
+        setSugerencias([]);
+        setSugerenciasFiltradas([]);
+      }
+    };
+    fetchSugerencias();
+  }, []);
+
+  // Crear sugerencia
+  const handleCrearSugerencia = async () => {
+    try {
+      // Obtener el usuario logueado desde localStorage
+      const usuarioLogueado = JSON.parse(localStorage.getItem('user') || '{}');
+      const idUsuario = usuarioLogueado.id;
+      
+      if (!idUsuario) {
+        alert('Error: No se pudo obtener la información del usuario');
+        return;
+      }
+      
+      // Crear sugerencia sin código primero
+      const nueva = {
+        asunto: nuevoAsunto,
+        detalle: nuevoDetalle,
+        idUsuario
+      };
+      
+      const respuesta = await sugerenciasService.crear(nueva);
+      console.log('Respuesta de creación:', respuesta); // Para debugging
+      
+      // Generar código basado en el ID de la sugerencia creada
+      const idSugerencia = respuesta.data.idSugerencia;
+      const codigoSugerencia = idSugerencia.toString().padStart(5, '0');
+      
+      console.log('ID generado:', idSugerencia, 'Código:', codigoSugerencia); // Para debugging
+      
+      // Actualizar la sugerencia con el código generado
+      await sugerenciasService.actualizar(idSugerencia, {
+        codigoSugerencia,
+        asunto: nuevoAsunto,
+        detalle: nuevoDetalle,
+        activo: true
+      });
+      
+      // Recargar sugerencias
+      const res = await sugerenciasService.obtenerTodas();
+      setSugerencias(res.data);
+      setSugerenciasFiltradas(res.data);
+      handleCloseModal();
+    } catch (err) {
+      console.error('Error al crear sugerencia:', err);
+      alert('Error al registrar sugerencia');
+    }
   };
-  // Eliminar sugerencia (solo demo)
-  const handleConfirmarEliminar = () => {
-    setSugerencias(prev => prev.filter(s => s.codigo !== sugerenciaSeleccionada.codigo));
-    setEliminarOpen(false);
-    setSugerenciaSeleccionada(null);
+
+  // Editar sugerencia
+  const handleGuardarEdicion = async () => {
+    try {
+      await sugerenciasService.actualizar(sugerenciaSeleccionada.idSugerencia, {
+        codigoSugerencia: sugerenciaSeleccionada.codigoSugerencia,
+        asunto: editAsunto,
+        detalle: editDetalle,
+        activo: true
+      });
+      const res = await sugerenciasService.obtenerTodas();
+      setSugerencias(res.data);
+      setSugerenciasFiltradas(res.data);
+      setEditarOpen(false);
+      setSugerenciaSeleccionada(null);
+    } catch (err) {
+      alert('Error al editar sugerencia');
+    }
+  };
+
+  // Eliminar sugerencia
+  const handleConfirmarEliminar = async () => {
+    try {
+      await sugerenciasService.eliminar(sugerenciaSeleccionada.idSugerencia);
+      const res = await sugerenciasService.obtenerTodas();
+      setSugerencias(res.data);
+      setSugerenciasFiltradas(res.data);
+      setEliminarOpen(false);
+      setSugerenciaSeleccionada(null);
+    } catch (err) {
+      alert('Error al eliminar sugerencia');
+    }
   };
 
   // 6. Cambiar fuente de datos de la tabla
@@ -181,16 +310,8 @@ const Sugerencias = () => {
         Mis sugerencias
       </Typography>
       <Divider sx={{ mb: 4, width: '100%' }} />
-      {/* Filtros y botón de nueva sugerencia en una sola fila en desktop, en columna en móvil */}
-      <Box sx={{
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        gap: 2,
-        mb: 1,
-        alignItems: isMobile ? 'stretch' : 'center',
-        width: '100%',
-        maxWidth: 900,
-      }}>
+      {/* Filtros en una fila */}
+      <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2, mb: 2, alignItems: isMobile ? 'stretch' : 'center', width: '100%', maxWidth: 900 }}>
         <TextField
           label="Buscar por asunto"
           value={filtroAsunto}
@@ -207,8 +328,9 @@ const Sugerencias = () => {
                 label="Desde"
                 value={filtroDesde}
                 onChange={setFiltroDesde}
-                renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
+                renderInput={(params) => <TextField {...params} size="small" fullWidth />}
                 inputFormat="DD/MM/YYYY"
+                disabled={filtrosAplicados}
               />
             </LocalizationProvider>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -216,8 +338,9 @@ const Sugerencias = () => {
                 label="Hasta"
                 value={filtroHasta}
                 onChange={setFiltroHasta}
-                renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
+                renderInput={(params) => <TextField {...params} size="small" fullWidth />}
                 inputFormat="DD/MM/YYYY"
+                disabled={filtrosAplicados}
               />
             </LocalizationProvider>
           </Box>
@@ -228,8 +351,9 @@ const Sugerencias = () => {
                 label="Desde"
                 value={filtroDesde}
                 onChange={setFiltroDesde}
-                renderInput={(params) => <TextField {...params} size="small" fullWidth={isMobile} sx={{ minWidth: 180, height: 40 }} disabled={filtrosAplicados} />}
+                renderInput={(params) => <TextField {...params} size="small" fullWidth={isMobile} sx={{ minWidth: 180, height: 40 }} />}
                 inputFormat="DD/MM/YYYY"
+                disabled={filtrosAplicados}
               />
             </LocalizationProvider>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -237,8 +361,9 @@ const Sugerencias = () => {
                 label="Hasta"
                 value={filtroHasta}
                 onChange={setFiltroHasta}
-                renderInput={(params) => <TextField {...params} size="small" fullWidth={isMobile} sx={{ minWidth: 180, height: 40 }} disabled={filtrosAplicados} />}
+                renderInput={(params) => <TextField {...params} size="small" fullWidth={isMobile} sx={{ minWidth: 180, height: 40 }} />}
                 inputFormat="DD/MM/YYYY"
+                disabled={filtrosAplicados}
               />
             </LocalizationProvider>
           </>
@@ -262,20 +387,37 @@ const Sugerencias = () => {
             whiteSpace: isMobile ? undefined : 'nowrap',
           }}
           onClick={handleOpenModal}
+          disabled={filtrosAplicados}
         >
           Nueva sugerencia
         </Button>
       </Box>
-      {/* Segunda fila: botones de filtros */}
+      {/* Botones de filtros en una fila aparte */}
       <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, mb: 2, width: '100%', maxWidth: 900 }}>
-        <Button variant="contained" color="primary" sx={{ fontWeight: 600 }}
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{ fontWeight: 600, minWidth: 140, height: 40 }}
           disabled={filtrosEnEstadoInicial || filtrosAplicados}
-          onClick={handleAplicarFiltros}
-        >Aplicar filtros</Button>
-        <Button variant="outlined" color="primary" sx={{ fontWeight: 600 }}
+          onClick={() => {
+            console.log('RENDER botón aplicar:', { filtrosEnEstadoInicial, filtrosAplicados });
+            handleAplicarFiltros();
+          }}
+        >
+          Aplicar filtros
+        </Button>
+        <Button
+          variant="outlined"
+          color="primary"
+          sx={{ fontWeight: 600, minWidth: 140, height: 40 }}
           disabled={filtrosEnEstadoInicial || !filtrosAplicados}
-          onClick={handleLimpiarFiltros}
-        >Limpiar filtros</Button>
+          onClick={() => {
+            console.log('RENDER botón limpiar:', { filtrosEnEstadoInicial, filtrosAplicados });
+            handleLimpiarFiltros();
+          }}
+        >
+          Limpiar filtros
+        </Button>
       </Box>
       <TableContainer component={Paper} sx={{ maxWidth: 900, mx: 'auto', boxShadow: 2, maxHeight: 480, overflowY: 'auto' }}>
         <Table size={isMobile ? 'small' : 'medium'} stickyHeader>
@@ -290,9 +432,9 @@ const Sugerencias = () => {
           <TableBody>
             {rowsToShow.map((row, idx) => (
               <TableRow key={idx}>
-                {!isMobile && <TableCell>{row.codigo}</TableCell>}
+                {!isMobile && <TableCell>{row.codigoSugerencia}</TableCell>}
                 <TableCell>{row.asunto}</TableCell>
-                <TableCell>{row.fecha}</TableCell>
+                <TableCell>{row.fechaCreacion ? new Date(row.fechaCreacion).toLocaleDateString('es-ES') : 'N/A'}</TableCell>
                 <TableCell align="center">
                   {isMobile ? (
                     <>
@@ -368,7 +510,7 @@ const Sugerencias = () => {
           <Button onClick={handleCloseModal} color="primary" sx={{ fontWeight: 600 }}>
             Cancelar
           </Button>
-          <Button onClick={handleCloseModal} color="primary" sx={{ fontWeight: 600 }} disabled={!nuevoAsunto || !nuevoDetalle}>
+          <Button onClick={handleCrearSugerencia} color="primary" sx={{ fontWeight: 600 }} disabled={!nuevoAsunto || !nuevoDetalle}>
             Registrar
           </Button>
         </DialogActions>
@@ -383,7 +525,7 @@ const Sugerencias = () => {
             <Box>
               <TextField
                 label="Código"
-                value={sugerenciaSeleccionada.codigo}
+                value={sugerenciaSeleccionada.codigoSugerencia || ''}
                 fullWidth
                 margin="normal"
                 size="small"
@@ -391,7 +533,7 @@ const Sugerencias = () => {
               />
               <TextField
                 label="Asunto"
-                value={sugerenciaSeleccionada.asunto}
+                value={sugerenciaSeleccionada.asunto || ''}
                 fullWidth
                 margin="normal"
                 size="small"
@@ -399,7 +541,7 @@ const Sugerencias = () => {
               />
               <TextField
                 label="Fecha"
-                value={sugerenciaSeleccionada.fecha}
+                value={sugerenciaSeleccionada.fechaCreacion ? new Date(sugerenciaSeleccionada.fechaCreacion).toLocaleDateString('es-ES') : 'N/A'}
                 fullWidth
                 margin="normal"
                 size="small"
@@ -431,7 +573,7 @@ const Sugerencias = () => {
         <DialogContent sx={{ pt: 1 }}>
           <TextField
             label="Código"
-            value={sugerenciaSeleccionada?.codigo || ''}
+            value={sugerenciaSeleccionada?.codigoSugerencia || ''}
             fullWidth
             margin="normal"
             size="small"
@@ -447,7 +589,7 @@ const Sugerencias = () => {
           />
           <TextField
             label="Fecha"
-            value={sugerenciaSeleccionada?.fecha || ''}
+            value={sugerenciaSeleccionada?.fechaCreacion ? new Date(sugerenciaSeleccionada.fechaCreacion).toLocaleDateString('es-ES') : 'N/A'}
             fullWidth
             margin="normal"
             size="small"

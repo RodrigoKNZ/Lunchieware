@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Paper, Typography, TextField, Button, Divider, IconButton, MenuItem, Select, InputLabel, FormControl, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Tooltip, Breadcrumbs, TablePagination, Popover, InputAdornment
 } from '@mui/material';
@@ -6,6 +6,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import Visibility from '@mui/icons-material/Visibility';
+import Delete from '@mui/icons-material/Delete';
 import { Link as RouterLink } from 'react-router-dom';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import dayjs from 'dayjs';
@@ -13,6 +14,7 @@ import { DateRange } from 'react-date-range';
 import 'react-date-range/dist/styles.css'; // main style file
 import 'react-date-range/dist/theme/default.css'; // theme css file
 import es from 'date-fns/locale/es';
+import cajaChicaService from '../services/cajaChicaService';
 
 // Datos mock
 const cajasMock = [
@@ -75,8 +77,9 @@ const AdminCajaChica = () => {
     filtroEstado === filtrosIniciales.estado;
 
   // Datos y paginación
-  const [cajas, setCajas] = useState(cajasMock);
-  const [cajasFiltradas, setCajasFiltradas] = useState(cajasMock);
+  const [cajas, setCajas] = useState([]);
+  const [cajasFiltradas, setCajasFiltradas] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -144,6 +147,75 @@ const AdminCajaChica = () => {
     setPage(0);
   };
   const paginatedCajas = cajasFiltradas.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  // Cargar cajas al montar el componente
+  useEffect(() => {
+    cargarCajas();
+  }, []);
+
+  const cargarCajas = async () => {
+    setLoading(true);
+    try {
+      const response = await cajaChicaService.obtenerTodas();
+      // Adaptar los datos del backend al formato esperado por el frontend
+      const adaptadas = response.data.map(caja => ({
+        id: caja.idCajaChica,
+        numero: caja.numeroLiquidacion,
+        fechaApertura: caja.fechaApertura ? dayjs(caja.fechaApertura).format('DD/MM/YYYY') : '',
+        fechaLiquidacion: caja.fechaLiquidacion ? dayjs(caja.fechaLiquidacion).format('DD/MM/YYYY') : '',
+        saldoInicial: parseFloat(caja.saldoInicial),
+        saldoFinal: parseFloat(caja.saldoFinal),
+        estado: caja.abierta ? 'Abierta' : 'Cerrada',
+        observaciones: caja.observaciones || ''
+      }));
+      setCajas(adaptadas);
+      setCajasFiltradas(adaptadas);
+    } catch (err) {
+      setCajas([]);
+      setCajasFiltradas([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Guardar nueva caja chica
+  const handleGuardarNuevaCaja = async () => {
+    try {
+      // Validaciones
+      if (!nuevoSaldoInicial || parseFloat(nuevoSaldoInicial) <= 0) {
+        alert('El saldo inicial debe ser mayor a 0');
+        return;
+      }
+
+      const nuevaCaja = {
+        fechaApertura: dayjs().format('YYYY-MM-DD'),
+        saldoInicial: parseFloat(nuevoSaldoInicial),
+        observaciones: nuevaObs || ''
+      };
+      
+      await cajaChicaService.crear(nuevaCaja);
+      setModalApertura(false);
+      setNuevoSaldoInicial('');
+      setNuevaObs('');
+      cargarCajas();
+    } catch (err) {
+      console.error('Error al crear caja chica:', err);
+      alert('Error al crear la caja chica');
+    }
+  };
+
+  // Eliminar caja chica
+  const handleEliminarCaja = async (caja) => {
+    if (window.confirm(`¿Está seguro que desea eliminar la caja chica ${caja.numero}? Esta acción no puede deshacerse.`)) {
+      try {
+        await cajaChicaService.eliminar(caja.id);
+        cargarCajas();
+      } catch (err) {
+        console.error('Error al eliminar caja chica:', err);
+        alert('Error al eliminar la caja chica');
+      }
+    }
+  };
 
   // Render
   return (
@@ -230,42 +302,55 @@ const AdminCajaChica = () => {
         </Box>
         <Divider sx={{ my: 2 }} />
         <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell align="center">Nro. liquidación</TableCell>
-                <TableCell align="center">Fecha apertura</TableCell>
-                <TableCell align="center">Fecha liquidación</TableCell>
-                <TableCell align="center">Saldo inicial</TableCell>
-                <TableCell align="center">Saldo final</TableCell>
-                <TableCell align="center">Estado</TableCell>
-                <TableCell align="center">Detalle</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {paginatedCajas.map((caja) => (
-                <TableRow key={caja.id} hover>
-                  <TableCell align="center">{caja.numero}</TableCell>
-                  <TableCell align="center">{caja.fechaApertura}</TableCell>
-                  <TableCell align="center">{caja.fechaLiquidacion || '-'}</TableCell>
-                  <TableCell align="center">S/. {caja.saldoInicial.toFixed(2)}</TableCell>
-                  <TableCell align="center">S/. {caja.saldoFinal.toFixed(2)}</TableCell>
-                  <TableCell align="center">
-                    <Box sx={{ bgcolor: caja.estado === 'Abierta' ? 'success.main' : 'error.main', color: 'white', px: 1.2, py: 0.2, borderRadius: '12px', display: 'inline-block', fontSize: '0.75rem' }}>
-                      {caja.estado === 'Abierta' ? 'Abierta' : 'Cerrada'}
-                    </Box>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Ver detalle">
-                      <IconButton size="small" component={RouterLink} to={`/admin/caja-chica/${caja.numero}`}>
-                        <Visibility fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
+          {loading ? (
+            <Box sx={{ p: 4, textAlign: 'center' }}>
+              <Typography>Cargando cajas chicas...</Typography>
+            </Box>
+          ) : (
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell align="center">Nro. liquidación</TableCell>
+                  <TableCell align="center">Fecha apertura</TableCell>
+                  <TableCell align="center">Fecha liquidación</TableCell>
+                  <TableCell align="center">Saldo inicial</TableCell>
+                  <TableCell align="center">Saldo final</TableCell>
+                  <TableCell align="center">Estado</TableCell>
+                  <TableCell align="center">Acciones</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {paginatedCajas.map((caja) => (
+                  <TableRow key={caja.id} hover>
+                    <TableCell align="center">{caja.numero}</TableCell>
+                    <TableCell align="center">{caja.fechaApertura}</TableCell>
+                    <TableCell align="center">{caja.fechaLiquidacion || '-'}</TableCell>
+                    <TableCell align="center">S/. {caja.saldoInicial.toFixed(2)}</TableCell>
+                    <TableCell align="center">S/. {caja.saldoFinal.toFixed(2)}</TableCell>
+                    <TableCell align="center">
+                      <Box sx={{ bgcolor: caja.estado === 'Abierta' ? 'success.main' : 'error.main', color: 'white', px: 1.2, py: 0.2, borderRadius: '12px', display: 'inline-block', fontSize: '0.75rem' }}>
+                        {caja.estado === 'Abierta' ? 'Abierta' : 'Cerrada'}
+                      </Box>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                        <Tooltip title="Ver detalle">
+                          <IconButton size="small" component={RouterLink} to={`/admin/caja-chica/${caja.numero}`}>
+                            <Visibility fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Eliminar">
+                          <IconButton size="small" onClick={() => handleEliminarCaja(caja)} color="error">
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </TableContainer>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
@@ -297,7 +382,7 @@ const AdminCajaChica = () => {
         </DialogContent>
         <DialogActions sx={{ pr: 3, pb: 2 }}>
           <Button onClick={() => setModalApertura(false)} sx={{ fontWeight: 600 }}>Cancelar</Button>
-          <Button onClick={() => setModalApertura(false)} sx={{ fontWeight: 600 }} disabled={!nuevoSaldoInicial}>Guardar</Button>
+          <Button onClick={handleGuardarNuevaCaja} sx={{ fontWeight: 600 }} disabled={!nuevoSaldoInicial}>Guardar</Button>
         </DialogActions>
       </Dialog>
 

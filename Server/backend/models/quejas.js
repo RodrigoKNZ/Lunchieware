@@ -64,10 +64,9 @@ const quejasModel = {
     return result.rows;
   },
 
-  // Crear nueva queja
+  // Crear nueva queja (sin código, se generará después)
   async crear(datos) {
     const {
-      codigoQueja,
       asunto,
       detalle,
       idUsuario,
@@ -76,11 +75,11 @@ const quejasModel = {
     } = datos;
 
     const query = `
-      INSERT INTO "Queja" ("codigoQueja", "asunto", "detalle", "fechaCreacion", "idUsuario", "resuelto", "activo")
-      VALUES ($1, $2, $3, NOW(), $4, $5, $6)
+      INSERT INTO "Queja" ("asunto", "detalle", "fechaCreacion", "idUsuario", "resuelto", "activo")
+      VALUES ($1, $2, NOW(), $3, $4, $5)
       RETURNING *
     `;
-    const values = [codigoQueja, asunto, detalle, idUsuario, resuelto, activo];
+    const values = [asunto, detalle, idUsuario, resuelto, activo];
     const result = await pool.query(query, values);
     return result.rows[0];
   },

@@ -21,29 +21,33 @@ import AdminClienteDetalle from './pages/AdminClienteDetalle';
 import AdminContratoDetalle from './pages/AdminContratoDetalle';
 
 function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    // Cargar usuario desde localStorage al iniciar
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   // Función para manejar el login exitoso
   const handleLogin = (usuario) => {
-    // Acceso según tipo de usuario
-    if (usuario === 'cliente') {
-      setUser({ tipo: 'cliente', usuario });
-    } else if (usuario === 'admin') {
-      setUser({ tipo: 'admin', usuario });
-    } else {
-      setUser({ tipo: 'otro', usuario });
-    }
+    console.log('Usuario logueado:', usuario); // Para debugging
+    setUser(usuario);
+  };
+
+  // Función para cerrar sesión
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setUser(null);
   };
 
   if (!user) {
     return <Login onLogin={handleLogin} />;
   }
 
-  if (user.tipo === 'admin') {
+  if (user.rol === 'admin') {
     return (
       <BrowserRouter>
         <Routes>
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminLayout onLogout={handleLogout} />}>
             <Route index element={<AdminHome />} />
             <Route path="venta" element={<AdminVenta />} />
             <Route path="clientes" element={<AdminClientes />} />
@@ -64,11 +68,11 @@ function App() {
     );
   }
 
-  if (user.tipo === 'cliente') {
+  if (user.rol === 'cliente') {
     return (
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<ClientLayout />}>
+          <Route path="/" element={<ClientLayout onLogout={handleLogout} />}>
             <Route index element={<Navigate to="/inicio" />} />
             <Route path="/inicio" element={<ClientHome />} />
             <Route path="/programacion-menu" element={<MenuProgramacion />} />
@@ -81,7 +85,8 @@ function App() {
     );
   }
 
-  // Si el usuario es de otro tipo, podrías mostrar otra vista o mensaje
+  // Si el usuario tiene un rol no reconocido, mostrar login nuevamente
+  console.log('Rol no reconocido:', user.rol);
   return <Login onLogin={handleLogin} />;
 }
 

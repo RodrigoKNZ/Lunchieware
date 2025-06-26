@@ -87,18 +87,21 @@ router.post('/', async (req, res) => {
       activo
     } = req.body;
 
-    if (!codigoQueja || !asunto || !detalle || !idUsuario) {
+    // Solo validar asunto, detalle e idUsuario
+    if (!asunto || !detalle || !idUsuario) {
       return res.status(400).json({ 
-        message: 'Los campos código, asunto, detalle y usuario son requeridos' 
+        message: 'Los campos asunto, detalle y usuario son requeridos' 
       });
     }
 
-    // Verificar si ya existe una queja con ese código
-    const quejaExistente = await quejasModel.obtenerPorCodigo(codigoQueja);
-    if (quejaExistente) {
-      return res.status(400).json({ 
-        message: 'Ya existe una queja con ese código' 
-      });
+    // Si se envía código, verificar unicidad
+    if (codigoQueja) {
+      const quejaExistente = await quejasModel.obtenerPorCodigo(codigoQueja);
+      if (quejaExistente) {
+        return res.status(400).json({ 
+          message: 'Ya existe una queja con ese código' 
+        });
+      }
     }
 
     const nuevaQueja = await quejasModel.crear({
