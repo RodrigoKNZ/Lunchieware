@@ -22,6 +22,13 @@ const clientesModel = {
     return result.rows[0];
   },
 
+  // Obtener cliente por nombre de usuario (que coincide con código de cliente)
+  async obtenerPorUsuario(nombreUsuario) {
+    const query = 'SELECT * FROM "Cliente" WHERE "codigoCliente" = $1 AND "activo" = true';
+    const result = await pool.query(query, [nombreUsuario]);
+    return result.rows;
+  },
+
   // Buscar clientes por nombre
   async buscarPorNombre(nombre) {
     const query = `

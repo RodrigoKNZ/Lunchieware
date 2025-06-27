@@ -10,8 +10,27 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import clienteService from '../services/clienteService';
 
-const nombreUsuario = 'Oscar Rodrigo Canez Rodriguez';
+// Obtener nombre del cliente asociado al usuario logueado
+const obtenerNombreCliente = async () => {
+  try {
+    const usuario = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!usuario.nombreUsuario) {
+      return 'Cliente';
+    }
+    
+    const response = await clienteService.obtenerPorUsuario(usuario.nombreUsuario);
+    if (response.data && response.data.length > 0) {
+      const cliente = response.data[0];
+      return `${cliente.nombres} ${cliente.apellidoPaterno} ${cliente.apellidoMaterno}`;
+    }
+    return 'Cliente';
+  } catch (error) {
+    console.error('Error obteniendo datos del cliente:', error);
+    return 'Cliente';
+  }
+};
 
 const productos = [
   { value: 'todos', label: 'Todos' },
@@ -21,44 +40,79 @@ const productos = [
 const mediosPago = [
   { value: 'todos', label: 'Todos' },
   { value: 'yape', label: 'Yape' },
-  { value: 'plin', label: 'Plin' },
   { value: 'transferencia', label: 'Transferencia' },
 ];
 
-// Datos simulados para las tablas
+// Nueva data mockup de consumos para abril 2025 (excluyendo sábados y domingos)
 const historialConsumo = [
-  { fecha: '20/03/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '19/03/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '18/03/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '17/03/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '16/03/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '13/03/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '12/03/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '11/03/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '10/03/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '09/03/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '06/03/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '05/03/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '04/03/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '03/03/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
+  { fecha: '30/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
+  { fecha: '29/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
+  { fecha: '28/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
+  { fecha: '25/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
+  { fecha: '24/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
+  { fecha: '23/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
+  { fecha: '22/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
+  { fecha: '21/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
+  { fecha: '18/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
+  { fecha: '17/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
+  { fecha: '16/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
+  { fecha: '15/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
+  { fecha: '14/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
+  { fecha: '11/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
+  { fecha: '10/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
+  { fecha: '09/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
+  { fecha: '08/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
+  { fecha: '07/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
+  { fecha: '04/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
+  { fecha: '03/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
+  { fecha: '02/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
+  { fecha: '01/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
 ];
-const comprobantesPago = Array.from({ length: 13 }, (_, i) => ({ codigo: `ABN00${i+1}`, fecha: 'Cell', monto: 'Cell', medio: 'Cell' }));
-
-function aDate(str) {
-  // Convierte DD/MM/YYYY a dayjs
-  const [d, m, y] = str.split('/');
-  return dayjs(`${y}-${m}-${d}`);
-}
+const comprobantesPago = [
+  { codigo: 'ABN001', fecha: '20/04/2025', monto: 'S/. 50.00', medio: 'Yape' },
+  { codigo: 'ABN002', fecha: '18/04/2025', monto: 'S/. 30.00', medio: 'Yape' },
+  { codigo: 'ABN003', fecha: '15/04/2025', monto: 'S/. 25.00', medio: 'Transferencia' },
+  { codigo: 'ABN004', fecha: '12/04/2025', monto: 'S/. 40.00', medio: 'Yape' },
+  { codigo: 'ABN005', fecha: '10/04/2025', monto: 'S/. 35.00', medio: 'Yape' },
+  { codigo: 'ABN006', fecha: '08/04/2025', monto: 'S/. 45.00', medio: 'Transferencia' },
+  { codigo: 'ABN007', fecha: '05/04/2025', monto: 'S/. 20.00', medio: 'Yape' },
+  { codigo: 'ABN008', fecha: '03/04/2025', monto: 'S/. 55.00', medio: 'Yape' },
+  { codigo: 'ABN009', fecha: '01/04/2025', monto: 'S/. 30.00', medio: 'Transferencia' },
+  { codigo: 'ABN010', fecha: '30/03/2025', monto: 'S/. 40.00', medio: 'Yape' },
+  { codigo: 'ABN011', fecha: '28/03/2025', monto: 'S/. 25.00', medio: 'Yape' },
+  { codigo: 'ABN012', fecha: '25/03/2025', monto: 'S/. 35.00', medio: 'Transferencia' },
+  { codigo: 'ABN013', fecha: '22/03/2025', monto: 'S/. 50.00', medio: 'Yape' }
+];
 
 const MiCuenta = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [tab, setTab] = React.useState(0);
+  const [nombreCliente, setNombreCliente] = React.useState('Cliente');
 
-  // Filtros historial consumo
+  // Cargar nombre del cliente al montar el componente
+  React.useEffect(() => {
+    const cargarNombreCliente = async () => {
+      const nombre = await obtenerNombreCliente();
+      setNombreCliente(nombre);
+    };
+    cargarNombreCliente();
+  }, []);
+
+  // Estados para filtros aplicados y valores temporales
+  const [filtrosAplicadosConsumo, setFiltrosAplicadosConsumo] = React.useState(false);
+  const [filtrosAplicadosAbonos, setFiltrosAplicadosAbonos] = React.useState(false);
+  const [filtrosConsumo, setFiltrosConsumo] = React.useState({
+    producto: 'todos',
+    desde: null,
+    hasta: null
+  });
+
+  // Inputs controlados (temporales)
   const [filtroProducto, setFiltroProducto] = React.useState('todos');
   const [filtroDesdeConsumo, setFiltroDesdeConsumo] = React.useState(null);
   const [filtroHastaConsumo, setFiltroHastaConsumo] = React.useState(null);
+
   // Filtros comprobantes
   const [filtroDesdeComp, setFiltroDesdeComp] = React.useState(null);
   const [filtroHastaComp, setFiltroHastaComp] = React.useState(null);
@@ -72,9 +126,6 @@ const MiCuenta = () => {
   const [pageComp, setPageComp] = React.useState(0);
   const [rowsPerPageComp, setRowsPerPageComp] = React.useState(10);
 
-  // Estados para control de filtros aplicados
-  const [filtrosAplicadosConsumo, setFiltrosAplicadosConsumo] = React.useState(false);
-  const [filtrosAplicadosAbonos, setFiltrosAplicadosAbonos] = React.useState(false);
   // Estados iniciales para filtros
   const filtrosInicialesConsumo = { producto: 'todos', desde: null, hasta: null };
   const filtrosInicialesAbonos = { desde: null, hasta: null, montoMin: '', montoMax: '', medio: 'todos' };
@@ -91,12 +142,18 @@ const MiCuenta = () => {
     filtroMedioPago === filtrosInicialesAbonos.medio;
   // Handlers filtros consumo
   const handleAplicarFiltrosConsumo = () => {
+    setFiltrosConsumo({
+      producto: filtroProducto,
+      desde: filtroDesdeConsumo,
+      hasta: filtroHastaConsumo
+    });
     setFiltrosAplicadosConsumo(true);
   };
   const handleLimpiarFiltrosConsumo = () => {
-    setFiltroProducto(filtrosInicialesConsumo.producto);
-    setFiltroDesdeConsumo(filtrosInicialesConsumo.desde);
-    setFiltroHastaConsumo(filtrosInicialesConsumo.hasta);
+    setFiltroProducto('todos');
+    setFiltroDesdeConsumo(null);
+    setFiltroHastaConsumo(null);
+    setFiltrosConsumo({ producto: 'todos', desde: null, hasta: null });
     setFiltrosAplicadosConsumo(false);
   };
   // Handlers filtros abonos
@@ -112,21 +169,81 @@ const MiCuenta = () => {
     setFiltrosAplicadosAbonos(false);
   };
 
-  // Filtrado de historial de consumo
-  const consumoFiltrado = historialConsumo.filter(row => {
-    let match = true;
-    if (filtroProducto !== 'todos') match = match && (row.producto === (filtroProducto === 'menu' ? 'Menú' : 'Plato a la carta'));
-    if (filtroDesdeConsumo) match = match && (aDate(row.fecha).isSameOrAfter(filtroDesdeConsumo, 'day'));
-    if (filtroHastaConsumo) match = match && (aDate(row.fecha).isSameOrBefore(filtroHastaConsumo, 'day'));
-    return match;
-  });
+  // Filtrado de historial de consumo (igual que en Quejas y Sugerencias, pero solo cuando se aplican filtros)
+  const consumoFiltrado = React.useMemo(() => {
+    return historialConsumo.filter(row => {
+      let match = true;
+      // Filtro por producto
+      if (filtrosConsumo.producto !== 'todos') {
+        match = match && (row.producto === (filtrosConsumo.producto === 'menu' ? 'Menú' : 'Plato a la carta'));
+      }
+      // Filtro por fecha desde
+      let matchDesde = true, matchHasta = true;
+      if (filtrosConsumo.desde) {
+        const fechaRow = dayjs(row.fecha, 'DD/MM/YYYY');
+        const desde = dayjs(filtrosConsumo.desde).startOf('day');
+        matchDesde = fechaRow.isSame(desde, 'day') || fechaRow.isAfter(desde, 'day');
+      }
+      // Filtro por fecha hasta
+      if (filtrosConsumo.hasta) {
+        const fechaRow = dayjs(row.fecha, 'DD/MM/YYYY');
+        const hasta = dayjs(filtrosConsumo.hasta).endOf('day');
+        matchHasta = fechaRow.isSame(hasta, 'day') || fechaRow.isBefore(hasta, 'day');
+      }
+      return match && matchDesde && matchHasta;
+    });
+  }, [filtrosConsumo]);
+
+  // Mostrar todos los datos si no hay filtros aplicados
+  const rowsConsumoToShow = filtrosAplicadosConsumo ? consumoFiltrado : historialConsumo;
 
   // Filtrado de comprobantes (simulado)
-  const comprobantesFiltrados = comprobantesPago.filter(row => {
-    let match = true;
-    // Aquí podrías agregar lógica real de filtrado por fecha, monto y medio de pago
-    return match;
-  });
+  const comprobantesFiltrados = React.useMemo(() => {
+    if (!filtrosAplicadosAbonos) {
+      return comprobantesPago;
+    }
+    
+    return comprobantesPago.filter(row => {
+      let match = true;
+      
+      // Filtro por fecha desde
+      if (filtroDesdeComp) {
+        const fechaRow = dayjs(row.fecha, 'DD/MM/YYYY');
+        const desde = dayjs(filtroDesdeComp).startOf('day');
+        match = match && (fechaRow.isSame(desde, 'day') || fechaRow.isAfter(desde, 'day'));
+      }
+      
+      // Filtro por fecha hasta
+      if (filtroHastaComp) {
+        const fechaRow = dayjs(row.fecha, 'DD/MM/YYYY');
+        const hasta = dayjs(filtroHastaComp).endOf('day');
+        match = match && (fechaRow.isSame(hasta, 'day') || fechaRow.isBefore(hasta, 'day'));
+      }
+      
+      // Filtro por monto mínimo
+      if (filtroMontoMin && filtroMontoMin !== '') {
+        const montoRow = parseFloat(row.monto.replace('S/. ', ''));
+        const montoMin = parseFloat(filtroMontoMin);
+        match = match && montoRow >= montoMin;
+      }
+      
+      // Filtro por monto máximo
+      if (filtroMontoMax && filtroMontoMax !== '') {
+        const montoRow = parseFloat(row.monto.replace('S/. ', ''));
+        const montoMax = parseFloat(filtroMontoMax);
+        match = match && montoRow <= montoMax;
+      }
+      
+      // Filtro por medio de pago
+      if (filtroMedioPago !== 'todos') {
+        const medioRow = row.medio.toLowerCase();
+        const medioFiltro = filtroMedioPago.toLowerCase();
+        match = match && medioRow === medioFiltro;
+      }
+      
+      return match;
+    });
+  }, [filtrosAplicadosAbonos, filtroDesdeComp, filtroHastaComp, filtroMontoMin, filtroMontoMax, filtroMedioPago]);
 
   // Estado para el modal de recarga
   const [openRecarga, setOpenRecarga] = React.useState(false);
@@ -209,7 +326,7 @@ const MiCuenta = () => {
   return (
     <Box sx={{ width: '100%', maxWidth: 1100, mx: 'auto', mt: isMobile ? 1 : 4, mb: 4, pl: { xs: 1, md: 3 } }}>
       <Box sx={{ mb: 1 }}>
-        <Typography variant="h5" fontWeight={600} sx={{ mb: 0.5 }}>{nombreUsuario}</Typography>
+        <Typography variant="h5" fontWeight={600} sx={{ mb: 0.5 }}>{nombreCliente}</Typography>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ minHeight: 40, mb: 2 }}>
           <Tab label="Historial de consumo" sx={{ fontWeight: 500, minWidth: 180 }} />
           <Tab label="Historial de abonos" sx={{ fontWeight: 500, minWidth: 200 }} />
@@ -285,7 +402,7 @@ const MiCuenta = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {consumoFiltrado.slice(pageConsumo * rowsPerPageConsumo, pageConsumo * rowsPerPageConsumo + rowsPerPageConsumo).map((row, idx) => (
+                {rowsConsumoToShow.slice(pageConsumo * rowsPerPageConsumo, pageConsumo * rowsPerPageConsumo + rowsPerPageConsumo).map((row, idx) => (
                   <TableRow key={idx}>
                     <TableCell sx={{ fontSize: 14, py: 0.5 }}>{row.fecha}</TableCell>
                     <TableCell sx={{ fontSize: 14, py: 0.5 }}>{row.producto}</TableCell>
@@ -297,7 +414,7 @@ const MiCuenta = () => {
             </Table>
             <TablePagination
               component="div"
-              count={consumoFiltrado.length}
+              count={rowsConsumoToShow.length}
               page={pageConsumo}
               onPageChange={(_, newPage) => setPageConsumo(newPage)}
               rowsPerPage={rowsPerPageConsumo}

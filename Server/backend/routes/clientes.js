@@ -43,6 +43,24 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Obtener cliente por usuario (código de cliente)
+router.get('/usuario/:nombreUsuario', async (req, res) => {
+  try {
+    const { nombreUsuario } = req.params;
+    const clientes = await clientesModel.obtenerPorUsuario(nombreUsuario);
+    
+    res.json({
+      message: 'Cliente obtenido exitosamente',
+      data: clientes
+    });
+  } catch (error) {
+    console.error('Error obteniendo cliente por usuario:', error);
+    res.status(500).json({ 
+      message: 'Error interno del servidor' 
+    });
+  }
+});
+
 // Buscar clientes por nombre
 router.get('/buscar/:nombre', async (req, res) => {
   try {
