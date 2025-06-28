@@ -307,49 +307,49 @@ const AdminCajaChica = () => {
               <Typography>Cargando cajas chicas...</Typography>
             </Box>
           ) : (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell align="center">Nro. liquidación</TableCell>
-                  <TableCell align="center">Fecha apertura</TableCell>
-                  <TableCell align="center">Fecha liquidación</TableCell>
-                  <TableCell align="center">Saldo inicial</TableCell>
-                  <TableCell align="center">Saldo final</TableCell>
-                  <TableCell align="center">Estado</TableCell>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell align="center">Nro. liquidación</TableCell>
+                <TableCell align="center">Fecha apertura</TableCell>
+                <TableCell align="center">Fecha liquidación</TableCell>
+                <TableCell align="center">Saldo inicial</TableCell>
+                <TableCell align="center">Saldo final</TableCell>
+                <TableCell align="center">Estado</TableCell>
                   <TableCell align="center">Acciones</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginatedCajas.map((caja) => (
-                  <TableRow key={caja.id} hover>
-                    <TableCell align="center">{caja.numero}</TableCell>
-                    <TableCell align="center">{caja.fechaApertura}</TableCell>
-                    <TableCell align="center">{caja.fechaLiquidacion || '-'}</TableCell>
-                    <TableCell align="center">S/. {caja.saldoInicial.toFixed(2)}</TableCell>
-                    <TableCell align="center">S/. {caja.saldoFinal.toFixed(2)}</TableCell>
-                    <TableCell align="center">
-                      <Box sx={{ bgcolor: caja.estado === 'Abierta' ? 'success.main' : 'error.main', color: 'white', px: 1.2, py: 0.2, borderRadius: '12px', display: 'inline-block', fontSize: '0.75rem' }}>
-                        {caja.estado === 'Abierta' ? 'Abierta' : 'Cerrada'}
-                      </Box>
-                    </TableCell>
-                    <TableCell align="center">
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paginatedCajas.map((caja) => (
+                <TableRow key={caja.id} hover>
+                  <TableCell align="center">{caja.numero}</TableCell>
+                  <TableCell align="center">{caja.fechaApertura}</TableCell>
+                  <TableCell align="center">{caja.fechaLiquidacion || '-'}</TableCell>
+                  <TableCell align="center">S/. {caja.saldoInicial.toFixed(2)}</TableCell>
+                  <TableCell align="center">S/. {caja.saldoFinal.toFixed(2)}</TableCell>
+                  <TableCell align="center">
+                    <Box sx={{ bgcolor: caja.estado === 'Abierta' ? 'success.main' : 'error.main', color: 'white', px: 1.2, py: 0.2, borderRadius: '12px', display: 'inline-block', fontSize: '0.75rem' }}>
+                      {caja.estado === 'Abierta' ? 'Abierta' : 'Cerrada'}
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">
                       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                        <Tooltip title="Ver detalle">
-                          <IconButton size="small" component={RouterLink} to={`/admin/caja-chica/${caja.numero}`}>
-                            <Visibility fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                    <Tooltip title="Ver detalle">
+                      <IconButton size="small" component={RouterLink} to={`/admin/caja-chica/${caja.numero}`}>
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                         <Tooltip title="Eliminar">
                           <IconButton size="small" onClick={() => handleEliminarCaja(caja)} color="error">
                             <Delete fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
           )}
         </TableContainer>
         <TablePagination

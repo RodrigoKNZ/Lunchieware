@@ -11,6 +11,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import clienteService from '../services/clienteService';
+import abonosService from '../services/abonosService';
 
 // Obtener nombre del cliente asociado al usuario logueado
 const obtenerNombreCliente = async () => {
@@ -29,6 +30,48 @@ const obtenerNombreCliente = async () => {
   } catch (error) {
     console.error('Error obteniendo datos del cliente:', error);
     return 'Cliente';
+  }
+};
+
+// Obtener datos del cliente y contrato vigente
+const obtenerDatosCliente = async () => {
+  try {
+    const usuario = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!usuario.nombreUsuario) {
+      return null;
+    }
+    
+    const response = await clienteService.obtenerPorUsuario(usuario.nombreUsuario);
+    if (response.data && response.data.length > 0) {
+      const cliente = response.data[0];
+      
+      // Obtener contratos del cliente
+      const contratosResponse = await clienteService.obtenerContratosPorCliente(cliente.idCliente);
+      const contratos = contratosResponse.data || [];
+      
+      // Obtener el contrato vigente (el más reciente)
+      const contratoVigente = contratos.length > 0 ? contratos[0] : null;
+      
+      return {
+        cliente,
+        contratoVigente
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error obteniendo datos del cliente:', error);
+    return null;
+  }
+};
+
+// Obtener abonos del cliente
+const obtenerAbonosCliente = async (idCliente) => {
+  try {
+    const response = await abonosService.obtenerPorCliente(idCliente);
+    return response.data || [];
+  } catch (error) {
+    console.error('Error obteniendo abonos del cliente:', error);
+    return [];
   }
 };
 
@@ -89,14 +132,38 @@ const MiCuenta = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [tab, setTab] = React.useState(0);
   const [nombreCliente, setNombreCliente] = React.useState('Cliente');
+  
+  // Estados para datos reales
+  const [datosCliente, setDatosCliente] = React.useState(null);
+  const [abonos, setAbonos] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState('');
 
-  // Cargar nombre del cliente al montar el componente
+  // Cargar datos del cliente al montar el componente
   React.useEffect(() => {
-    const cargarNombreCliente = async () => {
-      const nombre = await obtenerNombreCliente();
-      setNombreCliente(nombre);
+    const cargarDatos = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const nombre = await obtenerNombreCliente();
+        setNombreCliente(nombre);
+        
+        const datos = await obtenerDatosCliente();
+        if (datos) {
+          setDatosCliente(datos);
+          
+          // Cargar abonos del cliente
+          const abonosCliente = await obtenerAbonosCliente(datos.cliente.idCliente);
+          setAbonos(abonosCliente);
+        }
+      } catch (err) {
+        setError('Error al cargar los datos del cliente');
+        console.error('Error cargando datos:', err);
+      } finally {
+        setLoading(false);
+      }
     };
-    cargarNombreCliente();
+    cargarDatos();
   }, []);
 
   // Estados para filtros aplicados y valores temporales
@@ -523,19 +590,33 @@ const MiCuenta = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {comprobantesFiltrados.slice(pageComp * rowsPerPageComp, pageComp * rowsPerPageComp + rowsPerPageComp).map((row, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell sx={{ fontSize: 14, py: 0.5 }}>{row.codigo}</TableCell>
-                    <TableCell sx={{ fontSize: 14, py: 0.5 }}>{row.fecha}</TableCell>
-                    <TableCell sx={{ fontSize: 14, py: 0.5 }}>{row.monto}</TableCell>
-                    <TableCell sx={{ fontSize: 14, py: 0.5 }}>{row.medio}</TableCell>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center">Cargando abonos...</TableCell>
                   </TableRow>
-                ))}
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center" color="error">{error}</TableCell>
+                  </TableRow>
+                ) : abonos.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center">No hay abonos registrados</TableCell>
+                  </TableRow>
+                ) : (
+                  abonos.slice(pageComp * rowsPerPageComp, pageComp * rowsPerPageComp + rowsPerPageComp).map((abono, idx) => (
+                    <TableRow key={abono.idAbono || idx}>
+                      <TableCell sx={{ fontSize: 14, py: 0.5 }}>{abono.numRecibo}</TableCell>
+                      <TableCell sx={{ fontSize: 14, py: 0.5 }}>{dayjs(abono.fechaAbono).format('DD/MM/YYYY')}</TableCell>
+                      <TableCell sx={{ fontSize: 14, py: 0.5 }}>S/. {Number(abono.importeAbono).toFixed(2)}</TableCell>
+                      <TableCell sx={{ fontSize: 14, py: 0.5 }}>{abono.nombreBanco || 'N/A'}</TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
             <TablePagination
               component="div"
-              count={comprobantesFiltrados.length}
+              count={abonos.length}
               page={pageComp}
               onPageChange={(_, newPage) => setPageComp(newPage)}
               rowsPerPage={rowsPerPageComp}
@@ -549,43 +630,81 @@ const MiCuenta = () => {
       {/* MI SALDO / RECARGAR SALDO */}
       {tab === 2 && (
         <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-            <Button variant="contained" color="primary" sx={{ fontWeight: 600, borderRadius: 2 }} onClick={handleAbrirRecarga}>
-              + Recargar saldo
-            </Button>
-          </Box>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-            <Card sx={{ flex: '1 1 300px', minWidth: 280 }}>
-              <CardContent>
-                <Typography color="text.secondary" fontSize={14} gutterBottom>Actualizado al 20/04/2025</Typography>
-                <Typography variant="h6" fontWeight={600}>Saldo</Typography>
-                <Typography variant="h5" fontWeight={700} color="primary.main">S/. 20.00</Typography>
-              </CardContent>
-            </Card>
-            <Card sx={{ flex: '1 1 300px', minWidth: 280 }}>
-              <CardContent>
-                <Typography color="text.secondary" fontSize={14} gutterBottom>Actualizado al 20/04/2025</Typography>
-                <Typography variant="h6" fontWeight={600}>Deuda pendiente</Typography>
-                <Typography variant="h5" fontWeight={700} color="error.main">S/. 0.00</Typography>
-              </CardContent>
-            </Card>
-          </Box>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-            <Card sx={{ flex: '1 1 300px', minWidth: 280 }}>
-              <CardContent>
-                <Typography color="text.secondary" fontSize={14} gutterBottom>Actualizado al 20/04/2025</Typography>
-                <Typography variant="h6" fontWeight={600}>Medios de pago</Typography>
-                <Typography variant="body1">Yape, Plin, Transferencia</Typography>
-              </CardContent>
-            </Card>
-            <Card sx={{ flex: '1 1 300px', minWidth: 280 }}>
-              <CardContent>
-                <Typography color="text.secondary" fontSize={14} gutterBottom>Actualizado al 20/04/2025</Typography>
-                <Typography variant="h6" fontWeight={600}>Nuestras cuentas bancarias</Typography>
-                <Typography variant="body1">BCP: 123-4567890-0-12<br/>Interbank: 123-4567890-0-13</Typography>
-              </CardContent>
-            </Card>
-          </Box>
+          {loading ? (
+            <Typography>Cargando información del saldo...</Typography>
+          ) : error ? (
+            <Typography color="error">{error}</Typography>
+          ) : (
+            <>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                <Button variant="contained" color="primary" sx={{ fontWeight: 600, borderRadius: 2 }} onClick={handleAbrirRecarga}>
+                  + Recargar saldo
+                </Button>
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                <Card sx={{ flex: '1 1 300px', minWidth: 280 }}>
+                  <CardContent>
+                    <Typography color="text.secondary" fontSize={14} gutterBottom>
+                      {datosCliente?.contratoVigente ? 
+                        `Actualizado al ${dayjs(datosCliente.contratoVigente.fechaCreacion).format('DD/MM/YYYY')}` : 
+                        'Sin contrato vigente'
+                      }
+                    </Typography>
+                    <Typography variant="h6" fontWeight={600}>Saldo</Typography>
+                    <Typography variant="h5" fontWeight={700} color="primary.main">
+                      {datosCliente?.contratoVigente ? 
+                        `S/. ${Number(datosCliente.contratoVigente.importeSaldo).toFixed(2)}` : 
+                        'S/. 0.00'
+                      }
+                    </Typography>
+                  </CardContent>
+                </Card>
+                <Card sx={{ flex: '1 1 300px', minWidth: 280 }}>
+                  <CardContent>
+                    <Typography color="text.secondary" fontSize={14} gutterBottom>
+                      {datosCliente?.contratoVigente ? 
+                        `Actualizado al ${dayjs(datosCliente.contratoVigente.fechaCreacion).format('DD/MM/YYYY')}` : 
+                        'Sin contrato vigente'
+                      }
+                    </Typography>
+                    <Typography variant="h6" fontWeight={600}>Deuda pendiente</Typography>
+                    <Typography variant="h5" fontWeight={700} color="error.main">
+                      {datosCliente?.contratoVigente && Number(datosCliente.contratoVigente.importeSaldo) < 0 ? 
+                        `S/. ${Math.abs(Number(datosCliente.contratoVigente.importeSaldo)).toFixed(2)}` : 
+                        'S/. 0.00'
+                      }
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                <Card sx={{ flex: '1 1 300px', minWidth: 280 }}>
+                  <CardContent>
+                    <Typography color="text.secondary" fontSize={14} gutterBottom>
+                      {datosCliente?.contratoVigente ? 
+                        `Actualizado al ${dayjs(datosCliente.contratoVigente.fechaCreacion).format('DD/MM/YYYY')}` : 
+                        'Sin contrato vigente'
+                      }
+                    </Typography>
+                    <Typography variant="h6" fontWeight={600}>Medios de pago</Typography>
+                    <Typography variant="body1">Yape, Plin, Transferencia</Typography>
+                  </CardContent>
+                </Card>
+                <Card sx={{ flex: '1 1 300px', minWidth: 280 }}>
+                  <CardContent>
+                    <Typography color="text.secondary" fontSize={14} gutterBottom>
+                      {datosCliente?.contratoVigente ? 
+                        `Actualizado al ${dayjs(datosCliente.contratoVigente.fechaCreacion).format('DD/MM/YYYY')}` : 
+                        'Sin contrato vigente'
+                      }
+                    </Typography>
+                    <Typography variant="h6" fontWeight={600}>Nuestras cuentas bancarias</Typography>
+                    <Typography variant="body1">BCP: 123-4567890-0-12<br/>Interbank: 123-4567890-0-13</Typography>
+                  </CardContent>
+                </Card>
+              </Box>
+            </>
+          )}
         </Box>
       )}
       {/* Modal de recarga de saldo */}

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Breadcrumbs, Tabs, Tab, Paper, Button, Divider, IconButton, TextField,
   Select, MenuItem, InputLabel, FormControl,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, Checkbox, Tooltip,
-  Dialog, DialogActions, DialogContent, DialogTitle, Popover, InputAdornment
+  Dialog, DialogActions, DialogContent, DialogTitle, Popover, InputAdornment, Alert, Snackbar
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
@@ -16,17 +16,8 @@ import { DateRange } from 'react-date-range';
 import 'react-date-range/dist/styles.css'; // main style file
 import 'react-date-range/dist/theme/default.css'; // theme css file
 import es from 'date-fns/locale/es';
-
-// Mock Data
-const mockQuejas = [
-    { id: '00071', asunto: 'Devolución dinero contrato 2024', fecha: '20/03/2025', cliente: 'Maria Pia Escobar Ramos', estado: 'Sin resolver', detalle: 'Mi hija tiene saldo restante del año pasado (2024), este año le he empezado a enviar almuerzos preparados en casa, por ello solicito que se me haga la devolución del dinero correspondiente a dicho saldo restante.' },
-    { id: '0008', asunto: 'Devolución dinero contrato 2024', fecha: '20/03/2025', cliente: 'Juan Carlos Grau Mogrovejo', estado: 'Resuelta', detalle: 'Detalle de la queja resuelta.' },
-];
-
-const mockSugerencias = [
-    { id: '00071', asunto: 'Microondas adicional', fecha: '20/03/2025', cliente: 'Maria Pia Escobar Ramos', detalle: 'Recomendaría que compraran un microondas adicional, muchas veces, debido a que solo son 3 microondas, se terminan creando colas de espera para usar el microondas.' },
-    { id: '0008', asunto: 'Almuerzos más variados', fecha: '20/03/2025', cliente: 'Juan Carlos Grau Mogrovejo', detalle: 'Sería bueno que varíen más los almuerzos.' },
-];
+import quejasService from '../services/quejasService';
+import sugerenciasService from '../services/sugerenciasService';
 
 const TabPanel = (props) => {
   const { children, value, index, ...other } = props;
@@ -37,13 +28,15 @@ const TabPanel = (props) => {
   );
 };
 
-const QuejasSugerenciasContent = ({ data, isQuejas }) => {
+const QuejasSugerenciasContent = ({ data, isQuejas, onDataChange }) => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [selected, setSelected] = useState([]);
     const [openDetailModal, setOpenDetailModal] = useState(false);
     const [openResolveModal, setOpenResolveModal] = useState(false);
     const [currentItem, setCurrentItem] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
     // Estados para DateRangePicker
     const [anchorEl, setAnchorEl] = useState(null);
@@ -98,12 +91,45 @@ const QuejasSugerenciasContent = ({ data, isQuejas }) => {
         setOpenResolveModal(true);
     };
 
+    const handleResolveQuejas = async () => {
+        try {
+            setLoading(true);
+            const promises = selected.map(id => quejasService.actualizar(id, { resuelto: true }));
+            await Promise.all(promises);
+            
+            setSnackbar({
+                open: true,
+                message: 'Quejas marcadas como resueltas exitosamente',
+                severity: 'success'
+            });
+            
+            setSelected([]);
+            setOpenResolveModal(false);
+            if (onDataChange) {
+                onDataChange();
+            }
+        } catch (error) {
+            console.error('Error resolviendo quejas:', error);
+            setSnackbar({
+                open: true,
+                message: 'Error al marcar las quejas como resueltas',
+                severity: 'error'
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleOpenPopover = (event) => {
         setAnchorEl(event.currentTarget);
     };
 
     const handleClosePopover = () => {
         setAnchorEl(null);
+    };
+
+    const handleCloseSnackbar = () => {
+        setSnackbar({ ...snackbar, open: false });
     };
 
     const open = Boolean(anchorEl);
@@ -176,7 +202,7 @@ const QuejasSugerenciasContent = ({ data, isQuejas }) => {
                                             <Checkbox checked={isItemSelected} onChange={(event) => handleClick(event, row.id)} />
                                         </TableCell>
                                     )}
-                                    <TableCell>{row.id}</TableCell>
+                                    <TableCell>{row.codigo}</TableCell>
                                     <TableCell>{row.asunto}</TableCell>
                                     <TableCell>{row.fecha}</TableCell>
                                     <TableCell>{row.cliente}</TableCell>
@@ -227,8 +253,10 @@ const QuejasSugerenciasContent = ({ data, isQuejas }) => {
                 <DialogTitle>Marcar como resuelto</DialogTitle>
                 <DialogContent><Typography>¿Está seguro que desea marcar las quejas seleccionadas como resueltas?</Typography></DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenResolveModal(false)}>CANCELAR</Button>
-                    <Button onClick={() => setOpenResolveModal(false)} variant="contained">ACEPTAR</Button>
+                    <Button onClick={() => setOpenResolveModal(false)} disabled={loading}>CANCELAR</Button>
+                    <Button onClick={handleResolveQuejas} variant="contained" disabled={loading}>
+                        {loading ? 'PROCESANDO...' : 'ACEPTAR'}
+                    </Button>
                 </DialogActions>
             </Dialog>
 
@@ -250,16 +278,109 @@ const QuejasSugerenciasContent = ({ data, isQuejas }) => {
                     locale={es}
                 />
             </Popover>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Paper>
     );
 };
 
 const AdminQuejasSugerencias = () => {
   const [tabValue, setTabValue] = useState(0);
+  const [quejas, setQuejas] = useState([]);
+  const [sugerencias, setSugerencias] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const cargarQuejas = async () => {
+    try {
+      const response = await quejasService.obtenerTodas();
+      const quejasFormateadas = response.data.map(queja => ({
+        id: queja.idQueja,
+        codigo: queja.codigoQueja || `QJ${queja.idQueja.toString().padStart(5, '0')}`,
+        asunto: queja.asunto,
+        fecha: dayjs(queja.fechaCreacion).format('DD/MM/YYYY'),
+        cliente: queja.nombreCompletoCliente || queja.nombreUsuario || 'Cliente no identificado',
+        estado: queja.resuelto ? 'Resuelta' : 'Sin resolver',
+        detalle: queja.detalle
+      }));
+      setQuejas(quejasFormateadas);
+    } catch (error) {
+      console.error('Error cargando quejas:', error);
+      setError('Error al cargar las quejas');
+    }
+  };
+
+  const cargarSugerencias = async () => {
+    try {
+      const response = await sugerenciasService.obtenerTodas();
+      const sugerenciasFormateadas = response.data.map(sugerencia => ({
+        id: sugerencia.idSugerencia,
+        codigo: sugerencia.codigoSugerencia || `SG${sugerencia.idSugerencia.toString().padStart(5, '0')}`,
+        asunto: sugerencia.asunto,
+        fecha: dayjs(sugerencia.fechaCreacion).format('DD/MM/YYYY'),
+        cliente: sugerencia.nombreCompletoCliente || sugerencia.nombreUsuario || 'Cliente no identificado',
+        detalle: sugerencia.detalle
+      }));
+      setSugerencias(sugerenciasFormateadas);
+    } catch (error) {
+      console.error('Error cargando sugerencias:', error);
+      setError('Error al cargar las sugerencias');
+    }
+  };
+
+  const cargarDatos = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await Promise.all([cargarQuejas(), cargarSugerencias()]);
+    } catch (error) {
+      console.error('Error cargando datos:', error);
+      setError('Error al cargar los datos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    cargarDatos();
+  }, []);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
+
+  const handleQuejasChange = () => {
+    cargarQuejas();
+  };
+
+  const handleSugerenciasChange = () => {
+    cargarSugerencias();
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <Typography>Cargando...</Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   return (
     <React.Fragment>
@@ -279,16 +400,16 @@ const AdminQuejasSugerencias = () => {
 
       <Box sx={{ width: '100%', borderBottom: 1, borderColor: 'divider', mt: 2 }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label="Quejas" />
-          <Tab label="Sugerencias" />
+          <Tab label={`Quejas (${quejas.length})`} />
+          <Tab label={`Sugerencias (${sugerencias.length})`} />
         </Tabs>
       </Box>
 
       <TabPanel value={tabValue} index={0}>
-        <QuejasSugerenciasContent data={mockQuejas} isQuejas={true} />
+        <QuejasSugerenciasContent data={quejas} isQuejas={true} onDataChange={handleQuejasChange} />
       </TabPanel>
       <TabPanel value={tabValue} index={1}>
-        <QuejasSugerenciasContent data={mockSugerencias} isQuejas={false} />
+        <QuejasSugerenciasContent data={sugerencias} isQuejas={false} onDataChange={handleSugerenciasChange} />
       </TabPanel>
     </React.Fragment>
   );

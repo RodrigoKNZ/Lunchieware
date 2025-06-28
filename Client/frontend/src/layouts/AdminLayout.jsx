@@ -25,7 +25,7 @@ const menuItems = [
   { text: 'Quejas y sugerencias', icon: <ChatBubbleOutlineIcon />, path: '/admin/quejas-sugerencias' },
 ];
 
-const AdminLayout = () => {
+const AdminLayout = ({ onLogout }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [navValue, setNavValue] = React.useState(0);
@@ -33,9 +33,19 @@ const AdminLayout = () => {
   const location = useLocation();
 
   React.useEffect(() => {
-    const idx = menuItems.findIndex(item => location.pathname.startsWith(item.path));
+    const idx = menuItems.findIndex(item => item.path === location.pathname);
     setNavValue(idx === -1 ? 0 : idx);
   }, [location.pathname]);
+
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
+    } else {
+      // Fallback si no se pasa la función
+      localStorage.removeItem('user');
+      window.location.reload();
+    }
+  };
 
   return (
     <Box sx={{ display: 'flex', width: '100vw', minHeight: '100vh', bgcolor: '#fff', flexDirection: isMobile ? 'column' : 'row' }}>
@@ -83,7 +93,7 @@ const AdminLayout = () => {
           <Box sx={{ mb: 3, px: 2 }}>
             <ListItem
               button
-              onClick={() => window.location.reload()}
+              onClick={handleLogout}
               sx={{
                 mb: 0.5,
                 borderRadius: 2,

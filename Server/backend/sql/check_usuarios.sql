@@ -1,0 +1,1 @@
+SELECT "idUsuario", "nombreUsuario" FROM "Usuario" WHERE "activo" = true; 

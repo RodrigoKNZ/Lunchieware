@@ -17,6 +17,7 @@ import { DateRange } from 'react-date-range';
 import 'react-date-range/dist/styles.css'; // main style file
 import 'react-date-range/dist/theme/default.css'; // theme css file
 import es from 'date-fns/locale/es';
+import clienteService from '../services/clienteService';
 
 const mockClienteDetalle = {
     '20200554': {
@@ -67,8 +68,83 @@ const InfoItem = ({ label, value }) => (
 const AdminClienteDetalle = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const cliente = mockClienteDetalle[id];
-    
+    // const cliente = mockClienteDetalle[id];
+    const [cliente, setCliente] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchCliente = async () => {
+            setLoading(true);
+            setError('');
+            try {
+                const res = await clienteService.obtenerPorId(id);
+                
+                // Funciones de traducción
+                const traducirTipoCliente = (tipo) => {
+                    if (tipo === 'E') return 'Estudiante';
+                    if (tipo === 'D') return 'Docente';
+                    if (tipo === 'G') return 'General';
+                    return tipo;
+                };
+
+                const traducirTipoDocumento = (tipo) => {
+                    if (tipo === 'DNI') return 'Documento nacional de identidad (DNI)';
+                    if (tipo === 'CEX') return 'Carnet de extranjería';
+                    return tipo;
+                };
+
+                const traducirNivel = (nivel) => {
+                    if (nivel === 'PR') return 'Primaria';
+                    if (nivel === 'IN') return 'Inicial';
+                    if (nivel === 'SE') return 'Secundaria';
+                    return nivel;
+                };
+
+                const traducirGrado = (grado) => {
+                    if (!grado) return '-';
+                    if (grado === 'IN4') return '4 años';
+                    if (grado === 'IN5') return '5 años';
+                    if (grado === 'PR1') return '1er grado';
+                    if (grado === 'PR2') return '2do grado';
+                    if (grado === 'PR3') return '3er grado';
+                    if (grado === 'PR4') return '4to grado';
+                    if (grado === 'PR5') return '5to grado';
+                    if (grado === 'PR6') return '6to grado';
+                    if (grado === 'SE1') return '1er grado';
+                    if (grado === 'SE2') return '2do grado';
+                    if (grado === 'SE3') return '3er grado';
+                    if (grado === 'SE4') return '4to grado';
+                    if (grado === 'SE5') return '5to grado';
+                    return grado;
+                };
+
+                // Mapear los campos del backend a los nombres que espera el frontend
+                const clienteMapeado = {
+                    codigo: res.data.codigoCliente,
+                    nombres: res.data.nombres,
+                    paterno: res.data.apellidoPaterno,
+                    materno: res.data.apellidoMaterno,
+                    tipoDoc: traducirTipoDocumento(res.data.tipoDocumento),
+                    numDoc: res.data.numDocumento,
+                    tipoCliente: traducirTipoCliente(res.data.tipoCliente),
+                    nivel: traducirNivel(res.data.nivel),
+                    grado: traducirGrado(res.data.grado),
+                    seccion: res.data.seccion,
+                    telefono1: res.data.telefono1,
+                    telefono2: res.data.telefono2,
+                    estado: res.data.clienteVigente ? 'Activo' : 'Inactivo'
+                };
+                setCliente(clienteMapeado);
+            } catch (err) {
+                setError('No se pudo cargar el cliente.');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCliente();
+    }, [id]);
+
     // Estados de datos
     const [contratos, setContratos] = useState(mockContratos);
     const [contratosFiltrados, setContratosFiltrados] = useState(mockContratos);
@@ -126,6 +202,12 @@ const AdminClienteDetalle = () => {
         finVigencia: null
     });
 
+    if (loading) {
+        return <Typography>Cargando cliente...</Typography>;
+    }
+    if (error) {
+        return <Typography color="error">{error}</Typography>;
+    }
     if (!cliente) {
         return <Typography>Cliente no encontrado</Typography>;
     }

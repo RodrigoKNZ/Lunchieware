@@ -4,9 +4,12 @@ const quejasModel = {
   // Obtener todas las quejas
   async obtenerTodas() {
     const query = `
-      SELECT q.*, u."nombreUsuario" 
+      SELECT q.*, 
+             CONCAT(c."nombres", ' ', c."apellidoPaterno", ' ', c."apellidoMaterno") as "nombreCompletoCliente",
+             u."nombreUsuario"
       FROM "Queja" q 
       LEFT JOIN "Usuario" u ON q."idUsuario" = u."idUsuario" 
+      LEFT JOIN "Cliente" c ON u."nombreUsuario" = c."codigoCliente"
       WHERE q."activo" = true 
       ORDER BY q."fechaCreacion" DESC
     `;
@@ -17,9 +20,12 @@ const quejasModel = {
   // Obtener queja por ID
   async obtenerPorId(idQueja) {
     const query = `
-      SELECT q.*, u."nombreUsuario" 
+      SELECT q.*, 
+             CONCAT(c."nombres", ' ', c."apellidoPaterno", ' ', c."apellidoMaterno") as "nombreCompletoCliente",
+             u."nombreUsuario"
       FROM "Queja" q 
       LEFT JOIN "Usuario" u ON q."idUsuario" = u."idUsuario" 
+      LEFT JOIN "Cliente" c ON u."nombreUsuario" = c."codigoCliente"
       WHERE q."idQueja" = $1 AND q."activo" = true
     `;
     const result = await pool.query(query, [idQueja]);
@@ -29,9 +35,12 @@ const quejasModel = {
   // Obtener quejas por código
   async obtenerPorCodigo(codigoQueja) {
     const query = `
-      SELECT q.*, u."nombreUsuario" 
+      SELECT q.*, 
+             CONCAT(c."nombres", ' ', c."apellidoPaterno", ' ', c."apellidoMaterno") as "nombreCompletoCliente",
+             u."nombreUsuario"
       FROM "Queja" q 
       LEFT JOIN "Usuario" u ON q."idUsuario" = u."idUsuario" 
+      LEFT JOIN "Cliente" c ON u."nombreUsuario" = c."codigoCliente"
       WHERE q."codigoQueja" = $1 AND q."activo" = true
     `;
     const result = await pool.query(query, [codigoQueja]);
@@ -41,9 +50,12 @@ const quejasModel = {
   // Obtener quejas resueltas
   async obtenerResueltas() {
     const query = `
-      SELECT q.*, u."nombreUsuario" 
+      SELECT q.*, 
+             CONCAT(c."nombres", ' ', c."apellidoPaterno", ' ', c."apellidoMaterno") as "nombreCompletoCliente",
+             u."nombreUsuario"
       FROM "Queja" q 
       LEFT JOIN "Usuario" u ON q."idUsuario" = u."idUsuario" 
+      LEFT JOIN "Cliente" c ON u."nombreUsuario" = c."codigoCliente"
       WHERE q."resuelto" = true AND q."activo" = true 
       ORDER BY q."fechaCreacion" DESC
     `;
@@ -54,9 +66,12 @@ const quejasModel = {
   // Obtener quejas pendientes
   async obtenerPendientes() {
     const query = `
-      SELECT q.*, u."nombreUsuario" 
+      SELECT q.*, 
+             CONCAT(c."nombres", ' ', c."apellidoPaterno", ' ', c."apellidoMaterno") as "nombreCompletoCliente",
+             u."nombreUsuario"
       FROM "Queja" q 
       LEFT JOIN "Usuario" u ON q."idUsuario" = u."idUsuario" 
+      LEFT JOIN "Cliente" c ON u."nombreUsuario" = c."codigoCliente"
       WHERE q."resuelto" = false AND q."activo" = true 
       ORDER BY q."fechaCreacion" DESC
     `;
@@ -86,22 +101,55 @@ const quejasModel = {
 
   // Actualizar queja
   async actualizar(idQueja, datos) {
-    const {
-      codigoQueja,
-      asunto,
-      detalle,
-      resuelto,
-      activo
-    } = datos;
+    // Construir dinámicamente la query basada en los campos que se envían
+    const campos = [];
+    const valores = [];
+    let contador = 1;
+
+    if (datos.codigoQueja !== undefined) {
+      campos.push(`"codigoQueja" = $${contador}`);
+      valores.push(datos.codigoQueja);
+      contador++;
+    }
+
+    if (datos.asunto !== undefined) {
+      campos.push(`"asunto" = $${contador}`);
+      valores.push(datos.asunto);
+      contador++;
+    }
+
+    if (datos.detalle !== undefined) {
+      campos.push(`"detalle" = $${contador}`);
+      valores.push(datos.detalle);
+      contador++;
+    }
+
+    if (datos.resuelto !== undefined) {
+      campos.push(`"resuelto" = $${contador}`);
+      valores.push(datos.resuelto);
+      contador++;
+    }
+
+    if (datos.activo !== undefined) {
+      campos.push(`"activo" = $${contador}`);
+      valores.push(datos.activo);
+      contador++;
+    }
+
+    if (campos.length === 0) {
+      throw new Error('No se proporcionaron campos para actualizar');
+    }
+
+    valores.push(idQueja); // ID al final
 
     const query = `
       UPDATE "Queja"
-      SET "codigoQueja" = $1, "asunto" = $2, "detalle" = $3, "resuelto" = $4, "activo" = $5
-      WHERE "idQueja" = $6
+      SET ${campos.join(', ')}
+      WHERE "idQueja" = $${contador}
       RETURNING *
     `;
-    const values = [codigoQueja, asunto, detalle, resuelto, activo, idQueja];
-    const result = await pool.query(query, values);
+    
+    const result = await pool.query(query, valores);
     return result.rows[0];
   },
 

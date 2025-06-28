@@ -1,5 +1,8 @@
 const express = require('express');
 const clientesModel = require('../models/clientes');
+const contratosModel = require('../models/contratos');
+const usuariosModel = require('../models/usuarios');
+const pool = require('../db');
 
 const router = express.Router();
 
@@ -164,6 +167,28 @@ router.post('/', async (req, res) => {
       activo
     });
 
+    // Crear usuario asociado automáticamente
+    await usuariosModel.crear({
+      nombreUsuario: codigoCliente,
+      password: numDocumento,
+      rol: 'cliente',
+      accesoRealizado: false,
+      activo: true
+    });
+
+    // Crear contrato para el año actual usando el modelo formal
+    const hoy = new Date();
+    const year = hoy.getFullYear();
+    const fechaInicio = `${year}-01-01`;
+    const fechaFin = `${year}-12-31`;
+    const fechaCreacion = hoy.toISOString().slice(0,10);
+    await contratosModel.crear({
+      idCliente: nuevoCliente.idCliente,
+      fechaInicioVigencia: fechaInicio,
+      fechaFinVigencia: fechaFin,
+      fechaCreacion: fechaCreacion
+    });
+
     res.status(201).json({
       message: 'Cliente creado exitosamente',
       data: nuevoCliente
@@ -241,6 +266,56 @@ router.get('/estadisticas/totales', async (req, res) => {
     res.status(500).json({ 
       message: 'Error interno del servidor' 
     });
+  }
+});
+
+// Carga/actualización masiva de clientes
+router.post('/masivo', async (req, res) => {
+  try {
+    const clientes = req.body;
+    if (!Array.isArray(clientes) || clientes.length === 0) {
+      return res.status(400).json({ message: 'Se requiere un array de clientes' });
+    }
+    const resultados = [];
+    const hoy = new Date();
+    const year = hoy.getFullYear();
+    const fechaInicio = `${year}-01-01`;
+    const fechaFin = `${year}-12-31`;
+    const fechaCreacion = hoy.toISOString().slice(0,10);
+    for (const cli of clientes) {
+      // Buscar cliente activo por código
+      const existente = await clientesModel.obtenerPorCodigo(cli.codigoCliente);
+      let cliente;
+      if (existente) {
+        // Actualizar datos
+        await clientesModel.actualizar(existente.idCliente, { ...cli, clienteVigente: true, activo: true });
+        cliente = await clientesModel.obtenerPorId(existente.idCliente);
+        resultados.push({ codigoCliente: cli.codigoCliente, accion: 'actualizado' });
+      } else {
+        // Crear cliente
+        cliente = await clientesModel.crear({ ...cli, clienteVigente: true, activo: true });
+        resultados.push({ codigoCliente: cli.codigoCliente, accion: 'creado' });
+        // Crear usuario asociado automáticamente
+        await usuariosModel.crear({
+          nombreUsuario: cli.codigoCliente,
+          password: cli.numDocumento,
+          rol: 'cliente',
+          accesoRealizado: false,
+          activo: true
+        });
+        // Crear contrato para el año actual usando el modelo formal
+        await contratosModel.crear({
+          idCliente: cliente.idCliente,
+          fechaInicioVigencia: fechaInicio,
+          fechaFinVigencia: fechaFin,
+          fechaCreacion: fechaCreacion
+        });
+      }
+    }
+    res.json({ message: 'Carga masiva completada', resultados });
+  } catch (error) {
+    console.error('Error en carga masiva:', error);
+    res.status(500).json({ message: 'Error interno en carga masiva', error: error.message });
   }
 });
 

@@ -37,6 +37,18 @@ const clienteService = {
   async eliminar(idCliente) {
     const response = await axios.delete(`${API_BASE_URL}/${idCliente}`);
     return response.data;
+  },
+
+  // Carga/actualización masiva de clientes
+  async cargaMasiva(clientes) {
+    const response = await axios.post(`${API_BASE_URL}/masivo`, clientes);
+    return response.data;
+  },
+
+  // Obtener contratos por cliente
+  async obtenerContratosPorCliente(idCliente) {
+    const response = await axios.get(`http://localhost:5000/api/contratos/cliente/${idCliente}`);
+    return response.data;
   }
 };
 

@@ -15,7 +15,17 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import cajaChicaService from '../services/cajaChicaService';
 
-const tiposDocumento = ['Boleta de venta', 'Factura', 'Recibo por honorarios', 'Otro'];
+const tiposDocumento = [
+  { value: 'B', label: 'Boleta' },
+  { value: 'F', label: 'Factura' },
+  { value: 'N', label: 'Nota' }
+];
+
+// Función para obtener el label del tipo de documento
+const getTipoDocumentoLabel = (codigo) => {
+  const tipo = tiposDocumento.find(t => t.value === codigo);
+  return tipo ? tipo.label : codigo;
+};
 
 const AdminCajaChicaDetalle = () => {
   const { id } = useParams(); // id es el numeroLiquidacion
@@ -393,7 +403,7 @@ const AdminCajaChicaDetalle = () => {
                 <TableBody>
                   {paginatedMovimientos.map((mov) => (
                     <TableRow key={mov.id}>
-                      <TableCell>{mov.tipoDocumento}</TableCell>
+                      <TableCell>{getTipoDocumentoLabel(mov.tipoDocumento)}</TableCell>
                       <TableCell>{mov.serie}</TableCell>
                       <TableCell>{mov.numero}</TableCell>
                       <TableCell>{mov.referencia}</TableCell>
@@ -515,7 +525,7 @@ const AdminCajaChicaDetalle = () => {
                   fullWidth 
                   size="small"
                 >
-                  {tiposDocumento.map(option => <MenuItem key={option} value={option}>{option}</MenuItem>)}
+                  {tiposDocumento.map(option => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
                 </TextField>
               </Grid>
               <Grid item xs={12} sm={6}>

@@ -4,9 +4,12 @@ const sugerenciasModel = {
   // Obtener todas las sugerencias
   async obtenerTodas() {
     const query = `
-      SELECT s.*, u."nombreUsuario" 
+      SELECT s.*, 
+             CONCAT(c."nombres", ' ', c."apellidoPaterno", ' ', c."apellidoMaterno") as "nombreCompletoCliente",
+             u."nombreUsuario"
       FROM "Sugerencia" s 
       LEFT JOIN "Usuario" u ON s."idUsuario" = u."idUsuario" 
+      LEFT JOIN "Cliente" c ON u."nombreUsuario" = c."codigoCliente"
       WHERE s."activo" = true 
       ORDER BY s."fechaCreacion" DESC
     `;
@@ -17,9 +20,12 @@ const sugerenciasModel = {
   // Obtener sugerencia por ID
   async obtenerPorId(idSugerencia) {
     const query = `
-      SELECT s.*, u."nombreUsuario" 
+      SELECT s.*, 
+             CONCAT(c."nombres", ' ', c."apellidoPaterno", ' ', c."apellidoMaterno") as "nombreCompletoCliente",
+             u."nombreUsuario"
       FROM "Sugerencia" s 
       LEFT JOIN "Usuario" u ON s."idUsuario" = u."idUsuario" 
+      LEFT JOIN "Cliente" c ON u."nombreUsuario" = c."codigoCliente"
       WHERE s."idSugerencia" = $1 AND s."activo" = true
     `;
     const result = await pool.query(query, [idSugerencia]);
@@ -29,9 +35,12 @@ const sugerenciasModel = {
   // Obtener sugerencia por código
   async obtenerPorCodigo(codigoSugerencia) {
     const query = `
-      SELECT s.*, u."nombreUsuario" 
+      SELECT s.*, 
+             CONCAT(c."nombres", ' ', c."apellidoPaterno", ' ', c."apellidoMaterno") as "nombreCompletoCliente",
+             u."nombreUsuario"
       FROM "Sugerencia" s 
       LEFT JOIN "Usuario" u ON s."idUsuario" = u."idUsuario" 
+      LEFT JOIN "Cliente" c ON u."nombreUsuario" = c."codigoCliente"
       WHERE s."codigoSugerencia" = $1 AND s."activo" = true
     `;
     const result = await pool.query(query, [codigoSugerencia]);
@@ -60,21 +69,49 @@ const sugerenciasModel = {
 
   // Actualizar sugerencia
   async actualizar(idSugerencia, datos) {
-    const {
-      codigoSugerencia,
-      asunto,
-      detalle,
-      activo
-    } = datos;
+    // Construir dinámicamente la query basada en los campos que se envían
+    const campos = [];
+    const valores = [];
+    let contador = 1;
+
+    if (datos.codigoSugerencia !== undefined) {
+      campos.push(`"codigoSugerencia" = $${contador}`);
+      valores.push(datos.codigoSugerencia);
+      contador++;
+    }
+
+    if (datos.asunto !== undefined) {
+      campos.push(`"asunto" = $${contador}`);
+      valores.push(datos.asunto);
+      contador++;
+    }
+
+    if (datos.detalle !== undefined) {
+      campos.push(`"detalle" = $${contador}`);
+      valores.push(datos.detalle);
+      contador++;
+    }
+
+    if (datos.activo !== undefined) {
+      campos.push(`"activo" = $${contador}`);
+      valores.push(datos.activo);
+      contador++;
+    }
+
+    if (campos.length === 0) {
+      throw new Error('No se proporcionaron campos para actualizar');
+    }
+
+    valores.push(idSugerencia); // ID al final
 
     const query = `
       UPDATE "Sugerencia"
-      SET "codigoSugerencia" = $1, "asunto" = $2, "detalle" = $3, "activo" = $4
-      WHERE "idSugerencia" = $5
+      SET ${campos.join(', ')}
+      WHERE "idSugerencia" = $${contador}
       RETURNING *
     `;
-    const values = [codigoSugerencia, asunto, detalle, activo, idSugerencia];
-    const result = await pool.query(query, values);
+    
+    const result = await pool.query(query, valores);
     return result.rows[0];
   },
 

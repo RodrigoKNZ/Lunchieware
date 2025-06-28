@@ -1,0 +1,248 @@
+Diccionario de datos
+
+Entidad: Usuario
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idUsuario                INTEGER             Sí   No   No    —                             Identificador único del usuario en el sistema.
+nombreUsuario            VARCHAR(100)        No   No   No    —                             Nombre de usuario utilizado para iniciar sesión.
+contraseña               VARCHAR(255)        No   No   No    —                             Contraseña encriptada del usuario.
+accesoRealizado          BOOLEAN             No   No   No    —                             Indica si el usuario ha iniciado sesión exitosamente al menos una vez.
+rol                      VARCHAR(50)         No   No   No    —                             Rol asignado al usuario para definir su nivel de acceso en el sistema.
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: Cliente
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idCliente                INTEGER             Sí   No   No    —                             Identificador único del cliente
+codigoCliente            VARCHAR(30)         No   No   No    —                             Código asignado internamente al cliente (único)
+nombres                  VARCHAR(100)        No   No   No    —                             Nombres del cliente
+apellidoPaterno          VARCHAR(100)        No   No   No    —                             Apellido paterno del cliente
+apellidoMaterno          VARCHAR(100)        No   No   No    —                             Apellido materno del cliente
+nivel                    CHAR(2)             No   No   Sí    —                             Nivel educativo
+Inicial: “IN”
+Primaria: “PR”
+Secundaria: “SE”
+grado                    CHAR(3)             No   No   Sí    —                             Grado del estudiante, conformado por la abreviatura del nivel y un número indicador del grado.
+										           Inicial:
+										           4 años: “IN4”
+										           5 años: “IN5”
+										           Primaria:
+										           1er grado: “PR1”
+										           2do grado: “PR2”
+										           3er grado: “PR3”
+										           4to grado: “PR4”
+										           5to grado: “PR5”
+										           6to grado: “PR6”
+										           Secundaria:
+										           1er grado: “SE1”
+										           2do grado: “SE2”
+										           3er grado: “SE3”
+										           4to grado: “SE4”
+										           5to grado: “SE5”
+seccion                  CHAR(1)             No   No   Sí    —                             Sección del grupo escolar (A, B, C o D)
+telefono1                VARCHAR(20)         No   No   No    —                             Teléfono de contacto principal del cliente
+telefono2                VARCHAR(20)         No   No   Sí    —                             Teléfono alternativo
+tipoDocumento            VARCHAR(5)          No   No   No    —                             Tipo de documento:
+										           Documento nacional de identidad: “DNI”
+										           Carnet de extranjería: “CEX”
+numDocumento             VARCHAR(20)         No   No   No    —                             Número de documento de identidad (único)
+tipoCliente              CHAR(1)             No   No   No    —                             Tipo de cliente
+Estudiante: “E” 
+Docente: “D”
+General: ”G”
+clienteVigente           BOOLEAN             No   No   No    —                             Indica si el cliente cuenta con al menos un contrato vigente en el momento.
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: Contrato
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idContrato               INTEGER             Sí   No   No    —                             Identificador único del contrato
+codigoContrato           VARCHAR(30)         No   No   No    —                             Código alfanumérico único asignado al contrato
+idCliente                INTEGER             No   Sí   No    Cliente(idCliente)            Cliente asociado al contrato
+fechaInicioVigencia      DATE                No   No   No    —                             Fecha desde la cual el contrato entra en vigencia
+fechaFinVigencia         DATE                No   No   No    —                             Fecha en la que el contrato deja de tener validez
+fechaCreacion            DATE                No   No   No    —                             Fecha en que se generó el contrato
+importeAbonos            NUMERIC(10,2)       No   No   No    —                             Monto total de abonos registrados en el contrato
+importeConsumos          NUMERIC(10,2)       No   No   No    —                             Monto total de consumos realizados bajo este contrato
+importeSaldo             NUMERIC(10,2)       No   No   No    —                             Saldo disponible resultante del contrato
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: Consumo
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idConsumo                INTEGER             Sí   No   No    —                             Identificador único del consumo.
+fechaConsumo             DATE                No   No   No    —                             Fecha en que se registró el consumo.
+idContrato               INTEGER             No   Sí   No    Contrato(idContrato)          Identificador del contrato asociado al consumo.
+activo                   BOOLEAN             No   No   No    —                             Campo de eliminación lógica. Indica si el registro está activo o ha sido dado de baja.
+
+Entidad: ComprobanteVenta
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idComprobante            INTEGER             Sí   No   No    —                             Identificador único del comprobante de venta
+tipoComprobante          CHAR(1)             No   No   No    —                             Tipo de comprobante:
+										           Boleta: “B”
+										           Factura: “F”
+										           Nota de venta: “N”
+numeroSerie              VARCHAR(20)         No   No   No    —                             Serie del comprobante
+numeroComprobante        VARCHAR(20)         No   No   No    —                             Número del comprobante
+fechaDocumento           DATE                No   No   No    —                             Fecha de emisión del comprobante
+idContrato               INTEGER             No   Sí   No    Contrato(idContrato)          Contrato asociado al comprobante
+formaDePago              VARCHAR(20)         No   No   No    —                             Forma de pago (Contado, Crédito, etc.)
+medioDePago              VARCHAR(20)         No   No   No    —                             Medio de pago (Efectivo, Transferencia, etc.)
+importeImponible         NUMERIC(10,2)       No   No   No    —                             Monto base sin impuestos
+importeImpuesto          NUMERIC(10,2)       No   No   No    —                             Importe del impuesto aplicado
+importeTotal             NUMERIC(10,2)       No   No   No    —                             Monto total del comprobante
+saldoAlMomentoDeVenta    NUMERIC(10,2)       No   No   No    —                             Saldo del contrato al momento que se realizó la venta (sin tomar en cuenta el descuento por la venta)
+idConsumo                INTEGER             No   Sí   No    Consumo(idConsumo)            Consumo al que se relaciona el comprobante de venta.
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: FilaDetalleComprobante
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idComprobante            INTEGER             Sí   Sí   No    ComprobanteVenta (idComprobante)Identificador del comprobante al que pertenece esta fila
+idFila                   INTEGER             Sí   No   No    —                             Número secuencial único dentro del comprobante
+idProducto               INTEGER             No   Sí   No    Producto(idProducto)          Producto vendido
+cantidad                 INTEGER             No   No   No    —                             Cantidad de unidades del producto
+importeTotal             NUMERIC(10,2)       No   No   No    —                             Importe total de esta línea del comprobante
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: Producto
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idProducto               INTEGER             Sí   No   No    —                             Identificador único del producto.
+codigoProducto           VARCHAR(30)         No   No   No    —                             Código único asignado al producto.
+nombreProducto           VARCHAR(255)        No   No   No    —                             Nombre completo del producto.
+nombreCorto              VARCHAR(20)         No   No   No    —                             Nombre resumido del producto.
+tipoProducto             CHAR(1)             No   No   No    —                             Tipo o categoría del producto, son 3 categorías:
+										           Menú: “M”
+										           Plato a la carta: “C”
+										           Diversos: “D”
+costoUnitario            NUMERIC(10,2)       No   No   No    —                             Costo por unidad del producto.
+afectoIGV                BOOLEAN             No   No   No    —                             Indica si el producto está afecto al IGV (impuesto general a las ventas).
+disponible               BOOLEAN             No   No   No    —                             Indica si el producto está disponible para la venta.
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: Abono
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idAbono                  INTEGER             Sí   No   No    —                             Identificador único del abono registrado
+idContrato               INTEGER             No   Sí   No    Contrato(idContrato)          Contrato al cual se aplica el abono
+fechaAbono               DATE                No   No   No    —                             Fecha en la que se realizó el abono
+idCuenta                 INTEGER             No   Sí   No    CuentaBancaria(idCuenta)      Cuenta bancaria del comedor a la cual se realizó el abono
+numRecibo                VARCHAR(20)         No   No   No    —                             Número de recibo o comprobante del abono
+importeAbono             NUMERIC(10,2)       No   No   No    —                             Monto total abonado.
+registroManual           BOOLEAN             No   No   No    —                             Indica si el abono fue registrado manualmente.
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: Devolucion
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idDevolucion             INTEGER             Sí   No   No    —                             Identificador único de la devolución
+idContrato               INTEGER             No   Sí   No    Contrato(idContrato)          Contrato al que está asociada la devolución
+fechaDevolucion          DATE                No   No   No    —                             Fecha en que se realizó la devolución
+idCuenta                 INTEGER             No   Sí   No    CuentaBancaria(idCuenta)      Cuenta bancaria del comedor utilizada para devolver el importe
+numRecibo                VARCHAR(20)         No   No   No    —                             Número de recibo generado por la devolución
+importeDevolucion        NUMERIC(10,2)       No   No   No    —                             Monto total devuelto
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: CajaChica
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idCajaChica              INTEGER             Sí   No   No    —                             Identificador único del registro de caja chica
+numeroLiquidacion        VARCHAR(30)         No   No   No    —                             Número asignado a la caja chica
+fechaApertura            DATE                No   No   No    —                             Fecha en que se abre la caja chica
+saldoInicial             NUMERIC(10,2)       No   No   No    —                             Monto con el que se inicia la caja chica
+saldoFinal               NUMERIC(10,2)       No   No   No    —                             Saldo final al cerrar al liquidar la caja chica
+observaciones            TEXT                No   No   Sí    —                             Comentarios o notas adicionales sobre la caja chica
+abierta                  BOOLEAN             No   No   No    —                             Indica si la caja chica se encuentra actualmente abierta.
+fechaLiquidacion         DATE                No   No   Sí    —                             Fecha en la que se realizó la liquidación de la caja (puede ser nula si aún no se liquida).
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: MovimientoDeCajaChica
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idMovimiento             INTEGER             Sí   No   No    —                             Identificador único del movimiento registrado
+idCajaChica              INTEGER             No   Sí   No    CajaChica(idCajaChica)        Identificador de la caja chica a la que pertenece el movimiento
+tipoDocumento            CHAR(1)             No   No   No    —                             Tipo de comprobante
+										           Boleta: “B”
+										           Factura: “F”
+										           Nota: “N”
+referencia               VARCHAR(50)         No   No   No    —                             Referencia del proveedor, entidad o concepto relacionado
+serie                    VARCHAR(20)         No   No   No    —                             Serie del documento
+numero                   VARCHAR(20)         No   No   No    —                             Número del documento
+fechaMovimiento          DATE                No   No   No    —                             Fecha en que se realizó el movimiento
+montoImponible           NUMERIC(10,2)       No   No   No    —                             Monto base sin impuestos del movimiento
+impuestos                NUMERIC(10,2)       No   No   No    —                             Monto correspondiente a los impuestos aplicados
+montoTotal               NUMERIC(10,2)       No   No   No    —                             Monto total del movimiento (imponible + impuestos)
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: Banco
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idBanco                  INTEGER             Sí   No   No    —                             Identificador único del banco.
+codigoBanco              VARCHAR(30)         No   No   No    —                             Código único asignado al banco.
+nombreBanco              VARCHAR(100)        No   No   No    —                             Nombre oficial del banco.
+siglas                   VARCHAR(10)         No   No   No    —                             Abreviatura o sigla con la que se identifica el banco.
+disponible               BOOLEAN             No   No   No    —                             Indica si el banco está disponible para operaciones.
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: CuentaBancaria
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idCuenta                 INTEGER             Sí   No   No    —                             Identificador único de la cuenta bancaria registrada
+idBanco                  INTEGER             No   Sí   No    Banco(idBanco)                Banco al que pertenece la cuenta bancaria
+codigoCuenta             VARCHAR(30)         No   No   No    —                             Código o número de la cuenta bancaria
+codigoAgencia            VARCHAR(10)         No   No   No    —                             Código de la agencia asociada a la cuenta
+tipoCuenta               VARCHAR(20)         No   No   No    —                             Tipo de cuenta (Ejemplo: Cuenta de recaudación)
+disponible               BOOLEAN             No   No   No    —                             Indica si la cuenta se encuentra disponible para operaciones.
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: ProgramacionMenu
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idMenu                   INTEGER             Sí   No   No    —                             Identificador único del menú programado.
+fecha                    DATE                No   No   No    —                             Fecha en la que se servirá el menú. Única por programación.
+entrada                  VARCHAR(100)        No   No   No    —                             Nombre del platillo de entrada.
+plato                    VARCHAR(100)        No   No   No    —                             Nombre del plato principal.
+platoALaCarta            VARCHAR(100)        No   No   Sí    —                             Opción alternativa al plato principal, si aplica.
+postre                   VARCHAR(100)        No   No   No    —                             Nombre del postre incluido en el menú.
+refresco                 VARCHAR(100)        No   No   No    —                             Bebida servida como parte del menú.
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: Sugerencia
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idSugerencia             INTEGER             Sí   No   No    —                             Identificador único de la sugerencia.
+codigoSugerencia         VARCHAR(30)         No   No   No    —                             Código único asignado a la sugerencia.
+asunto                   TEXT                No   No   Sí    —                             Asunto de la sugerencia.
+detalle                  TEXT                No   No   Sí    —                             Descripción detallada de la sugerencia.
+fechaCreacion            DATE                No   No   No    —                             Fecha en la que fue registrada la sugerencia.
+idUsuario                INTEGER             No   Sí   No    Usuario(idUsuario)            Usuario que registró la sugerencia.
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: Queja
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idQueja                  INTEGER             Sí   No   No    —                             Identificador único de la queja.
+codigoQueja              VARCHAR(30)         No   No   No    —                             Código único asignado a la queja.
+asunto                   TEXT                No   No   Sí    —                             Asunto principal de la queja.
+resuelto                 BOOLEAN             No   No   No    —                             Indica si la queja ha sido resuelta (true) o no (false).
+detalle                  TEXT                No   No   Sí    —                             Descripción detallada de la queja.
+fechaCreacion            DATE                No   No   No    —                             Fecha en la que fue registrada la queja.
+idUsuario                INTEGER             No   Sí   No    Usuario(idUsuario)            Usuario que registró la queja.
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
+
+Entidad: NotaDeCredito
+Campo                    Tipo de dato        PK   FK   Nulo  Referencia                    Descripción
+--------------------------------------------------------------------------------------------------------------------------------------------
+idNotaDeCredito          INTEGER             Sí   No   No    —                             Identificador único de la nota de crédito.
+numeroSerie              VARCHAR(20)         No   No   No    —                             Serie de la nota de crédito.
+numeroDocumento          VARCHAR(20)         No   No   No    —                             Número del documento de la nota de crédito.
+motivo                   TEXT                No   No   Sí    —                             Motivo de la emisión de la nota de crédito.
+fechaDocumento           DATE                No   No   No    —                             Fecha de emisión del documento.
+idComprobante            INTEGER             No   Sí   No    ComprobanteVenta(idComprobante)Comprobante de venta asociado a la nota de crédito.
+importeInafecto          NUMERIC(10,2)       No   No   No    —                             Monto no afecto a impuestos.
+importeImponible         NUMERIC(10,2)       No   No   No    —                             Base imponible sobre la cual se calcula el impuesto.
+importeImpuesto          NUMERIC(10,2)       No   No   No    —                             Monto del impuesto aplicado.
+importeTotal             NUMERIC(10,2)       No   No   No    —                             Monto total de la nota de crédito.
+activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.

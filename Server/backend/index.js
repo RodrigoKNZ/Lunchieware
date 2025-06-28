@@ -11,6 +11,8 @@ const productosRoutes = require('./routes/productos');
 const cajaChicaRoutes = require('./routes/cajaChica');
 const movimientoCajaChicaRoutes = require('./routes/movimientoCajaChica');
 const sugerenciasRoutes = require('./routes/sugerencias');
+const contratosRoutes = require('./routes/contratos');
+const abonosRoutes = require('./routes/abonos');
 
 const app = express();
 
@@ -70,6 +72,8 @@ app.use('/api/sugerencias', sugerenciasRoutes);
 app.use('/api/productos', productosRoutes);
 app.use('/api/cajachica', cajaChicaRoutes);
 app.use('/api/movimientos-cajachica', movimientoCajaChicaRoutes);
+app.use('/api/contratos', contratosRoutes);
+app.use('/api/abonos', abonosRoutes);
 
 // Middleware para manejar rutas no encontradas
 app.use('*', (req, res) => {
@@ -99,4 +103,6 @@ app.listen(PORT, () => {
   console.log(`📦 Endpoints de productos: http://localhost:${PORT}/api/productos`);
   console.log(`💰 Endpoints de caja chica: http://localhost:${PORT}/api/cajachica`);
   console.log(`📊 Endpoints de movimientos caja chica: http://localhost:${PORT}/api/movimientos-cajachica`);
+  console.log(`📄 Endpoints de contratos: http://localhost:${PORT}/api/contratos`);
+  console.log(`📄 Endpoints de abonos: http://localhost:${PORT}/api/abonos`);
 });

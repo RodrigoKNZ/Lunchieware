@@ -47,7 +47,8 @@ router.post('/login', async (req, res) => {
       usuario: {
         id: usuario.idUsuario,
         nombreUsuario: usuario.nombreUsuario,
-        rol: usuario.rol
+        rol: usuario.rol,
+        accesoRealizado: usuario.accesoRealizado
       }
     });
 
@@ -126,7 +127,8 @@ router.get('/verificar', async (req, res) => {
       usuario: {
         id: usuario.idUsuario,
         nombreUsuario: usuario.nombreUsuario,
-        rol: usuario.rol
+        rol: usuario.rol,
+        accesoRealizado: usuario.accesoRealizado
       }
     });
 
@@ -135,6 +137,22 @@ router.get('/verificar', async (req, res) => {
     res.status(401).json({ 
       message: 'Token inválido' 
     });
+  }
+});
+
+// Cambiar contraseña (y marcar acceso realizado)
+router.post('/cambiar-password', async (req, res) => {
+  try {
+    const { idUsuario, nuevaPassword } = req.body;
+    if (!idUsuario || !nuevaPassword) {
+      return res.status(400).json({ message: 'idUsuario y nuevaPassword son requeridos' });
+    }
+    await usuariosModel.cambiarPassword(idUsuario, nuevaPassword);
+    await usuariosModel.marcarAcceso(idUsuario);
+    res.json({ message: 'Contraseña cambiada exitosamente' });
+  } catch (error) {
+    console.error('Error cambiando contraseña:', error);
+    res.status(500).json({ message: 'Error cambiando contraseña', error: error.message });
   }
 });
 

@@ -1,5 +1,5 @@
 import { Box, Button, TextField, Typography, Paper, Avatar, useTheme, useMediaQuery, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import axios from 'axios';
 
 const Login = ({ onLogin }) => {
@@ -9,6 +9,12 @@ const Login = ({ onLogin }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [userToChange, setUserToChange] = useState(null);
+  const newPasswordRef = useRef();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,12 +31,72 @@ const Login = ({ onLogin }) => {
       // Guardar usuario en localStorage
       localStorage.setItem('user', JSON.stringify(userData));
       
+      // Si requiere cambio de contraseña, mostrar modal
+      if (userData.accesoRealizado === false) {
+        setUserToChange(userData);
+        setShowChangePassword(true);
+        setNewPassword("");
+        setConfirmPassword("");
+        setChangePasswordError("");
+        setLoading(false);
+        setTimeout(() => newPasswordRef.current && newPasswordRef.current.focus(), 200);
+        return;
+      }
       if (onLogin) onLogin(userData);
     } catch (err) {
       console.error('Error en login:', err); // Para debugging
       setError(true);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setChangePasswordError("");
+    if (!newPassword || !confirmPassword) {
+      setChangePasswordError("Debes ingresar y confirmar la nueva contraseña.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setChangePasswordError("La nueva contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setChangePasswordError("Las contraseñas no coinciden.");
+      return;
+    }
+    try {
+      await axios.post('http://localhost:5000/api/auth/cambiar-password', {
+        idUsuario: userToChange.id,
+        nuevaPassword: newPassword
+      });
+      // Cerrar modal y continuar login
+      setShowChangePassword(false);
+      setUserToChange(null);
+      setNewPassword("");
+      setConfirmPassword("");
+      setChangePasswordError("");
+      // Volver a hacer login automáticamente con la nueva contraseña
+      setPassword(newPassword);
+      setTimeout(async () => {
+        setLoading(true);
+        setError(false);
+        try {
+          const res = await axios.post('http://localhost:5000/api/auth/login', {
+            nombreUsuario: usuario,
+            password: newPassword
+          });
+          const userData = res.data.usuario;
+          localStorage.setItem('user', JSON.stringify(userData));
+          if (onLogin) onLogin(userData);
+        } catch (err) {
+          setError(true);
+        } finally {
+          setLoading(false);
+        }
+      }, 100);
+    } catch (err) {
+      setChangePasswordError("Error al cambiar la contraseña. Intenta nuevamente.");
     }
   };
 
@@ -125,6 +191,55 @@ const Login = ({ onLogin }) => {
         <DialogActions sx={{ justifyContent: 'center' }}>
           <Button onClick={handleClose} variant="contained" color="primary" autoFocus>
             Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Modal de cambio de contraseña obligatorio */}
+      <Dialog
+        open={showChangePassword}
+        PaperProps={{ sx: { borderRadius: 3, minWidth: 340 } }}
+        BackdropProps={{
+          sx: {
+            backdropFilter: 'blur(4px)',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+          },
+        }}
+        disableEscapeKeyDown
+        disableBackdropClick
+      >
+        <DialogTitle sx={{ textAlign: 'center', fontWeight: 'bold', color: 'primary.main' }}>
+          Cambia tu contraseña
+        </DialogTitle>
+        <DialogContent>
+          <Typography align="center" sx={{ mb: 2 }}>
+            Es necesario que cambies tu contraseña antes de continuar.
+          </Typography>
+          <TextField
+            label="Nueva contraseña"
+            type="password"
+            fullWidth
+            inputRef={newPasswordRef}
+            value={newPassword}
+            onChange={e => setNewPassword(e.target.value)}
+            sx={{ mb: 2 }}
+            autoFocus
+          />
+          <TextField
+            label="Confirmar nueva contraseña"
+            type="password"
+            fullWidth
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+          />
+          {changePasswordError && (
+            <Typography color="error" sx={{ mt: 1, fontSize: 14 }} align="center">
+              {changePasswordError}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center' }}>
+          <Button onClick={handleChangePassword} variant="contained" color="primary">
+            Guardar nueva contraseña
           </Button>
         </DialogActions>
       </Dialog>
