@@ -78,6 +78,44 @@ const contratosModel = {
     const query = 'UPDATE "Contrato" SET "activo" = false WHERE "idContrato" = $1 RETURNING *';
     const result = await pool.query(query, [idContrato]);
     return result.rows[0];
+  },
+
+  // Actualizar saldo del contrato después de un abono
+  async actualizarSaldoDespuesAbono(idContrato, montoAbono) {
+    try {
+      // Obtener el contrato actual
+      const contrato = await this.obtenerPorId(idContrato);
+      if (!contrato) {
+        throw new Error(`Contrato con ID ${idContrato} no encontrado`);
+      }
+
+      // Calcular nuevos valores
+      const nuevoImporteAbonos = parseFloat(contrato.importeAbonos || 0) + parseFloat(montoAbono);
+      const nuevoSaldo = parseFloat(contrato.importeConsumos || 0) - nuevoImporteAbonos;
+
+      // Actualizar el contrato
+      const datosActualizados = {
+        ...contrato,
+        importeAbonos: nuevoImporteAbonos,
+        importeSaldo: nuevoSaldo
+      };
+
+      const contratoActualizado = await this.actualizar(idContrato, datosActualizados);
+      
+      console.log('Saldo del contrato actualizado:', {
+        contrato: contrato.codigoContrato,
+        abonoAnterior: contrato.importeAbonos,
+        nuevoAbono: montoAbono,
+        totalAbonos: nuevoImporteAbonos,
+        saldoAnterior: contrato.importeSaldo,
+        nuevoSaldo: nuevoSaldo
+      });
+
+      return contratoActualizado;
+    } catch (error) {
+      console.error('Error actualizando saldo del contrato:', error);
+      throw error;
+    }
   }
 };
 

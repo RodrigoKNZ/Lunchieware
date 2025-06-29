@@ -152,6 +152,14 @@ const clientesModel = {
     `;
     const result = await pool.query(query);
     return result.rows[0];
+  },
+
+  // Buscar cliente por email (placeholder - implementar cuando tengas campo email)
+  async obtenerPorEmail(email) {
+    // TODO: Implementar cuando tengas un campo email en la tabla Cliente
+    // Por ahora, retornar null para que se use la lógica de fallback
+    console.log('Búsqueda por email no implementada aún:', email);
+    return null;
   }
 };
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const usuariosModel = require('../models/usuarios');
+const cookieParser = require('cookie-parser');
 
 const router = express.Router();
 
@@ -40,6 +41,15 @@ router.post('/login', async (req, res) => {
     await usuariosModel.marcarAcceso(usuario.idUsuario);
 
     const token = generarToken(usuario);
+
+    // Enviar el token en una cookie segura
+    res.cookie('token', token, {
+      // httpOnly: true, // Temporalmente desactivado para pruebas
+      secure: false, // Cambia a true si usas HTTPS
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 24 * 60 * 60 * 1000 // 24 horas
+    });
 
     res.json({
       message: 'Login exitoso',
@@ -154,6 +164,38 @@ router.post('/cambiar-password', async (req, res) => {
     console.error('Error cambiando contraseña:', error);
     res.status(500).json({ message: 'Error cambiando contraseña', error: error.message });
   }
+});
+
+// Obtener usuario autenticado desde la cookie
+router.get('/me', async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({ message: 'No autenticado' });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const usuario = await usuariosModel.buscarPorId(decoded.id);
+    if (!usuario) {
+      return res.status(401).json({ message: 'Usuario no encontrado' });
+    }
+    res.json({
+      usuario: {
+        id: usuario.idUsuario,
+        nombreUsuario: usuario.nombreUsuario,
+        rol: usuario.rol,
+        accesoRealizado: usuario.accesoRealizado
+      }
+    });
+  } catch (error) {
+    console.error('Error en /me:', error);
+    res.status(401).json({ message: 'Token inválido' });
+  }
+});
+
+// Logout: eliminar la cookie de sesión
+router.post('/logout', (req, res) => {
+  res.clearCookie('token', { path: '/' });
+  res.json({ message: 'Sesión cerrada' });
 });
 
 module.exports = router; 

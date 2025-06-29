@@ -1,0 +1,16 @@
+{
+  "name": "lunchieware",
+  "version": "1.0.0",
+  "description": "Sistema de gestión de comedor universitario",
+  "scripts": {
+    "build": "cd Client/frontend && npm install && npm run build",
+    "dev": "concurrently \"cd Server/backend && npm run dev\" \"cd Client/frontend && npm run dev\"",
+    "install-deps": "npm install && cd Client/frontend && npm install && cd ../../Server/backend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 

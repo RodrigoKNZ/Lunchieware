@@ -62,7 +62,7 @@ const ClientLayout = ({ onLogout }) => {
         >
           <Box>
             <Toolbar sx={{ minHeight: 80, display: 'flex', alignItems: 'center', px: 2 }}>
-              <Avatar src="/src/assets/LogoLunchieware.png" alt="Logo" sx={{ width: 40, height: 40, mr: 1 }} />
+              <Avatar src="/LogoLunchieware.png" alt="Logo" sx={{ width: 40, height: 40, mr: 1 }} />
               <Typography variant="h6" fontWeight={600} color="text.primary">
                 Lunchieware
               </Typography>

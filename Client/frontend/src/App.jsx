@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ClientLayout from './layouts/ClientLayout';
 import ClientHome from './pages/ClientHome';
@@ -19,6 +19,9 @@ import AdminQuejasSugerencias from './pages/AdminQuejasSugerencias';
 import AdminClientes from './pages/AdminClientes';
 import AdminClienteDetalle from './pages/AdminClienteDetalle';
 import AdminContratoDetalle from './pages/AdminContratoDetalle';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailure from './pages/PaymentFailure';
+import PaymentPending from './pages/PaymentPending';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -26,6 +29,23 @@ function App() {
     const savedUser = localStorage.getItem('user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
+  const [loadingUser, setLoadingUser] = useState(false);
+
+  // Intentar restaurar sesión desde cookie al montar
+  useEffect(() => {
+    if (!user) {
+      setLoadingUser(true);
+      fetch('/api/auth/me', { credentials: 'include' })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data.usuario) {
+            setUser(data.usuario);
+            localStorage.setItem('user', JSON.stringify(data.usuario));
+          }
+        })
+        .finally(() => setLoadingUser(false));
+    }
+  }, []);
 
   // Función para manejar el login exitoso
   const handleLogin = (usuario) => {
@@ -35,11 +55,15 @@ function App() {
 
   // Función para cerrar sesión
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    setUser(null);
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+      .finally(() => {
+        localStorage.removeItem('user');
+        setUser(null);
+        window.location.href = '/'; // Redirigir al login tras logout
+      });
   };
 
-  if (!user) {
+  if (!user || loadingUser) {
     return <Login onLogin={handleLogin} />;
   }
 
@@ -72,6 +96,10 @@ function App() {
     return (
       <BrowserRouter>
         <Routes>
+          {/* Rutas de Mercado Pago fuera del layout principal */}
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-failure" element={<PaymentFailure />} />
+          <Route path="/payment-pending" element={<PaymentPending />} />
           <Route path="/" element={<ClientLayout onLogout={handleLogout} />}>
             <Route index element={<Navigate to="/inicio" />} />
             <Route path="/inicio" element={<ClientHome />} />

@@ -112,7 +112,7 @@ const Login = ({ onLogin }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundImage: 'url(/src/assets/bg-login.jpg)',
+        backgroundImage: 'url(/bg-login.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -131,7 +131,7 @@ const Login = ({ onLogin }) => {
       >
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
           <Avatar sx={{ width: 72, height: 72, bgcolor: 'white', boxShadow: 1 }}>
-            <img src="/src/assets/LogoLunchieware.png" alt="Logo Lunchieware" style={{ width: 56, height: 56 }} />
+            <img src="/LogoLunchieware.png" alt="Logo Lunchieware" style={{ width: 56, height: 56 }} />
           </Avatar>
         </Box>
         <Typography variant="h5" align="center" gutterBottom>

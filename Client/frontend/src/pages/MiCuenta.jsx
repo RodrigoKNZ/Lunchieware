@@ -12,6 +12,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import clienteService from '../services/clienteService';
 import abonosService from '../services/abonosService';
+import mercadoPagoService from '../services/mercadoPagoService';
 
 // Obtener nombre del cliente asociado al usuario logueado
 const obtenerNombreCliente = async () => {
@@ -334,14 +335,62 @@ const MiCuenta = () => {
     setLoadingRecarga(false);
     setErrorMonto('');
   };
-  const handleConfirmarRecarga = () => {
+  const handleConfirmarRecarga = async () => {
     setLoadingRecarga(true);
     setErrorMonto('');
-    // Simular llamada al backend para obtener URL de pago
-    setTimeout(() => {
-      setUrlPago('https://www.mercadopago.com.pe/checkout/v1/redirect?preference-id=dummy123');
+    setUrlPago('');
+    try {
+      // Validar monto
+      if (!montoRecarga || isNaN(montoRecarga) || parseFloat(montoRecarga) <= 0) {
+        setErrorMonto('Ingresa un monto válido');
+        setLoadingRecarga(false);
+        return;
+      }
+
+      const monto = parseFloat(montoRecarga);
+      if (monto < 5) {
+        setErrorMonto('El monto mínimo es S/. 5.00');
+        setLoadingRecarga(false);
+        return;
+      }
+
+      if (monto > 1000) {
+        setErrorMonto('El monto máximo es S/. 1,000.00');
+        setLoadingRecarga(false);
+        return;
+      }
+
+      // Obtener el ID del cliente actual
+      let clienteId = null;
+      if (datosCliente && datosCliente.idCliente) {
+        clienteId = datosCliente.idCliente;
+      }
+
+      // NO enviar información del usuario para evitar detección por Mercado Pago
+      // Usar un email genérico que será reemplazado en el backend
+      const payer_email = 'invitado@lunchieware.com';
+      
+      // Llamar al backend para crear la preferencia
+      const response = await mercadoPagoService.crearPreferencia({
+        amount: monto,
+        description: 'Recarga de saldo Lunchieware',
+        payer_email,
+        cliente_id: clienteId
+      });
+      
+      if (response.data && response.data.initPoint) {
+        setUrlPago(response.data.initPoint);
+        // Redirigir automáticamente al checkout de Mercado Pago en la misma pestaña
+        window.location.href = response.data.initPoint;
+      } else {
+        setErrorMonto('No se pudo generar el enlace de pago. Intenta nuevamente.');
+      }
+    } catch (error) {
+      setErrorMonto('Error al generar el pago: ' + (error.response?.data?.message || error.message));
+      console.error('Error al crear preferencia de Mercado Pago:', error);
+    } finally {
       setLoadingRecarga(false);
-    }, 1200);
+    }
   };
 
   // Validación de monto: solo números positivos, máximo 2 decimales, punto decimal
