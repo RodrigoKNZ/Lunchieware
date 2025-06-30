@@ -123,7 +123,6 @@ const ListaClientes = () => {
                 if (cli.clienteVigente) {
                     const contratosResp = await clienteService.obtenerContratos(cli.idCliente);
                     const contratos = Array.isArray(contratosResp.data) ? contratosResp.data : [];
-                    console.log(`🟦 Contratos para cliente ${cli.idCliente}:`, contratos);
                     const contratoActual = contratos.length > 0 ? contratos[0] : null;
                     if (contratoActual) {
                         const saldoNum = Number(contratoActual.importeSaldo);
@@ -147,11 +146,9 @@ const ListaClientes = () => {
                     idCliente: cli.idCliente
                 };
             }));
-            console.log('🟢 clientesConContrato:', clientesConContrato);
             setClientes(clientesConContrato);
             setClientesFiltrados(clientesConContrato);
         } catch (err) {
-            console.error('❌ Error en fetchClientes:', err);
             setClientes([]);
             setClientesFiltrados([]);
         } finally {

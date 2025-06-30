@@ -132,7 +132,10 @@ const Quejas = () => {
   const [openModal, setOpenModal] = React.useState(false);
   const [nuevoAsunto, setNuevoAsunto] = React.useState('');
   const [nuevoDetalle, setNuevoDetalle] = React.useState('');
-  const handleOpenModal = () => setOpenModal(true);
+  const handleOpenModal = () => {
+    console.log('%c🟦 [Quejas] Modal de nueva queja abierto', 'color: #1976d2');
+    setOpenModal(true);
+  };
   const handleCloseModal = () => {
     setOpenModal(false);
     setNuevoAsunto('');
@@ -174,32 +177,27 @@ const Quejas = () => {
   // Crear queja
   const handleCrearQueja = async () => {
     try {
-      // Obtener el usuario logueado desde localStorage
       const usuarioLogueado = JSON.parse(localStorage.getItem('user') || '{}');
       const idUsuario = usuarioLogueado.id;
-      
+      console.log('%c🟦 [Quejas] Intentando crear queja', 'color: #1976d2', {
+        asunto: nuevoAsunto,
+        detalle: nuevoDetalle,
+        idUsuario
+      });
       if (!idUsuario) {
         alert('Error: No se pudo obtener la información del usuario');
         return;
       }
-      
-      // Crear queja sin código primero
       const nueva = {
         asunto: nuevoAsunto,
         detalle: nuevoDetalle,
         idUsuario
       };
-      
       const respuesta = await quejasService.crear(nueva);
-      console.log('Respuesta de creación:', respuesta);
-      
-      // Generar código basado en el ID de la queja creada
+      console.log('%c🟢 [Quejas] Respuesta de creación:', 'color: #388e3c', respuesta);
       const idQueja = respuesta.data.idQueja;
       const codigoQueja = idQueja.toString().padStart(5, '0');
-      
-      console.log('ID generado:', idQueja, 'Código:', codigoQueja);
-      
-      // Actualizar la queja con el código generado
+      console.log('%c🟢 [Quejas] ID generado:', 'color: #388e3c', idQueja, 'Código:', codigoQueja);
       await quejasService.actualizar(idQueja, {
         codigoQueja,
         asunto: nuevoAsunto,
@@ -207,16 +205,15 @@ const Quejas = () => {
         resuelto: false,
         activo: true
       });
-      
-      // Recargar quejas
       const res = await quejasService.obtenerTodas();
       const quejasData = Array.isArray(res.data) ? res.data : [];
       setQuejas(quejasData);
       setQuejasFiltradas(quejasData);
       handleCloseModal();
     } catch (err) {
-      console.error('Error al crear queja:', err);
-      alert('Error al registrar queja');
+      console.error('%c🔴 [Quejas] Error creando queja:', 'color: #d32f2f', err);
+      setQuejas([]);
+      setQuejasFiltradas([]);
     }
   };
 

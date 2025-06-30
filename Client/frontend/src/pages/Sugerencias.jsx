@@ -170,7 +170,10 @@ const Sugerencias = () => {
     setMenuRowIdx(null);
   };
 
-  const handleOpenModal = () => setOpenModal(true);
+  const handleOpenModal = () => {
+    console.log('%c🟦 [Sugerencias] Modal de nueva sugerencia abierto', 'color: #1976d2');
+    setOpenModal(true);
+  };
   const handleCloseModal = () => {
     setOpenModal(false);
     setNuevoAsunto('');
@@ -218,30 +221,27 @@ const Sugerencias = () => {
   // Crear sugerencia
   const handleCrearSugerencia = async () => {
     try {
-      // Obtener el usuario logueado desde localStorage
       const usuarioLogueado = JSON.parse(localStorage.getItem('user') || '{}');
       const idUsuario = usuarioLogueado.id;
-      
+      console.log('%c🟦 [Sugerencias] Intentando crear sugerencia', 'color: #1976d2', {
+        asunto: nuevoAsunto,
+        detalle: nuevoDetalle,
+        idUsuario
+      });
       if (!idUsuario) {
         alert('Error: No se pudo obtener la información del usuario');
         return;
       }
-      
-      // Crear sugerencia sin código primero
       const nueva = {
         asunto: nuevoAsunto,
         detalle: nuevoDetalle,
         idUsuario
       };
-      
       const respuesta = await sugerenciasService.crear(nueva);
-      console.log('Respuesta de creación:', respuesta); // Para debugging
-      
-      // Generar código basado en el ID de la sugerencia creada
+      console.log('%c�� [Sugerencias] Respuesta de creación:', 'color: #388e3c', respuesta);
       const idSugerencia = respuesta.data.idSugerencia;
       const codigoSugerencia = idSugerencia.toString().padStart(5, '0');
-      
-      console.log('ID generado:', idSugerencia, 'Código:', codigoSugerencia); // Para debugging
+      console.log('%c🟢 [Sugerencias] ID generado:', 'color: #388e3c', idSugerencia, 'Código:', codigoSugerencia);
       
       // Actualizar la sugerencia con el código generado
       await sugerenciasService.actualizar(idSugerencia, {
@@ -258,8 +258,9 @@ const Sugerencias = () => {
       setSugerenciasFiltradas(sugerenciasData);
       handleCloseModal();
     } catch (err) {
-      console.error('Error al crear sugerencia:', err);
-      alert('Error al registrar sugerencia');
+      console.error('%c🔴 [Sugerencias] Error creando sugerencia:', 'color: #d32f2f', err);
+      setSugerencias([]);
+      setSugerenciasFiltradas([]);
     }
   };
 
