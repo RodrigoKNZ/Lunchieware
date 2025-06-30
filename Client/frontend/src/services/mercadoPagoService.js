@@ -4,7 +4,7 @@ import { API_URLS } from '../config/api';
 const mercadoPagoService = {
     // Crear preferencia de pago
     crearPreferencia: async (datos) => {
-        const response = await axios.post(`${API_URLS.mercadopago}/crear-preferencia`, datos);
+        const response = await axios.post(`${API_URLS.mercadopago}/create-preference`, datos);
         return response;
   },
     // Procesar webhook
