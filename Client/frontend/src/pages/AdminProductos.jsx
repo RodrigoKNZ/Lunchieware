@@ -82,12 +82,16 @@ const AdminProductos = () => {
     try {
       setLoading(true);
       const response = await productosService.obtenerTodos();
-      setProductos(response.data);
-      setProductosFiltrados(response.data);
+      // Validar que response.data sea un array
+      const productosData = Array.isArray(response.data) ? response.data : [];
+      setProductos(productosData);
+      setProductosFiltrados(productosData);
       setError(null);
     } catch (err) {
       setError('Error al cargar los productos');
       console.error('Error cargando productos:', err);
+      setProductos([]);
+      setProductosFiltrados([]);
     } finally {
       setLoading(false);
     }
@@ -155,8 +159,9 @@ const AdminProductos = () => {
       };
       
       const response = await productosService.crear(productoData);
-      setProductos(prev => [...prev, response.data]);
-      setProductosFiltrados(prev => [...prev, response.data]);
+      const nuevoProductoData = response.data;
+      setProductos(prev => [...prev, nuevoProductoData]);
+      setProductosFiltrados(prev => [...prev, nuevoProductoData]);
       setNuevoModalOpen(false);
       mostrarNotificacion('Producto creado exitosamente', 'success');
     } catch (err) {
@@ -191,8 +196,9 @@ const AdminProductos = () => {
       };
       
       const response = await productosService.actualizar(editProducto.idProducto, productoData);
+      const productoActualizado = response.data;
       const actualizados = productos.map(p => 
-        p.idProducto === editProducto.idProducto ? response.data : p
+        p.idProducto === editProducto.idProducto ? productoActualizado : p
       );
       setProductos(actualizados);
       setProductosFiltrados(actualizados);

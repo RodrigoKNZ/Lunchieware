@@ -134,8 +134,10 @@ const AdminCajaChica = () => {
     setLoading(true);
     try {
       const response = await cajaChicaService.obtenerTodas();
+      // Validar que response.data sea un array
+      const cajasData = Array.isArray(response.data) ? response.data : [];
       // Adaptar los datos del backend al formato esperado por el frontend
-      const adaptadas = response.data.map(caja => ({
+      const adaptadas = cajasData.map(caja => ({
         id: caja.idCajaChica,
         numero: caja.numeroLiquidacion,
         fechaApertura: caja.fechaApertura ? dayjs(caja.fechaApertura).format('DD/MM/YYYY') : '',
