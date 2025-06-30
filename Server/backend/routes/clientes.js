@@ -10,16 +10,28 @@ const router = express.Router();
 // Temporalmente deshabilitado para pruebas
 // router.use(authMiddleware);
 
+// Ruta de prueba simple
+router.get('/test', (req, res) => {
+  console.log('🧪 Ruta de prueba ejecutándose');
+  res.json({ message: 'Ruta de prueba funcionando', timestamp: new Date().toISOString() });
+});
+
 // Obtener todos los clientes
 router.get('/', async (req, res) => {
+  console.log('👥 Ruta GET /clientes ejecutándose');
+  console.log('📋 Headers recibidos:', req.headers);
+  console.log('👤 Usuario autenticado:', req.isAuthenticated);
+  console.log('👤 Usuario:', req.user);
+  
   try {
     const clientes = await clientesModel.obtenerTodos();
+    console.log('✅ Clientes obtenidos exitosamente:', clientes.length);
     res.json({
       message: 'Clientes obtenidos exitosamente',
       data: clientes
     });
   } catch (error) {
-    console.error('Error obteniendo clientes:', error);
+    console.error('❌ Error obteniendo clientes:', error);
     res.status(500).json({ 
       message: 'Error interno del servidor' 
     });
