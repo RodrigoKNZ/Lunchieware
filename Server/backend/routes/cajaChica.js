@@ -1,6 +1,10 @@
 const express = require('express');
 const cajaChicaModel = require('../models/cajaChica');
+const authMiddleware = require('../middleware/auth');
 const router = express.Router();
+
+// Aplicar middleware de autenticación a todas las rutas
+router.use(authMiddleware);
 
 // Listar todas las cajas chicas
 router.get('/', async (req, res) => {

@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 // Configuración de URLs de API
 const isDevelopment = import.meta.env.MODE === 'development';
 
@@ -20,5 +22,38 @@ export const API_URLS = {
   mercadopago: `${API_BASE_URL}/mercadopago`,
   programacionMenu: `${API_BASE_URL}/programacion-menu`,
 };
+
+// Configurar axios para enviar automáticamente el token JWT
+axios.defaults.baseURL = API_BASE_URL;
+
+// Interceptor para agregar el token a todas las peticiones
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor para manejar errores de autenticación
+axios.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expirado o inválido
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default API_BASE_URL; 

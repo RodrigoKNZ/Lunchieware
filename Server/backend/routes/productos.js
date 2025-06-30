@@ -1,7 +1,11 @@
 const express = require('express');
 const productosModel = require('../models/productos');
+const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
+
+// Aplicar middleware de autenticación a todas las rutas
+router.use(authMiddleware);
 
 // Obtener todos los productos
 router.get('/', async (req, res) => {

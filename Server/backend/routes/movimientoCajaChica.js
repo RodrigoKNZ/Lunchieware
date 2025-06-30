@@ -1,6 +1,10 @@
 const express = require('express');
 const movimientoCajaChicaModel = require('../models/movimientoCajaChica');
+const authMiddleware = require('../middleware/auth');
 const router = express.Router();
+
+// Aplicar middleware de autenticación a todas las rutas
+router.use(authMiddleware);
 
 // Obtener todos los movimientos de una caja chica
 router.get('/caja/:idCajaChica', async (req, res) => {

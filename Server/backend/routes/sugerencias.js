@@ -1,7 +1,11 @@
 const express = require('express');
 const sugerenciasModel = require('../models/sugerencias');
+const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
+
+// Aplicar middleware de autenticación a todas las rutas
+router.use(authMiddleware);
 
 // Obtener todas las sugerencias
 router.get('/', async (req, res) => {

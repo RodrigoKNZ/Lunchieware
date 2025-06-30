@@ -27,10 +27,12 @@ const Login = ({ onLogin }) => {
         password: password
       });
       const userData = res.data.usuario;
+      const token = res.data.token;
       console.log('Respuesta del login:', res.data); // Para debugging
       
-      // Guardar usuario en localStorage
+      // Guardar usuario y token en localStorage
       localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('token', token);
       
       // Si requiere cambio de contraseña, mostrar modal
       if (userData.accesoRealizado === false) {
@@ -88,7 +90,9 @@ const Login = ({ onLogin }) => {
             password: newPassword
           });
           const userData = res.data.usuario;
+          const token = res.data.token;
           localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem('token', token);
           if (onLogin) onLogin(userData);
         } catch (err) {
           setError(true);

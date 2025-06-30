@@ -1,7 +1,11 @@
 const express = require('express');
 const quejasModel = require('../models/quejas');
+const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
+
+// Aplicar middleware de autenticación a todas las rutas
+router.use(authMiddleware);
 
 // Obtener todas las quejas
 router.get('/', async (req, res) => {
