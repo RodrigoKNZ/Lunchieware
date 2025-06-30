@@ -35,7 +35,7 @@ async function procesarPagoExitoso(paymentData) {
   try {
     const { id, external_reference, transaction_amount, payer } = paymentData;
     
-    console.log('Procesando pago exitoso:', {
+    console.log('🟦 [ProcesarPago] Iniciando procesamiento:', {
       paymentId: id,
       externalReference: external_reference,
       amount: transaction_amount,
@@ -49,56 +49,70 @@ async function procesarPagoExitoso(paymentData) {
     let cliente = null;
     
     if (external_reference && external_reference.startsWith('lunchieware_')) {
+      console.log('🟦 [ProcesarPago] Buscando cliente por external_reference:', external_reference);
       // Extraer el ID del cliente del external_reference
       const parts = external_reference.split('_');
       if (parts.length >= 3) {
         const clienteId = parts[1];
+        console.log('🟦 [ProcesarPago] ID del cliente extraído:', clienteId);
         try {
           cliente = await clientesModel.obtenerPorId(parseInt(clienteId));
           if (cliente) {
-            console.log('Cliente encontrado por external_reference:', cliente.codigoCliente);
+            console.log('🟢 [ProcesarPago] Cliente encontrado por external_reference:', cliente.codigoCliente);
+          } else {
+            console.log('🟡 [ProcesarPago] No se encontró cliente con ID:', clienteId);
           }
         } catch (error) {
-          console.log('Error buscando cliente por ID:', error.message);
+          console.log('🔴 [ProcesarPago] Error buscando cliente por ID:', error.message);
         }
       }
     }
     
     // Si no se encontró por external_reference, intentar por email
     if (!cliente && payerEmail && !payerEmail.includes('invitado_') && !payerEmail.includes('test_user_')) {
+      console.log('🟦 [ProcesarPago] Buscando cliente por email:', payerEmail);
       cliente = await clientesModel.obtenerPorEmail(payerEmail);
       if (cliente) {
-        console.log('Cliente encontrado por email:', cliente.codigoCliente);
+        console.log('🟢 [ProcesarPago] Cliente encontrado por email:', cliente.codigoCliente);
+      } else {
+        console.log('🟡 [ProcesarPago] No se encontró cliente con email:', payerEmail);
       }
     }
     
     // Si no se encuentra por email, usar lógica de fallback
     if (!cliente) {
+      console.log('🟦 [ProcesarPago] Usando lógica de fallback para encontrar cliente');
       // Buscar un cliente disponible para procesar el pago
       const clientes = await clientesModel.obtenerTodos();
+      console.log('🟦 [ProcesarPago] Total de clientes disponibles:', clientes.length);
       if (clientes.length > 0) {
         // En un entorno real, aquí implementarías lógica para identificar
         // al cliente correcto basado en la sesión o cookies
         cliente = clientes[0]; // Usar el primer cliente disponible para pruebas
-        console.log('Usando cliente disponible:', cliente.codigoCliente);
+        console.log('🟢 [ProcesarPago] Usando cliente disponible:', cliente.codigoCliente);
       } else {
         throw new Error('No hay clientes disponibles para procesar el pago');
       }
     }
 
+    console.log('🟦 [ProcesarPago] Buscando contratos del cliente:', cliente.idCliente);
     // Obtener el contrato activo del cliente
     const contratos = await contratosModel.obtenerPorCliente(cliente.idCliente);
+    console.log('🟦 [ProcesarPago] Contratos encontrados:', contratos.length);
     if (contratos.length === 0) {
       throw new Error(`No hay contratos activos para el cliente ${cliente.codigoCliente}`);
     }
 
     const contrato = contratos[0]; // Usar el contrato más reciente
+    console.log('🟢 [ProcesarPago] Usando contrato:', contrato.codigoContrato);
     
+    console.log('🟦 [ProcesarPago] Buscando cuenta bancaria de Mercado Pago');
     // Obtener la cuenta bancaria de Mercado Pago
     const idCuentaMP = await obtenerCuentaMercadoPago();
     if (!idCuentaMP) {
       throw new Error('No se encontró la cuenta bancaria de Mercado Pago');
     }
+    console.log('🟢 [ProcesarPago] Cuenta bancaria encontrada:', idCuentaMP);
     
     // Crear el abono
     const datosAbono = {
@@ -111,9 +125,10 @@ async function procesarPagoExitoso(paymentData) {
       activo: true
     };
 
+    console.log('🟦 [ProcesarPago] Creando abono con datos:', datosAbono);
     const abonoCreado = await abonosModel.crear(datosAbono);
     
-    console.log('Abono registrado exitosamente:', {
+    console.log('🟢 [ProcesarPago] Abono registrado exitosamente:', {
       idAbono: abonoCreado.idAbono,
       contrato: contrato.codigoContrato,
       cliente: cliente.codigoCliente,
@@ -121,13 +136,15 @@ async function procesarPagoExitoso(paymentData) {
       fecha: abonoCreado.fechaAbono
     });
 
+    console.log('🟦 [ProcesarPago] Actualizando saldo del contrato');
     // Actualizar el saldo del contrato
     await contratosModel.actualizarSaldoDespuesAbono(contrato.idContrato, transaction_amount);
+    console.log('🟢 [ProcesarPago] Saldo del contrato actualizado');
 
     return abonoCreado;
 
   } catch (error) {
-    console.error('Error procesando pago exitoso:', error);
+    console.error('🔴 [ProcesarPago] Error procesando pago exitoso:', error);
     throw error;
   }
 }
@@ -147,6 +164,44 @@ router.get('/test', async (req, res) => {
     console.error('Error en prueba de Mercado Pago:', error);
     res.status(500).json({
       message: 'Error en la configuración de Mercado Pago',
+      error: error.message
+    });
+  }
+});
+
+// Ruta de prueba para webhook
+router.post('/test-webhook', async (req, res) => {
+  try {
+    console.log('🟦 [TestWebhook] Prueba de webhook recibida:', {
+      body: req.body,
+      headers: req.headers,
+      timestamp: new Date().toISOString()
+    });
+
+    // Simular un pago exitoso para pruebas
+    const mockPaymentData = {
+      id: 123456789,
+      external_reference: 'lunchieware_1_' + Date.now(),
+      transaction_amount: 10.00,
+      payer: {
+        email: 'test@example.com'
+      },
+      status: 'approved'
+    };
+
+    console.log('🟦 [TestWebhook] Procesando pago de prueba...');
+    const resultado = await procesarPagoExitoso(mockPaymentData);
+    
+    console.log('🟢 [TestWebhook] Pago de prueba procesado exitosamente:', resultado);
+
+    res.json({
+      message: 'Webhook de prueba procesado exitosamente',
+      data: resultado
+    });
+  } catch (error) {
+    console.error('🔴 [TestWebhook] Error en webhook de prueba:', error);
+    res.status(500).json({
+      message: 'Error en webhook de prueba',
       error: error.message
     });
   }
@@ -289,48 +344,57 @@ router.post('/webhook', async (req, res) => {
   try {
     const { type, data } = req.body;
 
-    console.log('Webhook recibido de Mercado Pago:', {
+    console.log('🟦 [Webhook] Recibido de Mercado Pago:', {
       type,
       data,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      body: req.body
     });
 
     if (type === 'payment') {
       const paymentId = data.id;
       
+      console.log('🟦 [Webhook] Procesando pago con ID:', paymentId);
+      
       // Obtener información del pago
       const payment = await mercadopago.payment.findById(paymentId);
       
-      console.log('Información del pago:', {
+      console.log('🟢 [Webhook] Información del pago obtenida:', {
         id: payment.body.id,
         status: payment.body.status,
         external_reference: payment.body.external_reference,
-        amount: payment.body.transaction_amount
+        amount: payment.body.transaction_amount,
+        payer: payment.body.payer
       });
 
       // Aquí procesarías el pago según su estado
       switch (payment.body.status) {
         case 'approved':
-          console.log(`Pago aprobado: ${paymentId}`);
-          await procesarPagoExitoso(payment.body);
+          console.log('🟢 [Webhook] Pago aprobado, procesando...');
+          try {
+            const resultado = await procesarPagoExitoso(payment.body);
+            console.log('🟢 [Webhook] Pago procesado exitosamente:', resultado);
+          } catch (error) {
+            console.error('🔴 [Webhook] Error procesando pago aprobado:', error);
+          }
           break;
         case 'rejected':
-          console.log(`Pago rechazado: ${paymentId}`);
+          console.log('🔴 [Webhook] Pago rechazado:', paymentId);
           // await procesarPagoRechazado(payment.body);
           break;
         case 'pending':
-          console.log(`Pago pendiente: ${paymentId}`);
+          console.log('🟡 [Webhook] Pago pendiente:', paymentId);
           // await procesarPagoPendiente(payment.body);
           break;
         default:
-          console.log(`Estado desconocido: ${payment.body.status}`);
+          console.log('🟡 [Webhook] Estado desconocido:', payment.body.status);
       }
     }
 
     res.status(200).json({ message: 'Webhook recibido correctamente' });
 
   } catch (error) {
-    console.error('Error procesando webhook:', error);
+    console.error('🔴 [Webhook] Error procesando webhook:', error);
     res.status(500).json({
       message: 'Error procesando webhook',
       error: error.message

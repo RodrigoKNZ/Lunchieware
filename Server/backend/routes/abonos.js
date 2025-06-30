@@ -86,6 +86,8 @@ router.get('/cliente/:idCliente', async (req, res) => {
 // Crear nuevo abono
 router.post('/', async (req, res) => {
   try {
+    console.log('🟦 [Abonos] Creando nuevo abono con datos:', req.body);
+    
     const {
       idContrato,
       fechaAbono,
@@ -96,10 +98,20 @@ router.post('/', async (req, res) => {
     } = req.body;
 
     if (!idContrato || !fechaAbono || !idCuenta || !numRecibo || !importeAbono) {
+      console.log('🔴 [Abonos] Datos faltantes:', { idContrato, fechaAbono, idCuenta, numRecibo, importeAbono });
       return res.status(400).json({ 
         message: 'Los campos contrato, fecha, cuenta, número de recibo e importe son requeridos' 
       });
     }
+
+    console.log('🟦 [Abonos] Llamando a abonosModel.crear con datos:', {
+      idContrato,
+      fechaAbono,
+      idCuenta,
+      numRecibo,
+      importeAbono,
+      registroManual
+    });
 
     const nuevoAbono = await abonosModel.crear({
       idContrato,
@@ -110,14 +122,17 @@ router.post('/', async (req, res) => {
       registroManual
     });
 
+    console.log('🟢 [Abonos] Abono creado exitosamente:', nuevoAbono);
+
     res.status(201).json({
       message: 'Abono creado exitosamente',
       data: nuevoAbono
     });
   } catch (error) {
-    console.error('Error creando abono:', error);
+    console.error('🔴 [Abonos] Error creando abono:', error);
     res.status(500).json({ 
-      message: 'Error interno del servidor' 
+      message: 'Error interno del servidor',
+      error: error.message
     });
   }
 });
