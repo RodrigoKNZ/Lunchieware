@@ -350,8 +350,8 @@ const MiCuenta = () => {
       }
 
       const monto = parseFloat(montoRecarga);
-      if (monto < 5) {
-        setErrorMonto('El monto mínimo es S/. 5.00');
+      if (monto < 0.01) {
+        setErrorMonto('El monto mínimo es S/. 0.01');
         setLoadingRecarga(false);
         return;
       }
