@@ -226,26 +226,26 @@ const AdminCajaChica = () => {
               <TextField label="Nro. liquidación" size="small" value={filtroNumero} onChange={e => setFiltroNumero(e.target.value)} disabled={filtrosAplicados} sx={{ width: 140 }}/>
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
-                  label="Fecha apertura"
+                label="Fecha apertura"
                   value={filtroFechaAperturaDesde ? dayjs(filtroFechaAperturaDesde) : null}
                   onChange={(newValue) => {
                     setFiltroFechaAperturaDesde(newValue ? newValue.format('YYYY-MM-DD') : null);
                     setFiltroFechaAperturaHasta(newValue ? newValue.format('YYYY-MM-DD') : null);
                   }}
                   renderInput={(params) => <TextField {...params} size="small" sx={{ width: 220 }} />}
-                  disabled={filtrosAplicados}
+                disabled={filtrosAplicados}
                 />
               </LocalizationProvider>
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
-                  label="Fecha liquidación"
+                label="Fecha liquidación"
                   value={filtroFechaLiquidacionDesde ? dayjs(filtroFechaLiquidacionDesde) : null}
                   onChange={(newValue) => {
                     setFiltroFechaLiquidacionDesde(newValue ? newValue.format('YYYY-MM-DD') : null);
                     setFiltroFechaLiquidacionHasta(newValue ? newValue.format('YYYY-MM-DD') : null);
                   }}
                   renderInput={(params) => <TextField {...params} size="small" sx={{ width: 220 }} />}
-                  disabled={filtrosAplicados}
+                disabled={filtrosAplicados}
                 />
               </LocalizationProvider>
               <FormControl size="small" sx={{ width: 120 }} disabled={filtrosAplicados}>

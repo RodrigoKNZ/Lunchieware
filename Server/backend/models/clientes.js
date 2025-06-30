@@ -5,11 +5,11 @@ const clientesModel = {
   async obtenerTodos() {
     console.log('🔍 Modelo: obteniendo todos los clientes');
     try {
-      const query = 'SELECT * FROM "Cliente" WHERE "activo" = true ORDER BY "nombres", "apellidoPaterno"';
+    const query = 'SELECT * FROM "Cliente" WHERE "activo" = true ORDER BY "nombres", "apellidoPaterno"';
       console.log('📝 Query:', query);
-      const result = await pool.query(query);
+    const result = await pool.query(query);
       console.log('✅ Resultado obtenido:', result.rows.length, 'clientes');
-      return result.rows;
+    return result.rows;
     } catch (error) {
       console.error('❌ Error en modelo obtenerTodos:', error);
       throw error;

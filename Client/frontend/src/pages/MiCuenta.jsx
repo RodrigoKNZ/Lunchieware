@@ -25,6 +25,7 @@ const obtenerNombreCliente = async () => {
     const response = await clienteService.obtenerPorUsuario(usuario.nombreUsuario);
     if (response.data && response.data.length > 0) {
       const cliente = response.data[0];
+      console.log('%c🟦 [MiCuenta] Obteniendo datos del cliente para pago', 'color: #1976d2', cliente);
       return `${cliente.nombres} ${cliente.apellidoPaterno} ${cliente.apellidoMaterno}`;
     }
     return 'Cliente';
@@ -47,12 +48,13 @@ const obtenerDatosCliente = async () => {
       const cliente = response.data[0];
       
       // Obtener contratos del cliente
-      const contratosResponse = await clienteService.obtenerContratosPorCliente(cliente.idCliente);
+      const contratosResponse = await clienteService.obtenerContratos(cliente.idCliente);
       const contratos = contratosResponse.data || [];
       
       // Obtener el contrato vigente (el más reciente)
       const contratoVigente = contratos.length > 0 ? contratos[0] : null;
       
+      console.log('%c🟦 [MiCuenta] Obteniendo datos del cliente para pago', 'color: #1976d2', cliente);
       return {
         cliente,
         contratoVigente
@@ -371,12 +373,19 @@ const MiCuenta = () => {
       const payer_email = 'invitado@lunchieware.com';
       
       // Llamar al backend para crear la preferencia
+      console.log('%c🟦 [Pago] Enviando datos a crearPreferencia:', 'color: #1976d2', {
+        amount: monto,
+        description: 'Recarga de saldo Lunchieware',
+        payer_email,
+        cliente_id: clienteId
+      });
       const response = await mercadoPagoService.crearPreferencia({
         amount: monto,
         description: 'Recarga de saldo Lunchieware',
         payer_email,
         cliente_id: clienteId
       });
+      console.log('%c🟢 [Pago] Respuesta de crearPreferencia:', 'color: #388e3c', response);
       
       if (response.data && response.data.initPoint) {
         setUrlPago(response.data.initPoint);
@@ -387,7 +396,7 @@ const MiCuenta = () => {
       }
     } catch (error) {
       setErrorMonto('Error al generar el pago: ' + (error.response?.data?.message || error.message));
-      console.error('Error al crear preferencia de Mercado Pago:', error);
+      console.error('%c🔴 [Pago] Error al crear preferencia de Mercado Pago:', 'color: #d32f2f', error);
     } finally {
       setLoadingRecarga(false);
     }
