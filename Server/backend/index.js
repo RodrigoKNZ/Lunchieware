@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const cookieParser = require('cookie-parser');
 
 // Importar rutas
@@ -19,8 +18,21 @@ const mercadopagoRoutes = require('./routes/mercadopago');
 
 const app = express();
 
+// Configuración de CORS para permitir el frontend
+const corsOptions = {
+  origin: [
+    'http://localhost:5173', // Desarrollo local
+    'http://localhost:3000', // Desarrollo local alternativo
+    'https://lunchieware-frontend.vercel.app', // Frontend en Vercel
+    'https://lunchieware.vercel.app', // Si usas un dominio personalizado
+    /\.vercel\.app$/, // Cualquier subdominio de Vercel
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -80,22 +92,6 @@ app.use('/api/contratos', contratosRoutes);
 app.use('/api/abonos', abonosRoutes);
 app.use('/api/mercadopago', mercadopagoRoutes);
 
-// Servir archivos estáticos del frontend (React build)
-app.use(express.static(path.join(__dirname, '../../Client/frontend/dist')));
-
-// Catch-all: devolver index.html para cualquier ruta no API
-app.get('*', (req, res) => {
-  // Si la ruta empieza con /api, devolver 404 JSON
-  if (req.originalUrl.startsWith('/api')) {
-    return res.status(404).json({ 
-      message: 'Ruta no encontrada',
-      path: req.originalUrl
-    });
-  }
-  // Si no, devolver index.html del frontend
-  res.sendFile(path.join(__dirname, '../../Client/frontend/dist', 'index.html'));
-});
-
 // Middleware para manejar errores
 app.use((error, req, res, next) => {
   console.error('Error:', error);
@@ -120,3 +116,5 @@ app.listen(PORT, () => {
   console.log(`📄 Endpoints de abonos: http://localhost:${PORT}/api/abonos`);
   console.log(`📄 Endpoints de Mercado Pago: http://localhost:${PORT}/api/mercadopago`);
 });
+
+module.exports = app;

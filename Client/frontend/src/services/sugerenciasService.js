@@ -1,41 +1,40 @@
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:5000/api/sugerencias';
+import { API_URLS } from '../config/api';
 
 const sugerenciasService = {
   // Obtener todas las sugerencias
-  async obtenerTodas() {
-    const response = await axios.get(`${API_BASE_URL}`);
-    return response.data;
+  obtenerTodas: async () => {
+    const response = await axios.get(API_URLS.sugerencias);
+    return response;
   },
 
   // Obtener sugerencia por ID
-  async obtenerPorId(id) {
-    const response = await axios.get(`${API_BASE_URL}/${id}`);
-    return response.data;
+  obtenerPorId: async (id) => {
+    const response = await axios.get(`${API_URLS.sugerencias}/${id}`);
+    return response;
   },
 
   // Crear nueva sugerencia
-  async crear(sugerencia) {
-    const response = await axios.post(`${API_BASE_URL}`, sugerencia);
-    return response.data;
+  crear: async (sugerencia) => {
+    const response = await axios.post(API_URLS.sugerencias, sugerencia);
+    return response;
   },
 
   // Actualizar sugerencia
-  async actualizar(id, sugerencia) {
-    const response = await axios.put(`${API_BASE_URL}/${id}`, sugerencia);
-    return response.data;
+  actualizar: async (id, sugerencia) => {
+    const response = await axios.put(`${API_URLS.sugerencias}/${id}`, sugerencia);
+    return response;
   },
 
   // Eliminar sugerencia
-  async eliminar(id) {
-    const response = await axios.delete(`${API_BASE_URL}/${id}`);
-    return response.data;
+  eliminar: async (id) => {
+    const response = await axios.delete(`${API_URLS.sugerencias}/${id}`);
+    return response;
   },
 
   // Obtener estadísticas
   async obtenerEstadisticas() {
-    const response = await axios.get(`${API_BASE_URL}/estadisticas/totales`);
+    const response = await axios.get(`${API_URLS.sugerencias}/estadisticas/totales`);
     return response.data;
   }
 };

@@ -1,34 +1,23 @@
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:5000/api';
+import { API_URLS } from '../config/api';
 
 const productosService = {
   // Obtener todos los productos
-  async obtenerTodos() {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/productos`);
-      return response.data;
-    } catch (error) {
-      console.error('Error obteniendo productos:', error);
-      throw error;
-    }
+  obtenerTodos: async () => {
+    const response = await axios.get(`${API_URLS.productos}/productos`);
+    return response;
   },
 
   // Obtener producto por ID
-  async obtenerPorId(id) {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/productos/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error obteniendo producto:', error);
-      throw error;
-    }
+  obtenerPorId: async (id) => {
+    const response = await axios.get(`${API_URLS.productos}/productos/${id}`);
+    return response;
   },
 
   // Buscar productos por nombre
   async buscarPorNombre(nombre) {
     try {
-      const response = await axios.get(`${API_BASE_URL}/productos/buscar/${nombre}`);
+      const response = await axios.get(`${API_URLS.productos}/productos/buscar/${nombre}`);
       return response.data;
     } catch (error) {
       console.error('Error buscando productos:', error);
@@ -39,7 +28,7 @@ const productosService = {
   // Obtener productos por tipo
   async obtenerPorTipo(tipo) {
     try {
-      const response = await axios.get(`${API_BASE_URL}/productos/tipo/${tipo}`);
+      const response = await axios.get(`${API_URLS.productos}/productos/tipo/${tipo}`);
       return response.data;
     } catch (error) {
       console.error('Error obteniendo productos por tipo:', error);
@@ -50,7 +39,7 @@ const productosService = {
   // Obtener productos disponibles
   async obtenerDisponibles() {
     try {
-      const response = await axios.get(`${API_BASE_URL}/productos/disponibles/todos`);
+      const response = await axios.get(`${API_URLS.productos}/productos/disponibles/todos`);
       return response.data;
     } catch (error) {
       console.error('Error obteniendo productos disponibles:', error);
@@ -59,31 +48,21 @@ const productosService = {
   },
 
   // Crear nuevo producto
-  async crear(producto) {
-    try {
-      const response = await axios.post(`${API_BASE_URL}/productos`, producto);
-      return response.data;
-    } catch (error) {
-      console.error('Error creando producto:', error);
-      throw error;
-    }
+  crear: async (producto) => {
+    const response = await axios.post(`${API_URLS.productos}/productos`, producto);
+    return response;
   },
 
   // Actualizar producto
-  async actualizar(id, producto) {
-    try {
-      const response = await axios.put(`${API_BASE_URL}/productos/${id}`, producto);
-      return response.data;
-    } catch (error) {
-      console.error('Error actualizando producto:', error);
-      throw error;
-    }
+  actualizar: async (id, producto) => {
+    const response = await axios.put(`${API_URLS.productos}/productos/${id}`, producto);
+    return response;
   },
 
   // Cambiar disponibilidad del producto
   async cambiarDisponibilidad(id, disponible) {
     try {
-      const response = await axios.patch(`${API_BASE_URL}/productos/${id}/disponibilidad`, { disponible });
+      const response = await axios.patch(`${API_URLS.productos}/productos/${id}/disponibilidad`, { disponible });
       return response.data;
     } catch (error) {
       console.error('Error cambiando disponibilidad:', error);
@@ -92,20 +71,15 @@ const productosService = {
   },
 
   // Eliminar producto
-  async eliminar(id) {
-    try {
-      const response = await axios.delete(`${API_BASE_URL}/productos/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error eliminando producto:', error);
-      throw error;
-    }
+  eliminar: async (id) => {
+    const response = await axios.delete(`${API_URLS.productos}/productos/${id}`);
+    return response;
   },
 
   // Obtener estadísticas
   async obtenerEstadisticas() {
     try {
-      const response = await axios.get(`${API_BASE_URL}/productos/estadisticas/totales`);
+      const response = await axios.get(`${API_URLS.productos}/productos/estadisticas/totales`);
       return response.data;
     } catch (error) {
       console.error('Error obteniendo estadísticas:', error);

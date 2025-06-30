@@ -1,53 +1,52 @@
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:5000/api/abonos';
+import { API_URLS } from '../config/api';
 
 const abonosService = {
   // Obtener todos los abonos
-  async obtenerTodos() {
-    const response = await axios.get(`${API_BASE_URL}`);
-    return response.data;
+  obtenerTodos: async () => {
+    const response = await axios.get(API_URLS.abonos);
+    return response;
   },
 
   // Obtener abono por ID
-  async obtenerPorId(id) {
-    const response = await axios.get(`${API_BASE_URL}/${id}`);
-    return response.data;
+  obtenerPorId: async (id) => {
+    const response = await axios.get(`${API_URLS.abonos}/${id}`);
+    return response;
   },
 
   // Obtener abonos por contrato
   async obtenerPorContrato(idContrato) {
-    const response = await axios.get(`${API_BASE_URL}/contrato/${idContrato}`);
+    const response = await axios.get(`${API_URLS.abonos}/contrato/${idContrato}`);
     return response.data;
   },
 
   // Obtener abonos por cliente
   async obtenerPorCliente(idCliente) {
-    const response = await axios.get(`${API_BASE_URL}/cliente/${idCliente}`);
+    const response = await axios.get(`${API_URLS.abonos}/cliente/${idCliente}`);
     return response.data;
   },
 
   // Crear nuevo abono
-  async crear(abono) {
-    const response = await axios.post(`${API_BASE_URL}`, abono);
-    return response.data;
+  crear: async (abono) => {
+    const response = await axios.post(API_URLS.abonos, abono);
+    return response;
   },
 
   // Actualizar abono
-  async actualizar(id, abono) {
-    const response = await axios.put(`${API_BASE_URL}/${id}`, abono);
-    return response.data;
+  actualizar: async (id, abono) => {
+    const response = await axios.put(`${API_URLS.abonos}/${id}`, abono);
+    return response;
   },
 
   // Eliminar abono
-  async eliminar(id) {
-    const response = await axios.delete(`${API_BASE_URL}/${id}`);
-    return response.data;
+  eliminar: async (id) => {
+    const response = await axios.delete(`${API_URLS.abonos}/${id}`);
+    return response;
   },
 
   // Obtener estadísticas
   async obtenerEstadisticas() {
-    const response = await axios.get(`${API_BASE_URL}/estadisticas/totales`);
+    const response = await axios.get(`${API_URLS.abonos}/estadisticas/totales`);
     return response.data;
   }
 };

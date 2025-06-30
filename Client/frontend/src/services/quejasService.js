@@ -1,41 +1,40 @@
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:5000/api/quejas';
+import { API_URLS } from '../config/api';
 
 const quejasService = {
   // Obtener todas las quejas
-  async obtenerTodas() {
-    const response = await axios.get(`${API_BASE_URL}`);
-    return response.data;
+  obtenerTodas: async () => {
+    const response = await axios.get(API_URLS.quejas);
+    return response;
   },
 
   // Obtener queja por ID
-  async obtenerPorId(id) {
-    const response = await axios.get(`${API_BASE_URL}/${id}`);
-    return response.data;
+  obtenerPorId: async (id) => {
+    const response = await axios.get(`${API_URLS.quejas}/${id}`);
+    return response;
   },
 
   // Crear nueva queja
-  async crear(queja) {
-    const response = await axios.post(`${API_BASE_URL}`, queja);
-    return response.data;
+  crear: async (queja) => {
+    const response = await axios.post(API_URLS.quejas, queja);
+    return response;
   },
 
   // Actualizar queja
-  async actualizar(id, queja) {
-    const response = await axios.put(`${API_BASE_URL}/${id}`, queja);
-    return response.data;
+  actualizar: async (id, queja) => {
+    const response = await axios.put(`${API_URLS.quejas}/${id}`, queja);
+    return response;
   },
 
   // Eliminar queja
-  async eliminar(id) {
-    const response = await axios.delete(`${API_BASE_URL}/${id}`);
-    return response.data;
+  eliminar: async (id) => {
+    const response = await axios.delete(`${API_URLS.quejas}/${id}`);
+    return response;
   },
 
   // Obtener estadísticas
   async obtenerEstadisticas() {
-    const response = await axios.get(`${API_BASE_URL}/estadisticas/totales`);
+    const response = await axios.get(`${API_URLS.quejas}/estadisticas/totales`);
     return response.data;
   }
 };

@@ -1,89 +1,88 @@
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:5000/api';
+import { API_URLS } from '../config/api';
 
 const cajaChicaService = {
   // Obtener todas las cajas chicas
-  async obtenerTodas() {
-    const response = await axios.get(`${API_BASE_URL}/cajachica`);
-    return response.data;
+  obtenerTodas: async () => {
+    const response = await axios.get(`${API_URLS.cajaChica}/cajachica`);
+    return response;
   },
 
   // Obtener caja chica por ID
-  async obtenerPorId(id) {
-    const response = await axios.get(`${API_BASE_URL}/cajachica/${id}`);
-    return response.data;
+  obtenerPorId: async (id) => {
+    const response = await axios.get(`${API_URLS.cajaChica}/cajachica/${id}`);
+    return response;
   },
 
   // Obtener caja chica por numeroLiquidacion
   async obtenerPorNumeroLiquidacion(numeroLiquidacion) {
-    const response = await axios.get(`${API_BASE_URL}/cajachica/numero/${numeroLiquidacion}`);
+    const response = await axios.get(`${API_URLS.cajaChica}/cajachica/numero/${numeroLiquidacion}`);
     return response.data;
   },
 
   // Crear nueva caja chica
-  async crear(caja) {
-    const response = await axios.post(`${API_BASE_URL}/cajachica`, caja);
-    return response.data;
+  crear: async (cajaChica) => {
+    const response = await axios.post(`${API_URLS.cajaChica}/cajachica`, cajaChica);
+    return response;
   },
 
   // Actualizar caja chica (observaciones)
-  async actualizar(id, caja) {
-    const response = await axios.put(`${API_BASE_URL}/cajachica/${id}`, caja);
-    return response.data;
+  actualizar: async (id, cajaChica) => {
+    const response = await axios.put(`${API_URLS.cajaChica}/cajachica/${id}`, cajaChica);
+    return response;
   },
 
   // Cerrar (liquidar) caja chica
   async cerrar(id, data) {
-    const response = await axios.patch(`${API_BASE_URL}/cajachica/${id}/cerrar`, data);
+    const response = await axios.patch(`${API_URLS.cajaChica}/cajachica/${id}/cerrar`, data);
     return response.data;
   },
 
   // Eliminar caja chica
-  async eliminar(id) {
-    const response = await axios.delete(`${API_BASE_URL}/cajachica/${id}`);
-    return response.data;
+  eliminar: async (id) => {
+    const response = await axios.delete(`${API_URLS.cajaChica}/cajachica/${id}`);
+    return response;
   },
 
   // Filtrar cajas chicas
   async filtrar(params) {
-    const response = await axios.get(`${API_BASE_URL}/cajachica/filtrar`, { params });
+    const response = await axios.get(`${API_URLS.cajaChica}/cajachica/filtrar`, { params });
     return response.data;
   },
 
   // Obtener todos los movimientos de una caja chica
-  async obtenerMovimientos(idCajaChica) {
-    const response = await axios.get(`${API_BASE_URL}/movimientos-cajachica/caja/${idCajaChica}`);
-    return response.data;
+  obtenerMovimientos: async () => {
+    const response = await axios.get(API_URLS.movimientosCajaChica);
+    return response;
   },
 
   // Obtener movimiento por ID
   async obtenerMovimiento(id) {
-    const response = await axios.get(`${API_BASE_URL}/movimientos-cajachica/${id}`);
+    const response = await axios.get(`${API_URLS.cajaChica}/movimientos-cajachica/${id}`);
     return response.data;
   },
 
   // Crear nuevo movimiento
   async crearMovimiento(movimiento) {
-    const response = await axios.post(`${API_BASE_URL}/movimientos-cajachica`, movimiento);
+    const response = await axios.post(`${API_URLS.cajaChica}/movimientos-cajachica`, movimiento);
     return response.data;
   },
 
   // Actualizar movimiento
   async actualizarMovimiento(id, movimiento) {
-    const response = await axios.put(`${API_BASE_URL}/movimientos-cajachica/${id}`, movimiento);
+    const response = await axios.put(`${API_URLS.cajaChica}/movimientos-cajachica/${id}`, movimiento);
     return response.data;
   },
 
   // Eliminar movimiento
   async eliminarMovimiento(id) {
-    const response = await axios.delete(`${API_BASE_URL}/movimientos-cajachica/${id}`);
+    const response = await axios.delete(`${API_URLS.cajaChica}/movimientos-cajachica/${id}`);
     return response.data;
   },
 
   // Calcular saldo actual de una caja chica
   async calcularSaldoActual(idCajaChica) {
-    const response = await axios.get(`${API_BASE_URL}/movimientos-cajachica/caja/${idCajaChica}/saldo`);
+    const response = await axios.get(`${API_URLS.cajaChica}/movimientos-cajachica/caja/${idCajaChica}/saldo`);
     return response.data;
   }
 };

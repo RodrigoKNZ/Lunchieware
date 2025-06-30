@@ -1,13 +1,13 @@
 import axios from 'axios';
+import { API_URLS } from '../config/api';
 
-// URL base que funciona tanto en desarrollo como en producción
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '/api/mercadopago' 
-  : 'http://localhost:5000/api/mercadopago';
+const API_BASE_URL = process.env.NODE_ENV === 'development' 
+  ? 'http://localhost:5000/api/mercadopago'
+  : 'https://lunchieware-backend.vercel.app/api/mercadopago';
 
 const mercadoPagoService = {
   async crearPreferencia({ amount, description, payer_email, external_reference, cliente_id }) {
-    const response = await axios.post(`${API_BASE_URL}/create-preference`, {
+    const response = await axios.post(`${API_URLS.mercadopago}/crear-preferencia`, {
       amount,
       description,
       payer_email,
@@ -18,7 +18,7 @@ const mercadoPagoService = {
   },
 
   async crearPreferenciaAlternativa({ amount, description, payer_email, external_reference, cliente_id }) {
-    const response = await axios.post(`${API_BASE_URL}/create-preference-api`, {
+    const response = await axios.post(`${API_URLS.mercadopago}/create-preference-api`, {
       amount,
       description,
       payer_email,
@@ -29,7 +29,7 @@ const mercadoPagoService = {
   },
 
   async consultarEstadoPago(paymentId) {
-    const response = await axios.get(`${API_BASE_URL}/payment-status/${paymentId}`);
+    const response = await axios.get(`${API_URLS.mercadopago}/estado/${paymentId}`);
     return response.data;
   },
 
@@ -67,6 +67,12 @@ const mercadoPagoService = {
       
       checkStatus();
     });
+  },
+
+  // Procesar webhook
+  procesarWebhook: async (datos) => {
+    const response = await axios.post(`${API_URLS.mercadopago}/webhook`, datos);
+    return response;
   }
 };
 
