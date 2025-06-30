@@ -114,7 +114,7 @@ const ListaClientes = () => {
     const fetchClientes = async () => {
         setLoading(true);
         try {
-            const res = await clienteService.obtenerTodas();
+            const res = await clienteService.obtenerTodos();
             // Validar que res.data sea un array
             const clientesRaw = Array.isArray(res.data) ? res.data : [];
             const clientesConContrato = await Promise.all(clientesRaw.map(async (cli) => {
