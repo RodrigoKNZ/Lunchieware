@@ -4,10 +4,16 @@
   "description": "Sistema de gestión de comedor universitario",
   "scripts": {
     "dev": "concurrently \"cd Server/backend && npm run dev\" \"cd Client/frontend && npm run dev\"",
-    "install-deps": "npm install && cd Client/frontend && npm install && cd ../../Server/backend && npm install"
+    "dev:https": "concurrently \"cd Server/backend && npm run dev:https\" \"cd Client/frontend && npm run dev:https\"",
+    "dev:prod-sim": "concurrently \"cd Server/backend && npm run dev:prod-sim\" \"cd Client/frontend && npm run dev:prod-sim\"",
+    "install-deps": "npm install && cd Client/frontend && npm install && cd ../../Server/backend && npm install",
+    "setup:ssl": "node scripts/setup-ssl.js",
+    "start:proxy": "node scripts/local-proxy.js"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "mkcert": "^1.4.4",
+    "http-proxy-middleware": "^2.0.6"
   },
   "engines": {
     "node": ">=18.0.0"

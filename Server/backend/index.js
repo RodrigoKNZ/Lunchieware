@@ -2,6 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const fs = require('fs');
+const path = require('path');
+const https = require('https');
 
 // Importar rutas
 const authRoutes = require('./routes/auth');
@@ -22,7 +25,9 @@ const app = express();
 const corsOptions = {
   origin: [
     'http://localhost:5173', // Desarrollo local
-    'http://localhost:3000', // Desarrollo local alternativo
+    'https://localhost:5173', // Desarrollo local HTTPS
+    'http://localhost:3000', // Proxy local
+    'https://localhost:3001', // Proxy local HTTPS
     'https://lunchieware-frontend.vercel.app', // Frontend en Vercel
     'https://lunchieware.vercel.app', // Si usas un dominio personalizado
     /\.vercel\.app$/, // Cualquier subdominio de Vercel
@@ -37,6 +42,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 const PORT = process.env.PORT || 5000;
+const isProductionSim = process.env.NODE_ENV === 'production-sim';
 
 // Ruta de prueba
 // app.get('/', (req, res) => {
@@ -101,20 +107,62 @@ app.use((error, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-  console.log(`📡 API disponible en: http://localhost:${PORT}`);
-  console.log(`🔐 Endpoints de autenticación: http://localhost:${PORT}/api/auth`);
-  console.log(`🍽️  Endpoints de menú: http://localhost:${PORT}/api/programacion-menu`);
-  console.log(`👥 Endpoints de clientes: http://localhost:${PORT}/api/clientes`);
-  console.log(`📝 Endpoints de quejas: http://localhost:${PORT}/api/quejas`);
-  console.log(`📦 Endpoints de sugerencias: http://localhost:${PORT}/api/sugerencias`);
-  console.log(`📦 Endpoints de productos: http://localhost:${PORT}/api/productos`);
-  console.log(`💰 Endpoints de caja chica: http://localhost:${PORT}/api/cajachica`);
-  console.log(`📊 Endpoints de movimientos caja chica: http://localhost:${PORT}/api/movimientos-cajachica`);
-  console.log(`📄 Endpoints de contratos: http://localhost:${PORT}/api/contratos`);
-  console.log(`📄 Endpoints de abonos: http://localhost:${PORT}/api/abonos`);
-  console.log(`📄 Endpoints de Mercado Pago: http://localhost:${PORT}/api/mercadopago`);
-});
+// Función para iniciar servidor HTTP
+function startHttpServer() {
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor HTTP corriendo en puerto ${PORT}`);
+    console.log(`📡 API disponible en: http://localhost:${PORT}`);
+    console.log(`🔐 Endpoints de autenticación: http://localhost:${PORT}/api/auth`);
+    console.log(`🍽️  Endpoints de menú: http://localhost:${PORT}/api/programacion-menu`);
+    console.log(`👥 Endpoints de clientes: http://localhost:${PORT}/api/clientes`);
+    console.log(`📝 Endpoints de quejas: http://localhost:${PORT}/api/quejas`);
+    console.log(`📦 Endpoints de sugerencias: http://localhost:${PORT}/api/sugerencias`);
+    console.log(`📦 Endpoints de productos: http://localhost:${PORT}/api/productos`);
+    console.log(`💰 Endpoints de caja chica: http://localhost:${PORT}/api/cajachica`);
+    console.log(`📊 Endpoints de movimientos caja chica: http://localhost:${PORT}/api/movimientos-cajachica`);
+    console.log(`📄 Endpoints de contratos: http://localhost:${PORT}/api/contratos`);
+    console.log(`📄 Endpoints de abonos: http://localhost:${PORT}/api/abonos`);
+    console.log(`📄 Endpoints de Mercado Pago: http://localhost:${PORT}/api/mercadopago`);
+  });
+}
+
+// Función para iniciar servidor HTTPS
+function startHttpsServer() {
+  const certPath = path.join(__dirname, '..', '..', 'ssl', 'localhost.pem');
+  const keyPath = path.join(__dirname, '..', '..', 'ssl', 'localhost-key.pem');
+  
+  if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+    const httpsOptions = {
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath)
+    };
+    
+    https.createServer(httpsOptions, app).listen(PORT, () => {
+      console.log(`🔐 Servidor HTTPS corriendo en puerto ${PORT}`);
+      console.log(`📡 API disponible en: https://localhost:${PORT}`);
+      console.log(`🔐 Endpoints de autenticación: https://localhost:${PORT}/api/auth`);
+      console.log(`🍽️  Endpoints de menú: https://localhost:${PORT}/api/programacion-menu`);
+      console.log(`👥 Endpoints de clientes: https://localhost:${PORT}/api/clientes`);
+      console.log(`📝 Endpoints de quejas: https://localhost:${PORT}/api/quejas`);
+      console.log(`📦 Endpoints de sugerencias: https://localhost:${PORT}/api/sugerencias`);
+      console.log(`📦 Endpoints de productos: https://localhost:${PORT}/api/productos`);
+      console.log(`💰 Endpoints de caja chica: https://localhost:${PORT}/api/cajachica`);
+      console.log(`📊 Endpoints de movimientos caja chica: https://localhost:${PORT}/api/movimientos-cajachica`);
+      console.log(`📄 Endpoints de contratos: https://localhost:${PORT}/api/contratos`);
+      console.log(`📄 Endpoints de abonos: https://localhost:${PORT}/api/abonos`);
+      console.log(`📄 Endpoints de Mercado Pago: https://localhost:${PORT}/api/mercadopago`);
+    });
+  } else {
+    console.log('⚠️  Certificados SSL no encontrados. Iniciando servidor HTTP...');
+    startHttpServer();
+  }
+}
+
+// Iniciar servidor según el modo
+if (isProductionSim) {
+  startHttpsServer();
+} else {
+  startHttpServer();
+}
 
 module.exports = app;

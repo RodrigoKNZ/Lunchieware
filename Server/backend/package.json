@@ -4,7 +4,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "dev:https": "nodemon --exec \"node -r dotenv/config index.js\" --env-file .env.local",
+    "dev:prod-sim": "nodemon --exec \"node -r dotenv/config index.js\" --env-file .env.prod-sim",
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",

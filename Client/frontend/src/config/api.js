@@ -2,11 +2,20 @@ import axios from 'axios';
 
 // Configuración de URLs de API
 const isDevelopment = import.meta.env.MODE === 'development';
+const isProductionSim = import.meta.env.MODE === 'production-sim';
 
 // URL base de la API
-export const API_BASE_URL = isDevelopment 
-  ? 'http://localhost:5000/api' 
-  : 'https://lunchieware-back.vercel.app/api';
+let API_BASE_URL;
+if (isProductionSim) {
+  // Simulación de producción local con HTTPS
+  API_BASE_URL = 'https://localhost:5000/api';
+} else if (isDevelopment) {
+  // Desarrollo local normal
+  API_BASE_URL = 'http://localhost:5000/api';
+} else {
+  // Producción real en Vercel
+  API_BASE_URL = 'https://lunchieware-back.vercel.app/api';
+}
 
 // URLs específicas para cada servicio
 export const API_URLS = {
@@ -29,6 +38,12 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Configuración para HTTPS local
+  ...(isProductionSim && {
+    httpsAgent: new (require('https').Agent)({
+      rejectUnauthorized: false
+    })
+  })
 });
 
 // Interceptor para agregar el token a todas las peticiones
