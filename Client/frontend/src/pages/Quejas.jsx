@@ -133,7 +133,6 @@ const Quejas = () => {
   const [nuevoAsunto, setNuevoAsunto] = React.useState('');
   const [nuevoDetalle, setNuevoDetalle] = React.useState('');
   const handleOpenModal = () => {
-    console.log('%c🟦 [Quejas] Modal de nueva queja abierto', 'color: #1976d2');
     setOpenModal(true);
   };
   const handleCloseModal = () => {
@@ -160,14 +159,10 @@ const Quejas = () => {
     const fetchQuejas = async () => {
       try {
         const res = await quejasService.obtenerTodas();
-        console.log('%c🟦 [Quejas] Respuesta al cargar quejas:', 'color: #1976d2', res);
-        // Validar que res.data sea un array
         const quejasData = Array.isArray(res.data.data) ? res.data.data : [];
-        console.log('%c🟢 [Quejas] Datos para setQuejas:', 'color: #388e3c', quejasData);
         setQuejas(quejasData);
         setQuejasFiltradas(quejasData);
       } catch (err) {
-        console.error('%c🔴 [Quejas] Error cargando quejas:', 'color: #d32f2f', err);
         setQuejas([]);
         setQuejasFiltradas([]);
       }
@@ -180,11 +175,6 @@ const Quejas = () => {
     try {
       const usuarioLogueado = JSON.parse(localStorage.getItem('user') || '{}');
       const idUsuario = usuarioLogueado.id;
-      console.log('%c🟦 [Quejas] Intentando crear queja', 'color: #1976d2', {
-        asunto: nuevoAsunto,
-        detalle: nuevoDetalle,
-        idUsuario
-      });
       if (!idUsuario) {
         alert('Error: No se pudo obtener la información del usuario');
         return;
@@ -195,10 +185,8 @@ const Quejas = () => {
         idUsuario
       };
       const respuesta = await quejasService.crear(nueva);
-      console.log('%c🟢 [Quejas] Respuesta de creación:', 'color: #388e3c', respuesta);
       const idQueja = respuesta.data.data.idQueja;
       const codigoQueja = idQueja.toString().padStart(5, '0');
-      console.log('%c🟢 [Quejas] ID generado:', 'color: #388e3c', idQueja, 'Código:', codigoQueja);
       await quejasService.actualizar(idQueja, {
         codigoQueja,
         asunto: nuevoAsunto,
@@ -212,7 +200,6 @@ const Quejas = () => {
       setQuejasFiltradas(quejasData);
       handleCloseModal();
     } catch (err) {
-      console.error('%c🔴 [Quejas] Error creando queja:', 'color: #d32f2f', err);
       setQuejas([]);
       setQuejasFiltradas([]);
     }
@@ -253,10 +240,6 @@ const Quejas = () => {
       alert('Error al eliminar queja');
     }
   };
-
-  // Antes del return del componente Quejas
-  console.log('%c🟡 [Quejas] Estado quejas:', 'color: #fbc02d', quejas);
-  console.log('%c🟡 [Quejas] Estado quejasFiltradas:', 'color: #fbc02d', quejasFiltradas);
 
   return (
     <Box sx={{ width: '100%', p: 0, pl: isMobile ? 1 : 3, pb: { xs: 7, md: 0 } }}>

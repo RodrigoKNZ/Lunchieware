@@ -133,16 +133,7 @@ const Sugerencias = () => {
     }));
   };
 
-  // LOGS EN CADA RENDER
-  React.useEffect(() => {
-    console.log('--- RENDER SUGERENCIAS ---');
-    console.log('filtrosAplicados:', filtrosAplicados);
-    console.log('filtrosEnEstadoInicial:', filtrosEnEstadoInicial);
-    console.log('filtroAsunto:', filtroAsunto);
-    console.log('filtroDesde:', filtroDesde);
-    console.log('filtroHasta:', filtroHasta);
-    console.log('--------------------------');
-  });
+  // LOGS ELIMINADOS
 
   // 4. Handlers de botones
   const handleAplicarFiltros = () => {
