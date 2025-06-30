@@ -165,10 +165,8 @@ router.post('/create-preference', async (req, res) => {
     }
     description = description || 'Recarga de saldo Lunchieware';
     
-    // Usar URL de producción si está disponible, si no usar host local
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : (process.env.NGROK_URL || `${req.protocol}://${req.get('host')}`);
+    // Usar URL del frontend si está disponible, si no usar host local
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
     // Crear external_reference con ID del cliente si está disponible
     const externalRef = cliente_id ? 
@@ -192,7 +190,7 @@ router.post('/create-preference', async (req, res) => {
       external_reference: externalRef,
       // Incluir notification_url solo en producción
       ...(process.env.VERCEL_URL ? { 
-        notification_url: `${baseUrl}/api/mercadopago/webhook`
+        notification_url: `${process.env.VERCEL_URL.startsWith('http') ? process.env.VERCEL_URL : 'https://' + process.env.VERCEL_URL}/api/mercadopago/webhook`
       } : {})
     };
 
