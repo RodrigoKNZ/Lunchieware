@@ -387,10 +387,9 @@ const MiCuenta = () => {
       });
       console.log('%c🟢 [Pago] Respuesta de crearPreferencia:', 'color: #388e3c', response);
       
-      if (response.data && response.data.initPoint) {
-        setUrlPago(response.data.initPoint);
-        // Redirigir automáticamente al checkout de Mercado Pago en la misma pestaña
-        window.location.href = response.data.initPoint;
+      if (response.data && response.data.data && response.data.data.initPoint) {
+        setUrlPago(response.data.data.initPoint);
+        window.location.href = response.data.data.initPoint;
       } else {
         setErrorMonto('No se pudo generar el enlace de pago. Intenta nuevamente.');
       }
