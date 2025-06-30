@@ -204,7 +204,7 @@ const Sugerencias = () => {
         const res = await sugerenciasService.obtenerTodas();
         console.log('%c🟦 [Sugerencias] Respuesta al cargar sugerencias:', 'color: #1976d2', res);
         // Validar que res.data sea un array
-        const sugerenciasData = Array.isArray(res.data) ? res.data : [];
+        const sugerenciasData = Array.isArray(res.data.data) ? res.data.data : [];
         console.log('%c🟢 [Sugerencias] Datos para setSugerencias:', 'color: #388e3c', sugerenciasData);
         setSugerencias(sugerenciasData);
         setSugerenciasFiltradas(sugerenciasData);
@@ -252,7 +252,7 @@ const Sugerencias = () => {
       
       // Recargar sugerencias
       const res = await sugerenciasService.obtenerTodas();
-      const sugerenciasData = Array.isArray(res.data) ? res.data : [];
+      const sugerenciasData = Array.isArray(res.data.data) ? res.data.data : [];
       setSugerencias(sugerenciasData);
       setSugerenciasFiltradas(sugerenciasData);
       handleCloseModal();
@@ -273,7 +273,7 @@ const Sugerencias = () => {
         activo: true
       });
       const res = await sugerenciasService.obtenerTodas();
-      const sugerenciasData = Array.isArray(res.data) ? res.data : [];
+      const sugerenciasData = Array.isArray(res.data.data) ? res.data.data : [];
       setSugerencias(sugerenciasData);
       setSugerenciasFiltradas(sugerenciasData);
       setEditarOpen(false);
@@ -288,7 +288,7 @@ const Sugerencias = () => {
     try {
       await sugerenciasService.eliminar(sugerenciaSeleccionada.idSugerencia);
       const res = await sugerenciasService.obtenerTodas();
-      const sugerenciasData = Array.isArray(res.data) ? res.data : [];
+      const sugerenciasData = Array.isArray(res.data.data) ? res.data.data : [];
       setSugerencias(sugerenciasData);
       setSugerenciasFiltradas(sugerenciasData);
       setEliminarOpen(false);
