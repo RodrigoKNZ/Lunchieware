@@ -195,7 +195,7 @@ const Quejas = () => {
       };
       const respuesta = await quejasService.crear(nueva);
       console.log('%c🟢 [Quejas] Respuesta de creación:', 'color: #388e3c', respuesta);
-      const idQueja = respuesta.data.idQueja;
+      const idQueja = respuesta.data.data.idQueja;
       const codigoQueja = idQueja.toString().padStart(5, '0');
       console.log('%c🟢 [Quejas] ID generado:', 'color: #388e3c', idQueja, 'Código:', codigoQueja);
       await quejasService.actualizar(idQueja, {

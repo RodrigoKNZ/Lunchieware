@@ -238,8 +238,8 @@ const Sugerencias = () => {
         idUsuario
       };
       const respuesta = await sugerenciasService.crear(nueva);
-      console.log('%c�� [Sugerencias] Respuesta de creación:', 'color: #388e3c', respuesta);
-      const idSugerencia = respuesta.data.idSugerencia;
+      console.log('%c🟢 [Sugerencias] Respuesta de creación:', 'color: #388e3c', respuesta);
+      const idSugerencia = respuesta.data.data.idSugerencia;
       const codigoSugerencia = idSugerencia.toString().padStart(5, '0');
       console.log('%c🟢 [Sugerencias] ID generado:', 'color: #388e3c', idSugerencia, 'Código:', codigoSugerencia);
       
