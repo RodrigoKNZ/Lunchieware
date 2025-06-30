@@ -121,8 +121,7 @@ const ListaClientes = () => {
                 let monto = '-';
                 let vigencia = cli.clienteVigente ? 'Vigente' : 'No vigente';
                 if (cli.clienteVigente) {
-                    const contratosRes = await clienteService.obtenerContratosPorCliente(cli.idCliente);
-                    const contratos = contratosRes.data || [];
+                    const contratos = await clienteService.obtenerContratos(cli.idCliente) || [];
                     const contratoActual = contratos.length > 0 ? contratos[0] : null;
                     if (contratoActual) {
                         const saldoNum = Number(contratoActual.importeSaldo);
