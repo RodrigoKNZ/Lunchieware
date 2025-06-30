@@ -1,6 +1,7 @@
 import { Box, Button, TextField, Typography, Paper, Avatar, useTheme, useMediaQuery, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { useState, useRef } from 'react';
 import axios from 'axios';
+import { API_URLS } from '../config/api';
 
 const Login = ({ onLogin }) => {
   const theme = useTheme();
@@ -21,7 +22,7 @@ const Login = ({ onLogin }) => {
     setLoading(true);
     setError(false); // Limpiar errores previos
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', {
+      const res = await axios.post(`${API_URLS.auth}/login`, {
         nombreUsuario: usuario,
         password: password
       });
@@ -82,7 +83,7 @@ const Login = ({ onLogin }) => {
         setLoading(true);
         setError(false);
         try {
-          const res = await axios.post('http://localhost:5000/api/auth/login', {
+          const res = await axios.post(`${API_URLS.auth}/login`, {
             nombreUsuario: usuario,
             password: newPassword
           });
