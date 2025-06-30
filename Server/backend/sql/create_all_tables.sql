@@ -88,6 +88,22 @@ CREATE TABLE IF NOT EXISTS "ComprobanteVenta" (
   CONSTRAINT "FK_ComprobanteVenta_Consumo" FOREIGN KEY ("idConsumo") REFERENCES "Consumo"("idConsumo")
 );
 
+-- Crear tabla Producto (ya existe, pero la incluimos para completitud)
+CREATE TABLE IF NOT EXISTS "Producto" (
+  "idProducto" SERIAL PRIMARY KEY,
+  "codigoProducto" VARCHAR(30) NOT NULL,
+  "nombreProducto" VARCHAR(255) NOT NULL,
+  "nombreCorto" VARCHAR(20) NOT NULL,
+  "tipoProducto" CHAR(1) NOT NULL,
+  "costoUnitario" NUMERIC(10,2) NOT NULL,
+  "afectoIGV" BOOLEAN NOT NULL DEFAULT true,
+  "disponible" BOOLEAN NOT NULL DEFAULT true,
+  "activo" BOOLEAN NOT NULL DEFAULT true
+);
+
+-- Crear índice normal en codigoProducto para Producto
+CREATE INDEX IF NOT EXISTS idx_producto_codigo ON "Producto" ("codigoProducto");
+
 -- Crear tabla FilaDetalleComprobante
 CREATE TABLE IF NOT EXISTS "FilaDetalleComprobante" (
   "idComprobante" INTEGER NOT NULL,
@@ -126,22 +142,6 @@ CREATE TABLE IF NOT EXISTS "Abono" (
   "activo" BOOLEAN NOT NULL DEFAULT true,
   CONSTRAINT "FK_Abono_Contrato" FOREIGN KEY ("idContrato") REFERENCES "Contrato"("idContrato")
 );
-
--- Crear tabla Producto (ya existe, pero la incluimos para completitud)
-CREATE TABLE IF NOT EXISTS "Producto" (
-  "idProducto" SERIAL PRIMARY KEY,
-  "codigoProducto" VARCHAR(30) NOT NULL,
-  "nombreProducto" VARCHAR(255) NOT NULL,
-  "nombreCorto" VARCHAR(20) NOT NULL,
-  "tipoProducto" CHAR(1) NOT NULL,
-  "costoUnitario" NUMERIC(10,2) NOT NULL,
-  "afectoIGV" BOOLEAN NOT NULL DEFAULT true,
-  "disponible" BOOLEAN NOT NULL DEFAULT true,
-  "activo" BOOLEAN NOT NULL DEFAULT true
-);
-
--- Crear índice normal en codigoProducto para Producto
-CREATE INDEX IF NOT EXISTS idx_producto_codigo ON "Producto" ("codigoProducto");
 
 -- Crear tabla Banco
 CREATE TABLE IF NOT EXISTS "Banco" (
@@ -210,14 +210,14 @@ CREATE TABLE IF NOT EXISTS "MovimientoDeCajaChica" (
 -- Crear tabla Queja
 CREATE TABLE IF NOT EXISTS "Queja" (
   "idQueja" SERIAL PRIMARY KEY,
-  "codigoQueja" VARCHAR(30) NOT NULL,
-  "asunto" TEXT NULL,
-  "resuelto" BOOLEAN NOT NULL DEFAULT false,
-  "detalle" TEXT NULL,
-  "fechaCreacion" DATE NOT NULL,
-  "idUsuario" INTEGER NOT NULL,
+  "codigoQueja" VARCHAR(30) NULL,
+  "titulo" VARCHAR(100) NOT NULL,
+  "resuelta" BOOLEAN NOT NULL DEFAULT false,
+  "detalle" TEXT NOT NULL,
+  "fechaRegistro" DATE NOT NULL,
+  "idCliente" INTEGER NOT NULL,
   "activo" BOOLEAN NOT NULL DEFAULT true,
-  CONSTRAINT "FK_Queja_Usuario" FOREIGN KEY ("idUsuario") REFERENCES "Usuario"("idUsuario")
+  CONSTRAINT "FK_Queja_Cliente" FOREIGN KEY ("idCliente") REFERENCES "Cliente"("idCliente")
 );
 
 -- Crear índice único en codigoQueja para Queja
@@ -226,13 +226,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_queja_codigo ON "Queja" ("codigoQueja");
 -- Crear tabla Sugerencia
 CREATE TABLE IF NOT EXISTS "Sugerencia" (
   "idSugerencia" SERIAL PRIMARY KEY,
-  "codigoSugerencia" VARCHAR(30) NOT NULL,
-  "asunto" TEXT NULL,
-  "detalle" TEXT NULL,
-  "fechaCreacion" DATE NOT NULL,
-  "idUsuario" INTEGER NOT NULL,
+  "codigoSugerencia" VARCHAR(30) NULL,
+  "titulo" VARCHAR(100) NOT NULL,
+  "detalle" TEXT NOT NULL,
+  "fechaRegistro" DATE NOT NULL,
+  "idCliente" INTEGER NOT NULL,
   "activo" BOOLEAN NOT NULL DEFAULT true,
-  CONSTRAINT "FK_Sugerencia_Usuario" FOREIGN KEY ("idUsuario") REFERENCES "Usuario"("idUsuario")
+  CONSTRAINT "FK_Sugerencia_Cliente" FOREIGN KEY ("idCliente") REFERENCES "Cliente"("idCliente")
 );
 
 -- Crear índice único en codigoSugerencia para Sugerencia
@@ -253,20 +253,6 @@ CREATE TABLE IF NOT EXISTS "NotaDeCredito" (
   "activo" BOOLEAN NOT NULL DEFAULT true,
   CONSTRAINT "FK_NotaDeCredito_ComprobanteVenta" FOREIGN KEY ("idComprobante") REFERENCES "ComprobanteVenta"("idComprobante")
 );
-
--- Insertar datos de prueba para Producto
-INSERT INTO "Producto" ("codigoProducto", "nombreProducto", "nombreCorto", "tipoProducto", "costoUnitario", "afectoIGV", "disponible", "activo") VALUES
-('PROD001', 'Hamburguesa Clásica', 'Hamb Clásica', 'C', 15.50, true, true, true),
-('PROD002', 'Pizza Margherita', 'Pizza Marg', 'C', 18.00, true, true, true),
-('PROD003', 'Ensalada César', 'Ensalada César', 'C', 12.00, true, true, true),
-('PROD004', 'Coca Cola 500ml', 'Coca 500ml', 'B', 3.50, true, true, true),
-('PROD005', 'Agua Mineral', 'Agua Min', 'B', 2.00, false, true, true),
-('PROD006', 'Torta de Chocolate', 'Torta Choc', 'P', 8.00, true, true, true),
-('PROD007', 'Helado de Vainilla', 'Helado Van', 'P', 5.50, true, false, true),
-('PROD008', 'Pollo a la Plancha', 'Pollo Plancha', 'C', 20.00, true, true, true),
-('PROD009', 'Jugo de Naranja', 'Jugo Naranja', 'B', 4.00, true, true, true),
-('PROD010', 'Tiramisú', 'Tiramisú', 'P', 10.00, true, true, true)
-ON CONFLICT ("codigoProducto") DO NOTHING;
 
 -- Verificar que todas las tablas se crearon correctamente
 SELECT 'Todas las tablas creadas exitosamente' as mensaje;

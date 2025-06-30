@@ -5,7 +5,7 @@ Campo                    Tipo de dato        PK   FK   Nulo  Referencia         
 --------------------------------------------------------------------------------------------------------------------------------------------
 idUsuario                INTEGER             Sí   No   No    —                             Identificador único del usuario en el sistema.
 nombreUsuario            VARCHAR(100)        No   No   No    —                             Nombre de usuario utilizado para iniciar sesión.
-contraseña               VARCHAR(255)        No   No   No    —                             Contraseña encriptada del usuario.
+password                 VARCHAR(255)        No   No   No    —                             Contraseña encriptada del usuario.
 accesoRealizado          BOOLEAN             No   No   No    —                             Indica si el usuario ha iniciado sesión exitosamente al menos una vez.
 rol                      VARCHAR(50)         No   No   No    —                             Rol asignado al usuario para definir su nivel de acceso en el sistema.
 activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.
