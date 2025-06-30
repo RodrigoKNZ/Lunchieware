@@ -160,13 +160,14 @@ const Quejas = () => {
     const fetchQuejas = async () => {
       try {
         const res = await quejasService.obtenerTodas();
-        console.log('Quejas cargadas del backend:', res.data);
+        console.log('%c🟦 [Quejas] Respuesta al cargar quejas:', 'color: #1976d2', res);
         // Validar que res.data sea un array
         const quejasData = Array.isArray(res.data) ? res.data : [];
+        console.log('%c🟢 [Quejas] Datos para setQuejas:', 'color: #388e3c', quejasData);
         setQuejas(quejasData);
         setQuejasFiltradas(quejasData);
       } catch (err) {
-        console.error('Error cargando quejas:', err);
+        console.error('%c🔴 [Quejas] Error cargando quejas:', 'color: #d32f2f', err);
         setQuejas([]);
         setQuejasFiltradas([]);
       }
@@ -252,6 +253,10 @@ const Quejas = () => {
       alert('Error al eliminar queja');
     }
   };
+
+  // Antes del return del componente Quejas
+  console.log('%c🟡 [Quejas] Estado quejas:', 'color: #fbc02d', quejas);
+  console.log('%c🟡 [Quejas] Estado quejasFiltradas:', 'color: #fbc02d', quejasFiltradas);
 
   return (
     <Box sx={{ width: '100%', p: 0, pl: isMobile ? 1 : 3, pb: { xs: 7, md: 0 } }}>

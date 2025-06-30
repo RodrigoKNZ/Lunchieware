@@ -202,15 +202,14 @@ const Sugerencias = () => {
     const fetchSugerencias = async () => {
       try {
         const res = await sugerenciasService.obtenerTodas();
-        console.log('Sugerencias cargadas del backend:', res.data);
-        console.log('Ejemplo de fecha de sugerencia:', res.data[0]?.fechaCreacion);
-        console.log('Tipo de fecha:', typeof res.data[0]?.fechaCreacion);
+        console.log('%c🟦 [Sugerencias] Respuesta al cargar sugerencias:', 'color: #1976d2', res);
         // Validar que res.data sea un array
         const sugerenciasData = Array.isArray(res.data) ? res.data : [];
+        console.log('%c🟢 [Sugerencias] Datos para setSugerencias:', 'color: #388e3c', sugerenciasData);
         setSugerencias(sugerenciasData);
         setSugerenciasFiltradas(sugerenciasData);
       } catch (err) {
-        console.error('Error cargando sugerencias:', err);
+        console.error('%c🔴 [Sugerencias] Error cargando sugerencias:', 'color: #d32f2f', err);
         setSugerencias([]);
         setSugerenciasFiltradas([]);
       }
@@ -301,6 +300,10 @@ const Sugerencias = () => {
 
   // 6. Cambiar fuente de datos de la tabla
   const rowsToShow = sugerenciasFiltradas.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  // Antes del return del componente Sugerencias
+  console.log('%c🟡 [Sugerencias] Estado sugerencias:', 'color: #fbc02d', sugerencias);
+  console.log('%c🟡 [Sugerencias] Estado sugerenciasFiltradas:', 'color: #fbc02d', sugerenciasFiltradas);
 
   return (
     <Box sx={{ width: '100%', p: 0, pl: isMobile ? 1 : 3, pb: { xs: 7, md: 0 } }}>
