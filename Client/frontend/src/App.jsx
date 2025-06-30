@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { API_URLS } from './config/api';
 import ClientLayout from './layouts/ClientLayout';
 import ClientHome from './pages/ClientHome';
 import MenuProgramacion from './pages/MenuProgramacion';
@@ -35,7 +36,7 @@ function App() {
   useEffect(() => {
     if (!user) {
       setLoadingUser(true);
-      fetch('/api/auth/me', { credentials: 'include' })
+      fetch(`${API_URLS.auth}/me`, { credentials: 'include' })
         .then(res => res.ok ? res.json() : null)
         .then(data => {
           if (data && data.usuario) {
@@ -55,7 +56,7 @@ function App() {
 
   // Función para cerrar sesión
   const handleLogout = () => {
-    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    fetch(`${API_URLS.auth}/logout`, { method: 'POST', credentials: 'include' })
       .finally(() => {
         localStorage.removeItem('user');
         setUser(null);
