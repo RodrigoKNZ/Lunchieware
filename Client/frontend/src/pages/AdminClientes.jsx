@@ -115,7 +115,6 @@ const ListaClientes = () => {
         setLoading(true);
         try {
             const res = await clienteService.obtenerTodos();
-            // Validar que res.data sea un array
             const clientesRaw = Array.isArray(res.data) ? res.data : [];
             const clientesConContrato = await Promise.all(clientesRaw.map(async (cli) => {
                 let saldo = '-';
@@ -147,6 +146,7 @@ const ListaClientes = () => {
                     idCliente: cli.idCliente
                 };
             }));
+            console.log('🟢 clientesConContrato:', clientesConContrato);
             setClientes(clientesConContrato);
             setClientesFiltrados(clientesConContrato);
         } catch (err) {
@@ -322,6 +322,8 @@ const ListaClientes = () => {
             setNuevoCliente(nc => ({ ...nc, grado: '' }));
         }
     }, [nuevoCliente.nivel]);
+
+    console.log('🟡 clientesFiltrados para renderizar:', clientesFiltrados);
 
     return (
         <Paper sx={{ p: 2, border: '1px solid #e0e0e0' }} elevation={0}>
