@@ -121,7 +121,8 @@ const ListaClientes = () => {
                 let monto = '-';
                 let vigencia = cli.clienteVigente ? 'Vigente' : 'No vigente';
                 if (cli.clienteVigente) {
-                    const contratos = await clienteService.obtenerContratos(cli.idCliente) || [];
+                    const contratosResp = await clienteService.obtenerContratos(cli.idCliente);
+                    const contratos = Array.isArray(contratosResp.data) ? contratosResp.data : [];
                     console.log(`🟦 Contratos para cliente ${cli.idCliente}:`, contratos);
                     const contratoActual = contratos.length > 0 ? contratos[0] : null;
                     if (contratoActual) {
