@@ -1,10 +1,10 @@
 // Configuración de URLs de API
-const isDevelopment = import.meta.env.DEV;
+const isDevelopment = import.meta.env.MODE === 'development';
 
 // URL base de la API
 export const API_BASE_URL = isDevelopment 
   ? 'http://localhost:5000/api' 
-  : 'https://lunchieware-backend.vercel.app/api';
+  : 'https://lunchieware-back.vercel.app/api';
 
 // URLs específicas para cada servicio
 export const API_URLS = {
