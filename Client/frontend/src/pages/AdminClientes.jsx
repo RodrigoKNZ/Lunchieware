@@ -150,6 +150,7 @@ const ListaClientes = () => {
             setClientes(clientesConContrato);
             setClientesFiltrados(clientesConContrato);
         } catch (err) {
+            console.error('❌ Error en fetchClientes:', err);
             setClientes([]);
             setClientesFiltrados([]);
         } finally {
