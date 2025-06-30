@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Paper, Typography, TextField, Button, Divider, IconButton, MenuItem, Select, InputLabel, FormControl, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Tooltip, Breadcrumbs, TablePagination, Popover, InputAdornment
+  Box, Paper, Typography, TextField, Button, Divider, IconButton, MenuItem, Select, InputLabel, FormControl, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Tooltip, Breadcrumbs, TablePagination
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
@@ -45,9 +45,17 @@ const AdminCajaChica = () => {
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [filtrosAplicados, setFiltrosAplicados] = useState(false);
 
-  // Estados para Popover
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [popoverType, setPopoverType] = useState('');
+  // Datos y paginación
+  const [cajas, setCajas] = useState([]);
+  const [cajasFiltradas, setCajasFiltradas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Modal apertura
+  const [modalApertura, setModalApertura] = useState(false);
+  const [nuevoSaldoInicial, setNuevoSaldoInicial] = useState('');
+  const [nuevaObs, setNuevaObs] = useState('');
 
   const filtrosIniciales = {
     numero: '',
@@ -70,32 +78,6 @@ const AdminCajaChica = () => {
     filtroSaldoFinalMin === filtrosIniciales.saldoFinalMin &&
     filtroSaldoFinalMax === filtrosIniciales.saldoFinalMax &&
     filtroEstado === filtrosIniciales.estado;
-
-  // Datos y paginación
-  const [cajas, setCajas] = useState([]);
-  const [cajasFiltradas, setCajasFiltradas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-
-  // Modal apertura
-  const [modalApertura, setModalApertura] = useState(false);
-  const [nuevoSaldoInicial, setNuevoSaldoInicial] = useState('');
-  const [nuevaObs, setNuevaObs] = useState('');
-
-  // Handlers Popover
-  const handleOpenPopover = (event, type) => {
-    setAnchorEl(event.currentTarget);
-    setPopoverType(type);
-  };
-
-  const handleClosePopover = () => {
-    setAnchorEl(null);
-    setPopoverType('');
-  };
-
-  const open = Boolean(anchorEl);
-  const idPopover = open ? 'date-range-popover' : undefined;
 
   // Filtros
   const handleAplicarFiltros = () => {
@@ -364,19 +346,6 @@ const AdminCajaChica = () => {
           <Button onClick={handleGuardarNuevaCaja} sx={{ fontWeight: 600 }} disabled={!nuevoSaldoInicial}>Guardar</Button>
         </DialogActions>
       </Dialog>
-
-      <Popover
-        id={idPopover}
-        open={open}
-        anchorEl={anchorEl}
-        onClose={handleClosePopover}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-      >
-        {/* Popover content */}
-      </Popover>
     </Box>
   );
 };

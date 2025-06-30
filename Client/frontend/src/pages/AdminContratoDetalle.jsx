@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Breadcrumbs, Tabs, Tab, Paper, Button, Divider, IconButton, Grid, TextField, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TablePagination, Select, MenuItem, InputLabel, FormControl, Dialog, DialogTitle, DialogContent, DialogActions, Popover, InputAdornment } from '@mui/material';
+import { Box, Typography, Breadcrumbs, Tabs, Tab, Paper, Button, Divider, IconButton, Grid, TextField, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TablePagination, Select, MenuItem, InputLabel, FormControl, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
@@ -83,10 +83,6 @@ const AdminContratoDetalle = () => {
     const [tabValue, setTabValue] = useState(0);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-
-    // Estados para Popover
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [popoverType, setPopoverType] = useState(null);
 
     // Estados de datos
     const [consumos, setConsumos] = useState(mockConsumos);
@@ -192,20 +188,6 @@ const AdminContratoDetalle = () => {
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0);
     };
-
-    // Handlers Popover
-    const handleOpenPopover = (event, type) => {
-        setAnchorEl(event.currentTarget);
-        setPopoverType(type);
-    };
-
-    const handleClosePopover = () => {
-        setAnchorEl(null);
-        setPopoverType(null);
-    };
-
-    const openPopover = Boolean(anchorEl);
-    const idPopover = openPopover ? 'date-range-popover' : undefined;
 
     // Lógica de Filtros
     const handleAplicarFiltrosConsumos = () => {
@@ -755,34 +737,6 @@ const AdminContratoDetalle = () => {
                     <Button onClick={handleGuardarNotaCredito} variant="contained">Guardar</Button>
                 </DialogActions>
             </Dialog>
-
-            <Popover
-                id={idPopover}
-                open={openPopover}
-                anchorEl={anchorEl}
-                onClose={handleClosePopover}
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'left',
-                }}
-            >
-                <DateRange
-                    editableDateInputs={true}
-                    onChange={item => {
-                        if (popoverType === 'consumos') setFiltrosConsumos({ ...filtrosConsumos, fechaDesde: item.selection[0].startDate, fechaHasta: item.selection[0].endDate });
-                        else if (popoverType === 'abonos') setFiltrosAbonos({ ...filtrosAbonos, fechaDesde: item.selection[0].startDate, fechaHasta: item.selection[0].endDate });
-                        else if (popoverType === 'devoluciones') setFiltrosDevoluciones({ ...filtrosDevoluciones, fechaDesde: item.selection[0].startDate, fechaHasta: item.selection[0].endDate });
-                        else if (popoverType === 'notasCredito') setFiltrosNotasCredito({ ...filtrosNotasCredito, fechaDesde: item.selection[0].startDate, fechaHasta: item.selection[0].endDate });
-                    }}
-                    moveRangeOnFirstSelection={false}
-                    ranges={
-                        popoverType === 'consumos' ? [filtrosConsumos] :
-                        popoverType === 'abonos' ? [filtrosAbonos] :
-                        popoverType === 'devoluciones' ? [filtrosDevoluciones] :
-                        [filtrosNotasCredito]
-                    }
-                />
-            </Popover>
         </React.Fragment>
     );
 };

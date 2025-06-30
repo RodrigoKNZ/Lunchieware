@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Breadcrumbs, Tabs, Tab, Paper, Button, Divider, IconButton, Grid, TextField, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TablePagination, Dialog, DialogTitle, DialogContent, DialogActions, Popover, InputAdornment } from '@mui/material';
+import { Box, Typography, Breadcrumbs, Tabs, Tab, Paper, Button, Divider, IconButton, Grid, TextField, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TablePagination, Dialog, DialogTitle, DialogContent, DialogActions, InputAdornment } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
@@ -13,10 +13,6 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import dayjs from 'dayjs';
-import { DateRange } from 'react-date-range';
-import 'react-date-range/dist/styles.css'; // main style file
-import 'react-date-range/dist/theme/default.css'; // theme css file
-import es from 'date-fns/locale/es';
 import clienteService from '../services/clienteService';
 
 const mockClienteDetalle = {
@@ -156,42 +152,38 @@ const AdminClienteDetalle = () => {
 
     // Estados de filtros
     const [filtroCodigo, setFiltroCodigo] = useState('');
-    const [rangoFechaCreacion, setRangoFechaCreacion] = useState([{
-        startDate: null,
-        endDate: null,
-        key: 'selection'
-    }]);
-    const [rangoInicioVigencia, setRangoInicioVigencia] = useState([{
-        startDate: null,
-        endDate: null,
-        key: 'selection'
-    }]);
-    const [rangoFinVigencia, setRangoFinVigencia] = useState([{
-        startDate: null,
-        endDate: null,
-        key: 'selection'
-    }]);
-
-    // Estados para Popover
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [popoverType, setPopoverType] = useState('');
     
+    // Filtros de fecha de creación
+    const [fechaCreacionDesde, setFechaCreacionDesde] = useState(null);
+    const [fechaCreacionHasta, setFechaCreacionHasta] = useState(null);
+    
+    // Filtros de fecha de inicio de vigencia
+    const [fechaInicioVigenciaDesde, setFechaInicioVigenciaDesde] = useState(null);
+    const [fechaInicioVigenciaHasta, setFechaInicioVigenciaHasta] = useState(null);
+    
+    // Filtros de fecha de fin de vigencia
+    const [fechaFinVigenciaDesde, setFechaFinVigenciaDesde] = useState(null);
+    const [fechaFinVigenciaHasta, setFechaFinVigenciaHasta] = useState(null);
+
     // Estado de control de filtros
     const [filtrosAplicados, setFiltrosAplicados] = useState(false);
     const filtrosIniciales = {
         codigo: '',
-        fechaCreacion: [{ startDate: null, endDate: null, key: 'selection' }],
-        inicioVigencia: [{ startDate: null, endDate: null, key: 'selection' }],
-        finVigencia: [{ startDate: null, endDate: null, key: 'selection' }],
+        fechaCreacionDesde: null,
+        fechaCreacionHasta: null,
+        fechaInicioVigenciaDesde: null,
+        fechaInicioVigenciaHasta: null,
+        fechaFinVigenciaDesde: null,
+        fechaFinVigenciaHasta: null,
     };
     const filtrosEnEstadoInicial =
         filtroCodigo === filtrosIniciales.codigo &&
-        rangoFechaCreacion[0].startDate === null &&
-        rangoFechaCreacion[0].endDate === null &&
-        rangoInicioVigencia[0].startDate === null &&
-        rangoInicioVigencia[0].endDate === null &&
-        rangoFinVigencia[0].startDate === null &&
-        rangoFinVigencia[0].endDate === null;
+        !fechaCreacionDesde &&
+        !fechaCreacionHasta &&
+        !fechaInicioVigenciaDesde &&
+        !fechaInicioVigenciaHasta &&
+        !fechaFinVigenciaDesde &&
+        !fechaFinVigenciaHasta;
 
     // Estados de modales
     const [nuevoContratoModalOpen, setNuevoContratoModalOpen] = useState(false);
@@ -231,22 +223,19 @@ const AdminClienteDetalle = () => {
             const matchCodigo = !filtroCodigo || c.codigo.toLowerCase().includes(filtroCodigo.toLowerCase());
             
             const fechaCreacionContrato = dayjs(c.fechaCreacion, 'DD/MM/YYYY');
-            const [rangoCreacion] = rangoFechaCreacion;
             const matchFechaCreacion = 
-                (!rangoCreacion.startDate || fechaCreacionContrato.isSame(dayjs(rangoCreacion.startDate), 'day') || fechaCreacionContrato.isAfter(dayjs(rangoCreacion.startDate), 'day')) &&
-                (!rangoCreacion.endDate || fechaCreacionContrato.isSame(dayjs(rangoCreacion.endDate), 'day') || fechaCreacionContrato.isBefore(dayjs(rangoCreacion.endDate), 'day'));
+                (!fechaCreacionDesde || fechaCreacionContrato.isSame(dayjs(fechaCreacionDesde), 'day') || fechaCreacionContrato.isAfter(dayjs(fechaCreacionDesde), 'day')) &&
+                (!fechaCreacionHasta || fechaCreacionContrato.isSame(dayjs(fechaCreacionHasta), 'day') || fechaCreacionContrato.isBefore(dayjs(fechaCreacionHasta), 'day'));
 
             const inicioVigenciaContrato = dayjs(c.inicioVigencia, 'DD/MM/YYYY');
-            const [rangoInicio] = rangoInicioVigencia;
             const matchInicioVigencia =
-                (!rangoInicio.startDate || inicioVigenciaContrato.isSame(dayjs(rangoInicio.startDate), 'day') || inicioVigenciaContrato.isAfter(dayjs(rangoInicio.startDate), 'day')) &&
-                (!rangoInicio.endDate || inicioVigenciaContrato.isSame(dayjs(rangoInicio.endDate), 'day') || inicioVigenciaContrato.isBefore(dayjs(rangoInicio.endDate), 'day'));
+                (!fechaInicioVigenciaDesde || inicioVigenciaContrato.isSame(dayjs(fechaInicioVigenciaDesde), 'day') || inicioVigenciaContrato.isAfter(dayjs(fechaInicioVigenciaDesde), 'day')) &&
+                (!fechaInicioVigenciaHasta || inicioVigenciaContrato.isSame(dayjs(fechaInicioVigenciaHasta), 'day') || inicioVigenciaContrato.isBefore(dayjs(fechaInicioVigenciaHasta), 'day'));
 
             const finVigenciaContrato = dayjs(c.finVigencia, 'DD/MM/YYYY');
-            const [rangoFin] = rangoFinVigencia;
             const matchFinVigencia =
-                (!rangoFin.startDate || finVigenciaContrato.isSame(dayjs(rangoFin.startDate), 'day') || finVigenciaContrato.isAfter(dayjs(rangoFin.startDate), 'day')) &&
-                (!rangoFin.endDate || finVigenciaContrato.isSame(dayjs(rangoFin.endDate), 'day') || finVigenciaContrato.isBefore(dayjs(rangoFin.endDate), 'day'));
+                (!fechaFinVigenciaDesde || finVigenciaContrato.isSame(dayjs(fechaFinVigenciaDesde), 'day') || finVigenciaContrato.isAfter(dayjs(fechaFinVigenciaDesde), 'day')) &&
+                (!fechaFinVigenciaHasta || finVigenciaContrato.isSame(dayjs(fechaFinVigenciaHasta), 'day') || finVigenciaContrato.isBefore(dayjs(fechaFinVigenciaHasta), 'day'));
 
             return matchCodigo && matchFechaCreacion && matchInicioVigencia && matchFinVigencia;
         });
@@ -257,27 +246,16 @@ const AdminClienteDetalle = () => {
 
     const handleLimpiarFiltros = () => {
         setFiltroCodigo(filtrosIniciales.codigo);
-        setRangoFechaCreacion(filtrosIniciales.fechaCreacion);
-        setRangoInicioVigencia(filtrosIniciales.inicioVigencia);
-        setRangoFinVigencia(filtrosIniciales.finVigencia);
+        setFechaCreacionDesde(null);
+        setFechaCreacionHasta(null);
+        setFechaInicioVigenciaDesde(null);
+        setFechaInicioVigenciaHasta(null);
+        setFechaFinVigenciaDesde(null);
+        setFechaFinVigenciaHasta(null);
         setContratosFiltrados(contratos);
         setFiltrosAplicados(false);
         setPage(0);
     };
-
-    // Handlers Popover
-    const handleOpenPopover = (event, type) => {
-        setAnchorEl(event.currentTarget);
-        setPopoverType(type);
-    };
-
-    const handleClosePopover = () => {
-        setAnchorEl(null);
-        setPopoverType('');
-    };
-
-    const open = Boolean(anchorEl);
-    const idPopover = open ? 'date-range-popover' : undefined;
 
     // Lógica de modales
     const handleGuardarNuevoContrato = () => {
@@ -372,92 +350,66 @@ const AdminClienteDetalle = () => {
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
                             <TextField label="Ingrese el código" variant="outlined" size="small" sx={{ width: 150 }} value={filtroCodigo} onChange={e => setFiltroCodigo(e.target.value)} disabled={filtrosAplicados}/>
-                            <TextField
-                                label="Fecha de Creación"
-                                size="small"
-                                value={
-                                    rangoFechaCreacion[0].startDate && rangoFechaCreacion[0].endDate
-                                    ? `${dayjs(rangoFechaCreacion[0].startDate).format('DD/MM/YYYY')} - ${dayjs(rangoFechaCreacion[0].endDate).format('DD/MM/YYYY')}`
-                                    : ''
-                                }
-                                onClick={(e) => handleOpenPopover(e, 'creacion')}
-                                readOnly
-                                sx={{ width: 220 }}
-                                disabled={filtrosAplicados}
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <CalendarTodayIcon sx={{ color: 'action.active', cursor: 'pointer' }} />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                            />
-                            <TextField
-                                label="Inicio Vigencia"
-                                size="small"
-                                value={
-                                    rangoInicioVigencia[0].startDate && rangoInicioVigencia[0].endDate
-                                    ? `${dayjs(rangoInicioVigencia[0].startDate).format('DD/MM/YYYY')} - ${dayjs(rangoInicioVigencia[0].endDate).format('DD/MM/YYYY')}`
-                                    : ''
-                                }
-                                onClick={(e) => handleOpenPopover(e, 'inicio')}
-                                readOnly
-                                sx={{ width: 220 }}
-                                disabled={filtrosAplicados}
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <CalendarTodayIcon sx={{ color: 'action.active', cursor: 'pointer' }} />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                            />
-                            <TextField
-                                label="Fin Vigencia"
-                                size="small"
-                                value={
-                                    rangoFinVigencia[0].startDate && rangoFinVigencia[0].endDate
-                                    ? `${dayjs(rangoFinVigencia[0].startDate).format('DD/MM/YYYY')} - ${dayjs(rangoFinVigencia[0].endDate).format('DD/MM/YYYY')}`
-                                    : ''
-                                }
-                                onClick={(e) => handleOpenPopover(e, 'fin')}
-                                readOnly
-                                sx={{ width: 220 }}
-                                disabled={filtrosAplicados}
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <CalendarTodayIcon sx={{ color: 'action.active', cursor: 'pointer' }} />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                            />
-                            <Popover
-                                id={idPopover}
-                                open={open}
-                                anchorEl={anchorEl}
-                                onClose={handleClosePopover}
-                                anchorOrigin={{
-                                    vertical: 'bottom',
-                                    horizontal: 'left',
-                                }}
-                            >
-                                <DateRange
-                                    editableDateInputs={true}
-                                    onChange={item => {
-                                        if (popoverType === 'creacion') setRangoFechaCreacion([item.selection]);
-                                        else if (popoverType === 'inicio') setRangoInicioVigencia([item.selection]);
-                                        else if (popoverType === 'fin') setRangoFinVigencia([item.selection]);
-                                    }}
-                                    moveRangeOnFirstSelection={false}
-                                    ranges={
-                                        popoverType === 'creacion' ? rangoFechaCreacion :
-                                        popoverType === 'inicio' ? rangoInicioVigencia :
-                                        rangoFinVigencia
-                                    }
-                                    locale={es}
+                            
+                            {/* Filtros de fecha de creación */}
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Fecha creación desde"
+                                    value={fechaCreacionDesde}
+                                    onChange={setFechaCreacionDesde}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 180 }} disabled={filtrosAplicados} />}
+                                    inputFormat="DD/MM/YYYY"
                                 />
-                            </Popover>
+                            </LocalizationProvider>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Fecha creación hasta"
+                                    value={fechaCreacionHasta}
+                                    onChange={setFechaCreacionHasta}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 180 }} disabled={filtrosAplicados} />}
+                                    inputFormat="DD/MM/YYYY"
+                                />
+                            </LocalizationProvider>
+                            
+                            {/* Filtros de fecha de inicio de vigencia */}
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Inicio vigencia desde"
+                                    value={fechaInicioVigenciaDesde}
+                                    onChange={setFechaInicioVigenciaDesde}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 180 }} disabled={filtrosAplicados} />}
+                                    inputFormat="DD/MM/YYYY"
+                                />
+                            </LocalizationProvider>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Inicio vigencia hasta"
+                                    value={fechaInicioVigenciaHasta}
+                                    onChange={setFechaInicioVigenciaHasta}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 180 }} disabled={filtrosAplicados} />}
+                                    inputFormat="DD/MM/YYYY"
+                                />
+                            </LocalizationProvider>
+                            
+                            {/* Filtros de fecha de fin de vigencia */}
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Fin vigencia desde"
+                                    value={fechaFinVigenciaDesde}
+                                    onChange={setFechaFinVigenciaDesde}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 180 }} disabled={filtrosAplicados} />}
+                                    inputFormat="DD/MM/YYYY"
+                                />
+                            </LocalizationProvider>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Fin vigencia hasta"
+                                    value={fechaFinVigenciaHasta}
+                                    onChange={setFechaFinVigenciaHasta}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 180 }} disabled={filtrosAplicados} />}
+                                    inputFormat="DD/MM/YYYY"
+                                />
+                            </LocalizationProvider>
                         </Box>
                     </Box>
                     <Divider sx={{ my: 2 }} />

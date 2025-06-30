@@ -3,7 +3,7 @@ import {
   Box, Typography, Breadcrumbs, Tabs, Tab, Paper, Button, Divider, IconButton, TextField,
   Select, MenuItem, InputLabel, FormControl,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, Checkbox, Tooltip,
-  Dialog, DialogActions, DialogContent, DialogTitle, Popover, InputAdornment, Alert, Snackbar
+  Dialog, DialogActions, DialogContent, DialogTitle, Alert, Snackbar
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
@@ -36,8 +36,6 @@ const QuejasSugerenciasContent = ({ data, isQuejas, onDataChange }) => {
     const [currentItem, setCurrentItem] = useState(null);
     const [loading, setLoading] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-
-    // Estados para los nuevos DatePicker
     const [fechaDesde, setFechaDesde] = useState(null);
     const [fechaHasta, setFechaHasta] = useState(null);
 
@@ -115,21 +113,10 @@ const QuejasSugerenciasContent = ({ data, isQuejas, onDataChange }) => {
         }
     };
 
-    const handleOpenPopover = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleClosePopover = () => {
-        setAnchorEl(null);
-    };
-
     const handleCloseSnackbar = () => {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const open = Boolean(anchorEl);
-    const idPopover = open ? 'date-range-popover' : undefined;
-    
     return (
         <Paper sx={{ p: 2, border: '1px solid #e0e0e0', mt: 2 }} elevation={0}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 2 }}>
@@ -253,25 +240,6 @@ const QuejasSugerenciasContent = ({ data, isQuejas, onDataChange }) => {
                     </Button>
                 </DialogActions>
             </Dialog>
-
-            <Popover
-                id={idPopover}
-                open={open}
-                anchorEl={anchorEl}
-                onClose={handleClosePopover}
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'left',
-                }}
-            >
-                <DateRange
-                    editableDateInputs={true}
-                    onChange={item => setRangoFecha([item.selection])}
-                    moveRangeOnFirstSelection={false}
-                    ranges={rangoFecha}
-                    locale={es}
-                />
-            </Popover>
 
             <Snackbar
                 open={snackbar.open}
