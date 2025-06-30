@@ -12,6 +12,28 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Filtrar cajas chicas (por número y estado) - DEBE IR ANTES DE /:id
+router.get('/filtrar', async (req, res) => {
+  try {
+    const { numeroLiquidacion, abierta } = req.query;
+    const cajas = await cajaChicaModel.filtrar({ numeroLiquidacion, abierta });
+    res.json({ message: 'Cajas chicas filtradas exitosamente', data: cajas });
+  } catch (error) {
+    res.status(500).json({ message: 'Error filtrando cajas chicas', error: error.message });
+  }
+});
+
+// Obtener caja chica por numeroLiquidacion - DEBE IR ANTES DE /:id
+router.get('/numero/:numeroLiquidacion', async (req, res) => {
+  try {
+    const caja = await cajaChicaModel.obtenerPorNumeroLiquidacion(req.params.numeroLiquidacion);
+    if (!caja) return res.status(404).json({ message: 'Caja chica no encontrada' });
+    res.json({ message: 'Caja chica obtenida exitosamente', data: caja });
+  } catch (error) {
+    res.status(500).json({ message: 'Error obteniendo caja chica', error: error.message });
+  }
+});
+
 // Obtener caja chica por ID
 router.get('/:id', async (req, res) => {
   try {
@@ -101,28 +123,6 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: 'Caja chica eliminada exitosamente', data: cajaEliminada });
   } catch (error) {
     res.status(500).json({ message: 'Error eliminando caja chica', error: error.message });
-  }
-});
-
-// Filtrar cajas chicas (por número y estado)
-router.get('/filtrar', async (req, res) => {
-  try {
-    const { numeroLiquidacion, abierta } = req.query;
-    const cajas = await cajaChicaModel.filtrar({ numeroLiquidacion, abierta });
-    res.json({ message: 'Cajas chicas filtradas exitosamente', data: cajas });
-  } catch (error) {
-    res.status(500).json({ message: 'Error filtrando cajas chicas', error: error.message });
-  }
-});
-
-// Obtener caja chica por numeroLiquidacion
-router.get('/numero/:numeroLiquidacion', async (req, res) => {
-  try {
-    const caja = await cajaChicaModel.obtenerPorNumeroLiquidacion(req.params.numeroLiquidacion);
-    if (!caja) return res.status(404).json({ message: 'Caja chica no encontrada' });
-    res.json({ message: 'Caja chica obtenida exitosamente', data: caja });
-  } catch (error) {
-    res.status(500).json({ message: 'Error obteniendo caja chica', error: error.message });
   }
 });
 

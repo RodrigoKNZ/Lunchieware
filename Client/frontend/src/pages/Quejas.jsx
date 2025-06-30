@@ -158,8 +158,10 @@ const Quejas = () => {
       try {
         const res = await quejasService.obtenerTodas();
         console.log('Quejas cargadas del backend:', res.data);
-        setQuejas(res.data);
-        setQuejasFiltradas(res.data);
+        // Validar que res.data sea un array
+        const quejasData = Array.isArray(res.data) ? res.data : [];
+        setQuejas(quejasData);
+        setQuejasFiltradas(quejasData);
       } catch (err) {
         console.error('Error cargando quejas:', err);
         setQuejas([]);
@@ -208,8 +210,9 @@ const Quejas = () => {
       
       // Recargar quejas
       const res = await quejasService.obtenerTodas();
-      setQuejas(res.data);
-      setQuejasFiltradas(res.data);
+      const quejasData = Array.isArray(res.data) ? res.data : [];
+      setQuejas(quejasData);
+      setQuejasFiltradas(quejasData);
       handleCloseModal();
     } catch (err) {
       console.error('Error al crear queja:', err);
@@ -228,8 +231,9 @@ const Quejas = () => {
         activo: true
       });
       const res = await quejasService.obtenerTodas();
-      setQuejas(res.data);
-      setQuejasFiltradas(res.data);
+      const quejasData = Array.isArray(res.data) ? res.data : [];
+      setQuejas(quejasData);
+      setQuejasFiltradas(quejasData);
       setEditarOpen(false);
       setQuejaSeleccionada(null);
     } catch (err) {
@@ -242,8 +246,9 @@ const Quejas = () => {
     try {
       await quejasService.eliminar(quejaSeleccionada.idQueja);
       const res = await quejasService.obtenerTodas();
-      setQuejas(res.data);
-      setQuejasFiltradas(res.data);
+      const quejasData = Array.isArray(res.data) ? res.data : [];
+      setQuejas(quejasData);
+      setQuejasFiltradas(quejasData);
       setEliminarOpen(false);
       setQuejaSeleccionada(null);
     } catch (err) {

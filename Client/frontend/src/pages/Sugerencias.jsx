@@ -202,8 +202,10 @@ const Sugerencias = () => {
         console.log('Sugerencias cargadas del backend:', res.data);
         console.log('Ejemplo de fecha de sugerencia:', res.data[0]?.fechaCreacion);
         console.log('Tipo de fecha:', typeof res.data[0]?.fechaCreacion);
-        setSugerencias(res.data);
-        setSugerenciasFiltradas(res.data);
+        // Validar que res.data sea un array
+        const sugerenciasData = Array.isArray(res.data) ? res.data : [];
+        setSugerencias(sugerenciasData);
+        setSugerenciasFiltradas(sugerenciasData);
       } catch (err) {
         console.error('Error cargando sugerencias:', err);
         setSugerencias([]);
@@ -251,8 +253,9 @@ const Sugerencias = () => {
       
       // Recargar sugerencias
       const res = await sugerenciasService.obtenerTodas();
-      setSugerencias(res.data);
-      setSugerenciasFiltradas(res.data);
+      const sugerenciasData = Array.isArray(res.data) ? res.data : [];
+      setSugerencias(sugerenciasData);
+      setSugerenciasFiltradas(sugerenciasData);
       handleCloseModal();
     } catch (err) {
       console.error('Error al crear sugerencia:', err);
@@ -270,8 +273,9 @@ const Sugerencias = () => {
         activo: true
       });
       const res = await sugerenciasService.obtenerTodas();
-      setSugerencias(res.data);
-      setSugerenciasFiltradas(res.data);
+      const sugerenciasData = Array.isArray(res.data) ? res.data : [];
+      setSugerencias(sugerenciasData);
+      setSugerenciasFiltradas(sugerenciasData);
       setEditarOpen(false);
       setSugerenciaSeleccionada(null);
     } catch (err) {
@@ -284,8 +288,9 @@ const Sugerencias = () => {
     try {
       await sugerenciasService.eliminar(sugerenciaSeleccionada.idSugerencia);
       const res = await sugerenciasService.obtenerTodas();
-      setSugerencias(res.data);
-      setSugerenciasFiltradas(res.data);
+      const sugerenciasData = Array.isArray(res.data) ? res.data : [];
+      setSugerencias(sugerenciasData);
+      setSugerenciasFiltradas(sugerenciasData);
       setEliminarOpen(false);
       setSugerenciaSeleccionada(null);
     } catch (err) {

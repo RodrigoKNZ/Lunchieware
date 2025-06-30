@@ -265,7 +265,8 @@ const AdminQuejasSugerencias = () => {
   const cargarQuejas = async () => {
     try {
       const response = await quejasService.obtenerTodas();
-      const quejasFormateadas = response.data.map(queja => ({
+      const quejasData = Array.isArray(response.data) ? response.data : [];
+      const quejasFormateadas = quejasData.map(queja => ({
         id: queja.idQueja,
         codigo: queja.codigoQueja || `QJ${queja.idQueja.toString().padStart(5, '0')}`,
         asunto: queja.asunto,
@@ -278,13 +279,15 @@ const AdminQuejasSugerencias = () => {
     } catch (error) {
       console.error('Error cargando quejas:', error);
       setError('Error al cargar las quejas');
+      setQuejas([]);
     }
   };
 
   const cargarSugerencias = async () => {
     try {
       const response = await sugerenciasService.obtenerTodas();
-      const sugerenciasFormateadas = response.data.map(sugerencia => ({
+      const sugerenciasData = Array.isArray(response.data) ? response.data : [];
+      const sugerenciasFormateadas = sugerenciasData.map(sugerencia => ({
         id: sugerencia.idSugerencia,
         codigo: sugerencia.codigoSugerencia || `SG${sugerencia.idSugerencia.toString().padStart(5, '0')}`,
         asunto: sugerencia.asunto,
@@ -296,6 +299,7 @@ const AdminQuejasSugerencias = () => {
     } catch (error) {
       console.error('Error cargando sugerencias:', error);
       setError('Error al cargar las sugerencias');
+      setSugerencias([]);
     }
   };
 
