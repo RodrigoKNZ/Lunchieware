@@ -31,7 +31,7 @@ router.get('/:id', async (req, res) => {
     }
     res.json({
       message: 'Sugerencia obtenida exitosamente',
-      data: sugerencia
+      data: [sugerencia]
     });
   } catch (error) {
     console.error('Error obteniendo sugerencia:', error);

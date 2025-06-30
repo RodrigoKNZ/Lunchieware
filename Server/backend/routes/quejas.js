@@ -33,7 +33,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({
       message: 'Queja obtenida exitosamente',
-      data: queja
+      data: [queja]
     });
   } catch (error) {
     console.error('Error obteniendo queja:', error);
