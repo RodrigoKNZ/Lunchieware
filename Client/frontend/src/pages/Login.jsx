@@ -67,7 +67,7 @@ const Login = ({ onLogin }) => {
       return;
     }
     try {
-      await axios.post('http://localhost:5000/api/auth/cambiar-password', {
+      await axios.post(`${API_URLS.auth}/cambiar-password`, {
         idUsuario: userToChange.id,
         nuevaPassword: newPassword
       });

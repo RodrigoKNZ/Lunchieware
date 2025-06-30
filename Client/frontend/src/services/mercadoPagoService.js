@@ -1,79 +1,22 @@
 import axios from 'axios';
 import { API_URLS } from '../config/api';
 
-const API_BASE_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:5000/api/mercadopago'
-  : 'https://lunchieware-backend.vercel.app/api/mercadopago';
-
 const mercadoPagoService = {
-  async crearPreferencia({ amount, description, payer_email, external_reference, cliente_id }) {
-    const response = await axios.post(`${API_URLS.mercadopago}/crear-preferencia`, {
-      amount,
-      description,
-      payer_email,
-      external_reference,
-      cliente_id
-    });
-    return response.data;
-  },
-
-  async crearPreferenciaAlternativa({ amount, description, payer_email, external_reference, cliente_id }) {
-    const response = await axios.post(`${API_URLS.mercadopago}/create-preference-api`, {
-      amount,
-      description,
-      payer_email,
-      external_reference,
-      cliente_id
-    });
-    return response.data;
-  },
-
-  async consultarEstadoPago(paymentId) {
-    const response = await axios.get(`${API_URLS.mercadopago}/estado/${paymentId}`);
-    return response.data;
-  },
-
-  // Función para hacer polling del estado del pago
-  async pollPaymentStatus(paymentId, maxAttempts = 30, interval = 2000) {
-    return new Promise((resolve, reject) => {
-      let attempts = 0;
-      
-      const checkStatus = async () => {
-        try {
-          attempts++;
-          const result = await this.consultarEstadoPago(paymentId);
-          
-          // Si el pago está aprobado, rechazado o en proceso, detener polling
-          if (['approved', 'rejected', 'cancelled'].includes(result.data.status)) {
-            resolve(result);
-            return;
-          }
-          
-          // Si se agotaron los intentos, detener
-          if (attempts >= maxAttempts) {
-            resolve({
-              message: 'Tiempo de espera agotado',
-              data: { status: 'timeout', paymentId }
-            });
-            return;
-          }
-          
-          // Continuar polling
-          setTimeout(checkStatus, interval);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      
-      checkStatus();
-    });
-  },
-
-  // Procesar webhook
-  procesarWebhook: async (datos) => {
-    const response = await axios.post(`${API_URLS.mercadopago}/webhook`, datos);
-    return response;
-  }
+    // Crear preferencia de pago
+    crearPreferencia: async (datos) => {
+        const response = await axios.post(`${API_URLS.mercadopago}/crear-preferencia`, datos);
+        return response;
+    },
+    // Procesar webhook
+    procesarWebhook: async (datos) => {
+        const response = await axios.post(`${API_URLS.mercadopago}/webhook`, datos);
+        return response;
+    },
+    // Obtener estado de pago
+    obtenerEstadoPago: async (paymentId) => {
+        const response = await axios.get(`${API_URLS.mercadopago}/estado/${paymentId}`);
+        return response;
+    }
 };
 
 export default mercadoPagoService; 
