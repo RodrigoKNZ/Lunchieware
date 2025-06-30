@@ -12,10 +12,9 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { Link as RouterLink } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { DateRange } from 'react-date-range';
-import 'react-date-range/dist/styles.css'; // main style file
-import 'react-date-range/dist/theme/default.css'; // theme css file
-import es from 'date-fns/locale/es';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import quejasService from '../services/quejasService';
 import sugerenciasService from '../services/sugerenciasService';
 
@@ -38,13 +37,9 @@ const QuejasSugerenciasContent = ({ data, isQuejas, onDataChange }) => {
     const [loading, setLoading] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-    // Estados para DateRangePicker
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [rangoFecha, setRangoFecha] = useState([{
-        startDate: null,
-        endDate: null,
-        key: 'selection'
-    }]);
+    // Estados para los nuevos DatePicker
+    const [fechaDesde, setFechaDesde] = useState(null);
+    const [fechaHasta, setFechaHasta] = useState(null);
 
     const handleSelectAllClick = (event) => {
         if (event.target.checked) {
@@ -147,25 +142,24 @@ const QuejasSugerenciasContent = ({ data, isQuejas, onDataChange }) => {
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
                 <TextField label="Código" size="small" sx={{ width: 120 }}/>
                 <TextField label="Asunto" size="small" sx={{flex: 1, minWidth: 220}} />
-                <TextField
-                    label="Fecha creación"
-                    size="small"
-                    value={
-                        rangoFecha[0].startDate && rangoFecha[0].endDate
-                        ? `${dayjs(rangoFecha[0].startDate).format('DD/MM/YYYY')} - ${dayjs(rangoFecha[0].endDate).format('DD/MM/YYYY')}`
-                        : ''
-                    }
-                    onClick={handleOpenPopover}
-                    readOnly
-                    sx={{ width: 220 }}
-                    InputProps={{
-                        endAdornment: (
-                            <InputAdornment position="end">
-                                <CalendarTodayIcon sx={{ color: 'action.active', cursor: 'pointer' }} />
-                            </InputAdornment>
-                        ),
-                    }}
-                />
+                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+                    <DatePicker
+                        label="Desde"
+                        value={fechaDesde}
+                        onChange={setFechaDesde}
+                        renderInput={(params) => <TextField {...params} size="small" sx={{ width: 120 }} />}
+                        inputFormat="DD/MM/YYYY"
+                    />
+                </LocalizationProvider>
+                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+                    <DatePicker
+                        label="Hasta"
+                        value={fechaHasta}
+                        onChange={setFechaHasta}
+                        renderInput={(params) => <TextField {...params} size="small" sx={{ width: 120 }} />}
+                        inputFormat="DD/MM/YYYY"
+                    />
+                </LocalizationProvider>
                 <TextField label="Nombre cliente asociado" size="small" sx={{flex: 1, minWidth: 220}}/>
                 {isQuejas && (
                     <FormControl size="small" sx={{ minWidth: 120 }}>

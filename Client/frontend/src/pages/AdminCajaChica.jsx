@@ -10,10 +10,9 @@ import Delete from '@mui/icons-material/Delete';
 import { Link as RouterLink } from 'react-router-dom';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import dayjs from 'dayjs';
-import { DateRange } from 'react-date-range';
-import 'react-date-range/dist/styles.css'; // main style file
-import 'react-date-range/dist/theme/default.css'; // theme css file
-import es from 'date-fns/locale/es';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import cajaChicaService from '../services/cajaChicaService';
 
 // Datos mock
@@ -35,16 +34,10 @@ const estados = [
 const AdminCajaChica = () => {
   // Estados de filtros
   const [filtroNumero, setFiltroNumero] = useState('');
-  const [filtroFechaApertura, setFiltroFechaApertura] = useState([{
-    startDate: null,
-    endDate: null,
-    key: 'selection'
-  }]);
-  const [filtroFechaLiquidacion, setFiltroFechaLiquidacion] = useState([{
-    startDate: null,
-    endDate: null,
-    key: 'selection'
-  }]);
+  const [filtroFechaAperturaDesde, setFiltroFechaAperturaDesde] = useState(null);
+  const [filtroFechaAperturaHasta, setFiltroFechaAperturaHasta] = useState(null);
+  const [filtroFechaLiquidacionDesde, setFiltroFechaLiquidacionDesde] = useState(null);
+  const [filtroFechaLiquidacionHasta, setFiltroFechaLiquidacionHasta] = useState(null);
   const [filtroSaldoInicialMin, setFiltroSaldoInicialMin] = useState('');
   const [filtroSaldoInicialMax, setFiltroSaldoInicialMax] = useState('');
   const [filtroSaldoFinalMin, setFiltroSaldoFinalMin] = useState('');
@@ -58,8 +51,10 @@ const AdminCajaChica = () => {
 
   const filtrosIniciales = {
     numero: '',
-    fechaApertura: [{ startDate: null, endDate: null, key: 'selection' }],
-    fechaLiquidacion: [{ startDate: null, endDate: null, key: 'selection' }],
+    fechaAperturaDesde: null,
+    fechaAperturaHasta: null,
+    fechaLiquidacionDesde: null,
+    fechaLiquidacionHasta: null,
     saldoInicialMin: '',
     saldoInicialMax: '',
     saldoFinalMin: '',
@@ -68,8 +63,8 @@ const AdminCajaChica = () => {
   };
   const filtrosEnEstadoInicial =
     filtroNumero === filtrosIniciales.numero &&
-    filtroFechaApertura[0].startDate === null && filtroFechaApertura[0].endDate === null &&
-    filtroFechaLiquidacion[0].startDate === null && filtroFechaLiquidacion[0].endDate === null &&
+    filtroFechaAperturaDesde === null && filtroFechaAperturaHasta === null &&
+    filtroFechaLiquidacionDesde === null && filtroFechaLiquidacionHasta === null &&
     filtroSaldoInicialMin === filtrosIniciales.saldoInicialMin &&
     filtroSaldoInicialMax === filtrosIniciales.saldoInicialMax &&
     filtroSaldoFinalMin === filtrosIniciales.saldoFinalMin &&
@@ -108,14 +103,12 @@ const AdminCajaChica = () => {
       const matchNumero = !filtroNumero || c.numero.includes(filtroNumero);
       
       const fechaAperturaCaja = dayjs(c.fechaApertura, 'DD/MM/YYYY');
-      const [rangoApertura] = filtroFechaApertura;
-      const matchFechaApertura = (!rangoApertura.startDate || fechaAperturaCaja.isSame(dayjs(rangoApertura.startDate), 'day') || fechaAperturaCaja.isAfter(dayjs(rangoApertura.startDate))) &&
-                                 (!rangoApertura.endDate || fechaAperturaCaja.isSame(dayjs(rangoApertura.endDate), 'day') || fechaAperturaCaja.isBefore(dayjs(rangoApertura.endDate)));
+      const matchFechaApertura = (!filtroFechaAperturaDesde || fechaAperturaCaja.isSame(dayjs(filtroFechaAperturaDesde), 'day') || fechaAperturaCaja.isAfter(dayjs(filtroFechaAperturaDesde))) &&
+                                 (!filtroFechaAperturaHasta || fechaAperturaCaja.isSame(dayjs(filtroFechaAperturaHasta), 'day') || fechaAperturaCaja.isBefore(dayjs(filtroFechaAperturaHasta)));
       
       const fechaLiquidacionCaja = c.fechaLiquidacion ? dayjs(c.fechaLiquidacion, 'DD/MM/YYYY') : null;
-      const [rangoLiquidacion] = filtroFechaLiquidacion;
-      const matchFechaLiquidacion = !fechaLiquidacionCaja || (!rangoLiquidacion.startDate || fechaLiquidacionCaja.isSame(dayjs(rangoLiquidacion.startDate), 'day') || fechaLiquidacionCaja.isAfter(dayjs(rangoLiquidacion.startDate))) &&
-                                    (!rangoLiquidacion.endDate || fechaLiquidacionCaja.isSame(dayjs(rangoLiquidacion.endDate), 'day') || fechaLiquidacionCaja.isBefore(dayjs(rangoLiquidacion.endDate)));
+      const matchFechaLiquidacion = !fechaLiquidacionCaja || (!filtroFechaLiquidacionDesde || fechaLiquidacionCaja.isSame(dayjs(filtroFechaLiquidacionDesde), 'day') || fechaLiquidacionCaja.isAfter(dayjs(filtroFechaLiquidacionDesde))) &&
+                                    (!filtroFechaLiquidacionHasta || fechaLiquidacionCaja.isSame(dayjs(filtroFechaLiquidacionHasta), 'day') || fechaLiquidacionCaja.isBefore(dayjs(filtroFechaLiquidacionHasta)));
       
       const matchSaldoInicial = (!filtroSaldoInicialMin || c.saldoInicial >= parseFloat(filtroSaldoInicialMin)) && (!filtroSaldoInicialMax || c.saldoInicial <= parseFloat(filtroSaldoInicialMax));
       const matchSaldoFinal = (!filtroSaldoFinalMin || c.saldoFinal >= parseFloat(filtroSaldoFinalMin)) && (!filtroSaldoFinalMax || c.saldoFinal <= parseFloat(filtroSaldoFinalMax));
@@ -128,8 +121,10 @@ const AdminCajaChica = () => {
   };
   const handleLimpiarFiltros = () => {
     setFiltroNumero('');
-    setFiltroFechaApertura([{ startDate: null, endDate: null, key: 'selection' }]);
-    setFiltroFechaLiquidacion([{ startDate: null, endDate: null, key: 'selection' }]);
+    setFiltroFechaAperturaDesde(null);
+    setFiltroFechaAperturaHasta(null);
+    setFiltroFechaLiquidacionDesde(null);
+    setFiltroFechaLiquidacionHasta(null);
     setFiltroSaldoInicialMin('');
     setFiltroSaldoInicialMax('');
     setFiltroSaldoFinalMin('');
@@ -245,46 +240,30 @@ const AdminCajaChica = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'center' }}>
               <TextField label="Nro. liquidación" size="small" value={filtroNumero} onChange={e => setFiltroNumero(e.target.value)} disabled={filtrosAplicados} sx={{ width: 140 }}/>
-              <TextField
-                label="Fecha apertura"
-                size="small"
-                value={
-                  filtroFechaApertura[0].startDate && filtroFechaApertura[0].endDate
-                  ? `${dayjs(filtroFechaApertura[0].startDate).format('DD/MM/YYYY')} - ${dayjs(filtroFechaApertura[0].endDate).format('DD/MM/YYYY')}`
-                  : ''
-                }
-                onClick={(e) => handleOpenPopover(e, 'apertura')}
-                readOnly
-                sx={{ width: 220 }}
-                disabled={filtrosAplicados}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <CalendarTodayIcon sx={{ color: 'action.active', cursor: 'pointer' }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                label="Fecha liquidación"
-                size="small"
-                value={
-                  filtroFechaLiquidacion[0].startDate && filtroFechaLiquidacion[0].endDate
-                  ? `${dayjs(filtroFechaLiquidacion[0].startDate).format('DD/MM/YYYY')} - ${dayjs(filtroFechaLiquidacion[0].endDate).format('DD/MM/YYYY')}`
-                  : ''
-                }
-                onClick={(e) => handleOpenPopover(e, 'liquidacion')}
-                readOnly
-                sx={{ width: 220 }}
-                disabled={filtrosAplicados}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <CalendarTodayIcon sx={{ color: 'action.active', cursor: 'pointer' }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="Fecha apertura"
+                  value={filtroFechaAperturaDesde ? dayjs(filtroFechaAperturaDesde) : null}
+                  onChange={(newValue) => {
+                    setFiltroFechaAperturaDesde(newValue ? newValue.format('YYYY-MM-DD') : null);
+                    setFiltroFechaAperturaHasta(newValue ? newValue.format('YYYY-MM-DD') : null);
+                  }}
+                  renderInput={(params) => <TextField {...params} size="small" sx={{ width: 220 }} />}
+                  disabled={filtrosAplicados}
+                />
+              </LocalizationProvider>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="Fecha liquidación"
+                  value={filtroFechaLiquidacionDesde ? dayjs(filtroFechaLiquidacionDesde) : null}
+                  onChange={(newValue) => {
+                    setFiltroFechaLiquidacionDesde(newValue ? newValue.format('YYYY-MM-DD') : null);
+                    setFiltroFechaLiquidacionHasta(newValue ? newValue.format('YYYY-MM-DD') : null);
+                  }}
+                  renderInput={(params) => <TextField {...params} size="small" sx={{ width: 220 }} />}
+                  disabled={filtrosAplicados}
+                />
+              </LocalizationProvider>
               <FormControl size="small" sx={{ width: 120 }} disabled={filtrosAplicados}>
                 <InputLabel>Estado</InputLabel>
                 <Select label="Estado" value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}>
@@ -396,19 +375,7 @@ const AdminCajaChica = () => {
           horizontal: 'left',
         }}
       >
-        <DateRange
-          editableDateInputs={true}
-          onChange={item => {
-            if (popoverType === 'apertura') setFiltroFechaApertura([item.selection]);
-            else if (popoverType === 'liquidacion') setFiltroFechaLiquidacion([item.selection]);
-          }}
-          moveRangeOnFirstSelection={false}
-          ranges={
-            popoverType === 'apertura' ? filtroFechaApertura :
-            filtroFechaLiquidacion
-          }
-          locale={es}
-        />
+        {/* Popover content */}
       </Popover>
     </Box>
   );

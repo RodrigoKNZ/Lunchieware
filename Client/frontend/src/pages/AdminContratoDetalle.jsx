@@ -16,7 +16,6 @@ import dayjs from 'dayjs';
 import { DateRange } from 'react-date-range';
 import 'react-date-range/dist/styles.css'; // main style file
 import 'react-date-range/dist/theme/default.css'; // theme css file
-import es from 'date-fns/locale/es';
 
 const mockConsumos = [
     {
@@ -103,30 +102,34 @@ const AdminContratoDetalle = () => {
 
     // Estados de filtros
     const [filtrosConsumos, setFiltrosConsumos] = useState({ 
-        rangoFecha: [{ startDate: null, endDate: null, key: 'selection' }],
+        fechaDesde: null,
+        fechaHasta: null,
         producto: 'Todos',
         formaPago: 'Todos',
         medioPago: 'Todos'
     });
     const [filtrosAbonos, setFiltrosAbonos] = useState({ 
-        rangoFecha: [{ startDate: null, endDate: null, key: 'selection' }],
+        fechaDesde: null,
+        fechaHasta: null,
         banco: 'Todos',
         importeMin: '',
         importeMax: ''
     });
     const [filtrosDevoluciones, setFiltrosDevoluciones] = useState({ 
-        rangoFecha: [{ startDate: null, endDate: null, key: 'selection' }],
+        fechaDesde: null,
+        fechaHasta: null,
         banco: 'Todos',
         importeMin: '',
         importeMax: ''
     });
-    const [filtrosNotasCredito, setFiltrosNotasCredito] = useState({ rangoFecha: [{ startDate: null, endDate: null, key: 'selection' }] });
+    const [filtrosNotasCredito, setFiltrosNotasCredito] = useState({ fechaDesde: null, fechaHasta: null });
     
     // Estados de control de filtros
     const [filtrosAplicados, setFiltrosAplicados] = useState({ consumos: false, abonos: false, devoluciones: false, notasCredito: false });
 
     const filtrosIniciales = {
-        rangoFecha: [{ startDate: null, endDate: null, key: 'selection' }],
+        fechaDesde: null,
+        fechaHasta: null,
         producto: 'Todos',
         formaPago: 'Todos',
         medioPago: 'Todos',
@@ -136,8 +139,8 @@ const AdminContratoDetalle = () => {
     };
 
     const sonFiltrosIniciales = (filtros) => {
-        return filtros.rangoFecha[0].startDate === null && 
-               filtros.rangoFecha[0].endDate === null &&
+        return filtros.fechaDesde === null && 
+               filtros.fechaHasta === null &&
                filtros.producto === 'Todos' &&
                filtros.formaPago === 'Todos' &&
                filtros.medioPago === 'Todos' &&
@@ -147,23 +150,23 @@ const AdminContratoDetalle = () => {
     };
 
     const sonFiltrosInicialesAbonos = (filtros) => {
-        return filtros.rangoFecha[0].startDate === null && 
-               filtros.rangoFecha[0].endDate === null &&
+        return filtros.fechaDesde === null && 
+               filtros.fechaHasta === null &&
                filtros.banco === 'Todos' &&
                filtros.importeMin === '' &&
                filtros.importeMax === '';
     };
 
     const sonFiltrosInicialesDevoluciones = (filtros) => {
-        return filtros.rangoFecha[0].startDate === null && 
-               filtros.rangoFecha[0].endDate === null &&
+        return filtros.fechaDesde === null && 
+               filtros.fechaHasta === null &&
                filtros.banco === 'Todos' &&
                filtros.importeMin === '' &&
                filtros.importeMax === '';
     };
 
     const sonFiltrosInicialesNotasCredito = (filtros) => {
-        return filtros.rangoFecha[0].startDate === null && filtros.rangoFecha[0].endDate === null;
+        return filtros.fechaDesde === null && filtros.fechaHasta === null;
     };
 
     // Estados de modales
@@ -208,9 +211,8 @@ const AdminContratoDetalle = () => {
     const handleAplicarFiltrosConsumos = () => {
         const filtrados = consumos.filter(c => {
             const fechaConsumo = dayjs(c.fechaConsumo, 'DD/MM/YYYY');
-            const [rango] = filtrosConsumos.rangoFecha;
-            const matchFecha = (!rango.startDate || fechaConsumo.isSame(dayjs(rango.startDate), 'day') || fechaConsumo.isAfter(dayjs(rango.startDate))) &&
-                   (!rango.endDate || fechaConsumo.isSame(dayjs(rango.endDate), 'day') || fechaConsumo.isBefore(dayjs(rango.endDate)));
+            const matchFecha = (!filtrosConsumos.fechaDesde || fechaConsumo.isSame(dayjs(filtrosConsumos.fechaDesde), 'day') || fechaConsumo.isAfter(dayjs(filtrosConsumos.fechaDesde))) &&
+                   (!filtrosConsumos.fechaHasta || fechaConsumo.isSame(dayjs(filtrosConsumos.fechaHasta), 'day') || fechaConsumo.isBefore(dayjs(filtrosConsumos.fechaHasta)));
             
             const matchProducto = filtrosConsumos.producto === 'Todos' || c.producto === filtrosConsumos.producto;
             const matchFormaPago = filtrosConsumos.formaPago === 'Todos' || c.formaPago === filtrosConsumos.formaPago;
@@ -224,7 +226,8 @@ const AdminContratoDetalle = () => {
 
     const handleLimpiarFiltrosConsumos = () => {
         setFiltrosConsumos({
-            rangoFecha: [{ startDate: null, endDate: null, key: 'selection' }],
+            fechaDesde: null,
+            fechaHasta: null,
             producto: 'Todos',
             formaPago: 'Todos',
             medioPago: 'Todos'
@@ -236,9 +239,8 @@ const AdminContratoDetalle = () => {
     const handleAplicarFiltrosAbonos = () => {
         const filtrados = abonos.filter(a => {
             const fechaAbono = dayjs(a.fechaAbono, 'DD/MM/YYYY');
-            const [rango] = filtrosAbonos.rangoFecha;
-            const matchFecha = (!rango.startDate || fechaAbono.isSame(dayjs(rango.startDate), 'day') || fechaAbono.isAfter(dayjs(rango.startDate))) &&
-                   (!rango.endDate || fechaAbono.isSame(dayjs(rango.endDate), 'day') || fechaAbono.isBefore(dayjs(rango.endDate)));
+            const matchFecha = (!filtrosAbonos.fechaDesde || fechaAbono.isSame(dayjs(filtrosAbonos.fechaDesde), 'day') || fechaAbono.isAfter(dayjs(filtrosAbonos.fechaDesde))) &&
+                   (!filtrosAbonos.fechaHasta || fechaAbono.isSame(dayjs(filtrosAbonos.fechaHasta), 'day') || fechaAbono.isBefore(dayjs(filtrosAbonos.fechaHasta)));
             
             const matchBanco = filtrosAbonos.banco === 'Todos' || a.banco === filtrosAbonos.banco;
             const importe = parseFloat(a.importe.replace('S/ ', ''));
@@ -253,7 +255,8 @@ const AdminContratoDetalle = () => {
 
     const handleLimpiarFiltrosAbonos = () => {
         setFiltrosAbonos({
-            rangoFecha: [{ startDate: null, endDate: null, key: 'selection' }],
+            fechaDesde: null,
+            fechaHasta: null,
             banco: 'Todos',
             importeMin: '',
             importeMax: ''
@@ -265,9 +268,8 @@ const AdminContratoDetalle = () => {
     const handleAplicarFiltrosDevoluciones = () => {
         const filtrados = devoluciones.filter(d => {
             const fechaDevolucion = dayjs(d.fechaDevolucion, 'DD/MM/YYYY');
-            const [rango] = filtrosDevoluciones.rangoFecha;
-            const matchFecha = (!rango.startDate || fechaDevolucion.isSame(dayjs(rango.startDate), 'day') || fechaDevolucion.isAfter(dayjs(rango.startDate))) &&
-                   (!rango.endDate || fechaDevolucion.isSame(dayjs(rango.endDate), 'day') || fechaDevolucion.isBefore(dayjs(rango.endDate)));
+            const matchFecha = (!filtrosDevoluciones.fechaDesde || fechaDevolucion.isSame(dayjs(filtrosDevoluciones.fechaDesde), 'day') || fechaDevolucion.isAfter(dayjs(filtrosDevoluciones.fechaDesde))) &&
+                   (!filtrosDevoluciones.fechaHasta || fechaDevolucion.isSame(dayjs(filtrosDevoluciones.fechaHasta), 'day') || fechaDevolucion.isBefore(dayjs(filtrosDevoluciones.fechaHasta)));
             
             const matchBanco = filtrosDevoluciones.banco === 'Todos' || d.banco === filtrosDevoluciones.banco;
             const importe = parseFloat(d.importe.replace('S/ ', ''));
@@ -282,7 +284,8 @@ const AdminContratoDetalle = () => {
 
     const handleLimpiarFiltrosDevoluciones = () => {
         setFiltrosDevoluciones({
-            rangoFecha: [{ startDate: null, endDate: null, key: 'selection' }],
+            fechaDesde: null,
+            fechaHasta: null,
             banco: 'Todos',
             importeMin: '',
             importeMax: ''
@@ -294,9 +297,9 @@ const AdminContratoDetalle = () => {
     const handleAplicarFiltrosNotasCredito = () => {
         const filtrados = notasDeCredito.filter(n => {
             const fechaNota = dayjs(n.fecha, 'DD/MM/YYYY');
-            const [rango] = filtrosNotasCredito.rangoFecha;
-            return (!rango.startDate || fechaNota.isSame(dayjs(rango.startDate), 'day') || fechaNota.isAfter(dayjs(rango.startDate))) &&
-                   (!rango.endDate || fechaNota.isSame(dayjs(rango.endDate), 'day') || fechaNota.isBefore(dayjs(rango.endDate)));
+            const matchFecha = (!filtrosNotasCredito.fechaDesde || fechaNota.isSame(dayjs(filtrosNotasCredito.fechaDesde), 'day') || fechaNota.isAfter(dayjs(filtrosNotasCredito.fechaDesde))) &&
+                   (!filtrosNotasCredito.fechaHasta || fechaNota.isSame(dayjs(filtrosNotasCredito.fechaHasta), 'day') || fechaNota.isBefore(dayjs(filtrosNotasCredito.fechaHasta)));
+            return matchFecha;
         });
         setNotasDeCreditoFiltradas(filtrados);
         setFiltrosAplicados(prev => ({ ...prev, notasCredito: true }));
@@ -377,24 +380,20 @@ const AdminContratoDetalle = () => {
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
                             <TextField
-                                label="Fecha"
+                                label="Fecha desde"
                                 size="small"
-                                value={
-                                    filtrosConsumos.rangoFecha[0].startDate && filtrosConsumos.rangoFecha[0].endDate
-                                    ? `${dayjs(filtrosConsumos.rangoFecha[0].startDate).format('DD/MM/YYYY')} - ${dayjs(filtrosConsumos.rangoFecha[0].endDate).format('DD/MM/YYYY')}`
-                                    : ''
-                                }
-                                onClick={(e) => handleOpenPopover(e, 'consumos')}
-                                readOnly
+                                value={filtrosConsumos.fechaDesde ? dayjs(filtrosConsumos.fechaDesde).format('DD/MM/YYYY') : ''}
+                                onChange={(e) => setFiltrosConsumos({...filtrosConsumos, fechaDesde: e.target.value ? dayjs(e.target.value).toDate() : null})}
                                 sx={{ width: 220 }}
                                 disabled={filtrosAplicados.consumos}
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <CalendarTodayIcon sx={{ color: 'action.active', cursor: 'pointer' }} />
-                                        </InputAdornment>
-                                    ),
-                                }}
+                            />
+                            <TextField
+                                label="Fecha hasta"
+                                size="small"
+                                value={filtrosConsumos.fechaHasta ? dayjs(filtrosConsumos.fechaHasta).format('DD/MM/YYYY') : ''}
+                                onChange={(e) => setFiltrosConsumos({...filtrosConsumos, fechaHasta: e.target.value ? dayjs(e.target.value).toDate() : null})}
+                                sx={{ width: 220 }}
+                                disabled={filtrosAplicados.consumos}
                             />
                             <FormControl size="small" sx={{ minWidth: 150 }} disabled={filtrosAplicados.consumos}>
                                 <InputLabel>Producto</InputLabel>
@@ -474,24 +473,20 @@ const AdminContratoDetalle = () => {
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
                             <TextField
-                                label="Fecha"
+                                label="Fecha desde"
                                 size="small"
-                                value={
-                                    filtrosAbonos.rangoFecha[0].startDate && filtrosAbonos.rangoFecha[0].endDate
-                                    ? `${dayjs(filtrosAbonos.rangoFecha[0].startDate).format('DD/MM/YYYY')} - ${dayjs(filtrosAbonos.rangoFecha[0].endDate).format('DD/MM/YYYY')}`
-                                    : ''
-                                }
-                                onClick={(e) => handleOpenPopover(e, 'abonos')}
-                                readOnly
+                                value={filtrosAbonos.fechaDesde ? dayjs(filtrosAbonos.fechaDesde).format('DD/MM/YYYY') : ''}
+                                onChange={(e) => setFiltrosAbonos({...filtrosAbonos, fechaDesde: e.target.value ? dayjs(e.target.value).toDate() : null})}
                                 sx={{ width: 220 }}
                                 disabled={filtrosAplicados.abonos}
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <CalendarTodayIcon sx={{ color: 'action.active', cursor: 'pointer' }} />
-                                        </InputAdornment>
-                                    ),
-                                }}
+                            />
+                            <TextField
+                                label="Fecha hasta"
+                                size="small"
+                                value={filtrosAbonos.fechaHasta ? dayjs(filtrosAbonos.fechaHasta).format('DD/MM/YYYY') : ''}
+                                onChange={(e) => setFiltrosAbonos({...filtrosAbonos, fechaHasta: e.target.value ? dayjs(e.target.value).toDate() : null})}
+                                sx={{ width: 220 }}
+                                disabled={filtrosAplicados.abonos}
                             />
                             <FormControl size="small" sx={{ minWidth: 150 }} disabled={filtrosAplicados.abonos}>
                                 <InputLabel>Banco</InputLabel>
@@ -557,24 +552,20 @@ const AdminContratoDetalle = () => {
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
                             <TextField
-                                label="Fecha"
+                                label="Fecha desde"
                                 size="small"
-                                value={
-                                    filtrosDevoluciones.rangoFecha[0].startDate && filtrosDevoluciones.rangoFecha[0].endDate
-                                    ? `${dayjs(filtrosDevoluciones.rangoFecha[0].startDate).format('DD/MM/YYYY')} - ${dayjs(filtrosDevoluciones.rangoFecha[0].endDate).format('DD/MM/YYYY')}`
-                                    : ''
-                                }
-                                onClick={(e) => handleOpenPopover(e, 'devoluciones')}
-                                readOnly
+                                value={filtrosDevoluciones.fechaDesde ? dayjs(filtrosDevoluciones.fechaDesde).format('DD/MM/YYYY') : ''}
+                                onChange={(e) => setFiltrosDevoluciones({...filtrosDevoluciones, fechaDesde: e.target.value ? dayjs(e.target.value).toDate() : null})}
                                 sx={{ width: 220 }}
                                 disabled={filtrosAplicados.devoluciones}
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <CalendarTodayIcon sx={{ color: 'action.active', cursor: 'pointer' }} />
-                                        </InputAdornment>
-                                    ),
-                                }}
+                            />
+                            <TextField
+                                label="Fecha hasta"
+                                size="small"
+                                value={filtrosDevoluciones.fechaHasta ? dayjs(filtrosDevoluciones.fechaHasta).format('DD/MM/YYYY') : ''}
+                                onChange={(e) => setFiltrosDevoluciones({...filtrosDevoluciones, fechaHasta: e.target.value ? dayjs(e.target.value).toDate() : null})}
+                                sx={{ width: 220 }}
+                                disabled={filtrosAplicados.devoluciones}
                             />
                             <FormControl size="small" sx={{ minWidth: 150 }} disabled={filtrosAplicados.devoluciones}>
                                 <InputLabel>Banco</InputLabel>
@@ -640,24 +631,20 @@ const AdminContratoDetalle = () => {
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
                             <TextField
-                                label="Fecha"
+                                label="Fecha desde"
                                 size="small"
-                                value={
-                                    filtrosNotasCredito.rangoFecha[0].startDate && filtrosNotasCredito.rangoFecha[0].endDate
-                                    ? `${dayjs(filtrosNotasCredito.rangoFecha[0].startDate).format('DD/MM/YYYY')} - ${dayjs(filtrosNotasCredito.rangoFecha[0].endDate).format('DD/MM/YYYY')}`
-                                    : ''
-                                }
-                                onClick={(e) => handleOpenPopover(e, 'notasCredito')}
-                                readOnly
+                                value={filtrosNotasCredito.fechaDesde ? dayjs(filtrosNotasCredito.fechaDesde).format('DD/MM/YYYY') : ''}
+                                onChange={(e) => setFiltrosNotasCredito({...filtrosNotasCredito, fechaDesde: e.target.value ? dayjs(e.target.value).toDate() : null})}
                                 sx={{ width: 220 }}
                                 disabled={filtrosAplicados.notasCredito}
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <CalendarTodayIcon sx={{ color: 'action.active', cursor: 'pointer' }} />
-                                        </InputAdornment>
-                                    ),
-                                }}
+                            />
+                            <TextField
+                                label="Fecha hasta"
+                                size="small"
+                                value={filtrosNotasCredito.fechaHasta ? dayjs(filtrosNotasCredito.fechaHasta).format('DD/MM/YYYY') : ''}
+                                onChange={(e) => setFiltrosNotasCredito({...filtrosNotasCredito, fechaHasta: e.target.value ? dayjs(e.target.value).toDate() : null})}
+                                sx={{ width: 220 }}
+                                disabled={filtrosAplicados.notasCredito}
                             />
                         </Box>
                     </Box>
@@ -782,19 +769,18 @@ const AdminContratoDetalle = () => {
                 <DateRange
                     editableDateInputs={true}
                     onChange={item => {
-                        if (popoverType === 'consumos') setFiltrosConsumos({ ...filtrosConsumos, rangoFecha: [item.selection] });
-                        else if (popoverType === 'abonos') setFiltrosAbonos({ ...filtrosAbonos, rangoFecha: [item.selection] });
-                        else if (popoverType === 'devoluciones') setFiltrosDevoluciones({ ...filtrosDevoluciones, rangoFecha: [item.selection] });
-                        else if (popoverType === 'notasCredito') setFiltrosNotasCredito({ ...filtrosNotasCredito, rangoFecha: [item.selection] });
+                        if (popoverType === 'consumos') setFiltrosConsumos({ ...filtrosConsumos, fechaDesde: item.selection[0].startDate, fechaHasta: item.selection[0].endDate });
+                        else if (popoverType === 'abonos') setFiltrosAbonos({ ...filtrosAbonos, fechaDesde: item.selection[0].startDate, fechaHasta: item.selection[0].endDate });
+                        else if (popoverType === 'devoluciones') setFiltrosDevoluciones({ ...filtrosDevoluciones, fechaDesde: item.selection[0].startDate, fechaHasta: item.selection[0].endDate });
+                        else if (popoverType === 'notasCredito') setFiltrosNotasCredito({ ...filtrosNotasCredito, fechaDesde: item.selection[0].startDate, fechaHasta: item.selection[0].endDate });
                     }}
                     moveRangeOnFirstSelection={false}
                     ranges={
-                        popoverType === 'consumos' ? filtrosConsumos.rangoFecha :
-                        popoverType === 'abonos' ? filtrosAbonos.rangoFecha :
-                        popoverType === 'devoluciones' ? filtrosDevoluciones.rangoFecha :
-                        filtrosNotasCredito.rangoFecha
+                        popoverType === 'consumos' ? [filtrosConsumos] :
+                        popoverType === 'abonos' ? [filtrosAbonos] :
+                        popoverType === 'devoluciones' ? [filtrosDevoluciones] :
+                        [filtrosNotasCredito]
                     }
-                    locale={es}
                 />
             </Popover>
         </React.Fragment>
