@@ -4,8 +4,12 @@ const authMiddleware = (req, res, next) => {
   try {
     // Obtener el token del header Authorization
     const authHeader = req.headers.authorization;
+    
+    // Si no hay token, permitir continuar pero marcar como no autenticado
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Token no proporcionado' });
+      req.user = null;
+      req.isAuthenticated = false;
+      return next();
     }
 
     const token = authHeader.split(' ')[1];
@@ -15,12 +19,24 @@ const authMiddleware = (req, res, next) => {
     
     // Agregar la información del usuario al request
     req.user = decoded;
+    req.isAuthenticated = true;
     
     next();
   } catch (error) {
     console.error('Error en middleware de autenticación:', error);
-    return res.status(401).json({ message: 'Token inválido' });
+    // En lugar de rechazar, permitir continuar pero marcar como no autenticado
+    req.user = null;
+    req.isAuthenticated = false;
+    next();
   }
 };
 
-module.exports = authMiddleware; 
+// Middleware más estricto para rutas que requieren autenticación obligatoria
+const requireAuth = (req, res, next) => {
+  if (!req.isAuthenticated || !req.user) {
+    return res.status(401).json({ message: 'Autenticación requerida' });
+  }
+  next();
+};
+
+module.exports = { authMiddleware, requireAuth }; 

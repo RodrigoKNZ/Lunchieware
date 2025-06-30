@@ -23,29 +23,38 @@ export const API_URLS = {
   programacionMenu: `${API_BASE_URL}/programacion-menu`,
 };
 
-// Configurar axios para enviar automáticamente el token JWT
-axios.defaults.baseURL = API_BASE_URL;
+// Crear una instancia de axios con configuración personalizada
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 // Interceptor para agregar el token a todas las peticiones
-axios.interceptors.request.use(
+apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
+    console.log('Token en localStorage:', token ? 'Presente' : 'No encontrado');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('Header Authorization agregado:', config.headers.Authorization);
     }
     return config;
   },
   (error) => {
+    console.error('Error en interceptor de request:', error);
     return Promise.reject(error);
   }
 );
 
 // Interceptor para manejar errores de autenticación
-axios.interceptors.response.use(
+apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
+    console.error('Error en respuesta:', error.response?.status, error.response?.data);
     if (error.response?.status === 401) {
       // Token expirado o inválido
       localStorage.removeItem('token');
@@ -56,4 +65,5 @@ axios.interceptors.response.use(
   }
 );
 
-export default API_BASE_URL; 
+// Exportar la instancia configurada
+export default apiClient; 

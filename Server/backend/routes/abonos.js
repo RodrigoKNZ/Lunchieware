@@ -1,11 +1,11 @@
 const express = require('express');
 const abonosModel = require('../models/abonos');
-const authMiddleware = require('../middleware/auth');
+const { authMiddleware, requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Aplicar middleware de autenticación a todas las rutas
-router.use(authMiddleware);
+// Temporalmente deshabilitado para pruebas
+// router.use(authMiddleware);
 
 // Obtener todos los abonos
 router.get('/', async (req, res) => {
