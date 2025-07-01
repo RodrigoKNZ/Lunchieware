@@ -159,7 +159,7 @@ const AdminProductos = () => {
       };
       
       const response = await productosService.crear(productoData);
-      const nuevoProductoData = response.data;
+      const nuevoProductoData = adaptarProducto(response.data.data);
       setProductos(prev => [...prev, nuevoProductoData]);
       setProductosFiltrados(prev => [...prev, nuevoProductoData]);
       setNuevoModalOpen(false);
@@ -185,12 +185,13 @@ const AdminProductos = () => {
     setEditarModalOpen(true);
   };
 
-  // Función para adaptar un producto al formato esperado por la tabla
+  // Refuerzo del adaptador para tipos estrictos según diccionario de datos
   const adaptarProducto = (producto) => ({
     ...producto,
-    costoUnitario: parseFloat(producto.costoUnitario),
+    costoUnitario: Number(producto.costoUnitario),
     afectoIGV: Boolean(producto.afectoIGV),
-    disponible: Boolean(producto.disponible)
+    disponible: Boolean(producto.disponible),
+    activo: producto.activo !== undefined ? Boolean(producto.activo) : true
   });
 
   const handleGuardarEdicion = async () => {
@@ -204,8 +205,7 @@ const AdminProductos = () => {
       };
       
       const response = await productosService.actualizar(editProducto.idProducto, productoData);
-      const productoActualizado = response.data;
-      const productoActualizadoAdaptado = adaptarProducto(productoActualizado);
+      const productoActualizadoAdaptado = adaptarProducto(response.data.data);
       const actualizados = productos.map(p => 
         p.idProducto === productoActualizadoAdaptado.idProducto ? productoActualizadoAdaptado : p
       );
@@ -361,7 +361,11 @@ const AdminProductos = () => {
                   <TableCell>{producto.nombreProducto}</TableCell>
                   <TableCell>{producto.nombreCorto}</TableCell>
                   <TableCell>{mapearTipoProducto(producto.tipoProducto)}</TableCell>
-                  <TableCell>S/. {parseFloat(producto.costoUnitario).toFixed(2)}</TableCell>
+                  <TableCell>
+                    {(!isNaN(producto.costoUnitario) && producto.costoUnitario !== null)
+                      ? `S/. ${Number(producto.costoUnitario).toFixed(2)}`
+                      : '-'}
+                  </TableCell>
                   <TableCell>{producto.afectoIGV ? 'Sí' : 'No'}</TableCell>
                   <TableCell>{producto.disponible ? 'Disponible' : 'No Disponible'}</TableCell>
                   <TableCell>

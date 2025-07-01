@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Breadcrumbs, Tabs, Tab, Paper, Button, Divider, IconButton, Grid, TextField, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TablePagination, Dialog, DialogTitle, DialogContent, DialogActions, InputAdornment } from '@mui/material';
+import { Box, Typography, Breadcrumbs, Tabs, Tab, Paper, Button, Divider, IconButton, Grid, TextField, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TablePagination, Dialog, DialogTitle, DialogContent, DialogActions, InputAdornment, MenuItem } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
@@ -32,18 +32,6 @@ const mockClienteDetalle = {
         estado: 'Activo',
     }
 };
-
-const mockContratos = [
-    {
-        codigo: '000200',
-        fechaCreacion: '01/03/2025',
-        inicioVigencia: '01/03/2025',
-        finVigencia: '31/12/2025',
-        importeAbonos: 'S/ 1000.00',
-        importeConsumos: 'S/ 500.00',
-        importeSaldo: 'S/ 500.00',
-    }
-];
 
 const TabPanel = (props) => {
     const { children, value, index, ...other } = props;
@@ -129,9 +117,22 @@ const AdminClienteDetalle = () => {
                     seccion: res.data.seccion,
                     telefono1: res.data.telefono1,
                     telefono2: res.data.telefono2,
-                    estado: res.data.clienteVigente ? 'Activo' : 'Inactivo'
+                    vigencia: res.data.clienteVigente ? 'Vigente' : 'No vigente',
                 };
                 setCliente(clienteMapeado);
+                // Cargar contratos reales
+                const contratosRes = await clienteService.obtenerContratos(id);
+                const contratosData = Array.isArray(contratosRes.data) ? contratosRes.data.map(c => ({
+                  codigo: c.codigoContrato,
+                  fechaCreacion: c.fechaCreacion,
+                  inicioVigencia: c.fechaInicioVigencia,
+                  finVigencia: c.fechaFinVigencia,
+                  importeAbonos: c.importeAbonos,
+                  importeConsumos: c.importeConsumos,
+                  importeSaldo: c.importeSaldo
+                })) : [];
+                setContratos(contratosData);
+                setContratosFiltrados(contratosData);
             } catch (err) {
                 setError('No se pudo cargar el cliente.');
             } finally {
@@ -142,8 +143,8 @@ const AdminClienteDetalle = () => {
     }, [id]);
 
     // Estados de datos
-    const [contratos, setContratos] = useState(mockContratos);
-    const [contratosFiltrados, setContratosFiltrados] = useState(mockContratos);
+    const [contratos, setContratos] = useState([]);
+    const [contratosFiltrados, setContratosFiltrados] = useState([]);
 
     // Estados de UI
     const [tabValue, setTabValue] = useState(0);
@@ -187,12 +188,44 @@ const AdminClienteDetalle = () => {
 
     // Estados de modales
     const [nuevoContratoModalOpen, setNuevoContratoModalOpen] = useState(false);
-    const [nuevoContrato, setNuevoContrato] = useState({
-        codigo: '',
-        fechaCreacion: null,
-        inicioVigencia: null,
-        finVigencia: null
-    });
+    const [editarClienteModalOpen, setEditarClienteModalOpen] = useState(false);
+    const [editCliente, setEditCliente] = useState(null);
+    const [editLoading, setEditLoading] = useState(false);
+    const [editError, setEditError] = useState('');
+    const [eliminarClienteModalOpen, setEliminarClienteModalOpen] = useState(false);
+    const [eliminarLoading, setEliminarLoading] = useState(false);
+    const [eliminarError, setEliminarError] = useState('');
+
+    // Opciones para selects según diccionario de datos
+    const opcionesTipoCliente = [
+        { value: 'E', label: 'Estudiante' },
+        { value: 'D', label: 'Docente' },
+        { value: 'G', label: 'General' }
+    ];
+    const opcionesNivel = [
+        { value: 'IN', label: 'Inicial' },
+        { value: 'PR', label: 'Primaria' },
+        { value: 'SE', label: 'Secundaria' }
+    ];
+    const opcionesTipoDocumento = [
+        { value: 'DNI', label: 'DNI' },
+        { value: 'CEX', label: 'Carnet de extranjería' }
+    ];
+    const opcionesGrado = [
+        { value: 'IN4', label: 'Inicial - 4 años' },
+        { value: 'IN5', label: 'Inicial - 5 años' },
+        { value: 'PR1', label: 'Primaria - 1er grado' },
+        { value: 'PR2', label: 'Primaria - 2do grado' },
+        { value: 'PR3', label: 'Primaria - 3er grado' },
+        { value: 'PR4', label: 'Primaria - 4to grado' },
+        { value: 'PR5', label: 'Primaria - 5to grado' },
+        { value: 'PR6', label: 'Primaria - 6to grado' },
+        { value: 'SE1', label: 'Secundaria - 1er grado' },
+        { value: 'SE2', label: 'Secundaria - 2do grado' },
+        { value: 'SE3', label: 'Secundaria - 3er grado' },
+        { value: 'SE4', label: 'Secundaria - 4to grado' },
+        { value: 'SE5', label: 'Secundaria - 5to grado' }
+    ];
 
     if (loading) {
         return <Typography>Cargando cliente...</Typography>;
@@ -278,6 +311,42 @@ const AdminClienteDetalle = () => {
 
     const nombreCompleto = `${cliente.nombres} ${cliente.paterno} ${cliente.materno}`;
 
+    // Funciones de traducción para mostrar valores legibles en el detalle
+    const mostrarTipoCliente = (tipo) => {
+        if (tipo === 'E') return 'Estudiante';
+        if (tipo === 'D') return 'Docente';
+        if (tipo === 'G') return 'General';
+        return tipo;
+    };
+    const mostrarTipoDocumento = (tipo) => {
+        if (tipo === 'DNI') return 'Documento nacional de identidad (DNI)';
+        if (tipo === 'CEX') return 'Carnet de extranjería';
+        return tipo;
+    };
+    const mostrarNivel = (nivel) => {
+        if (nivel === 'IN') return 'Inicial';
+        if (nivel === 'PR') return 'Primaria';
+        if (nivel === 'SE') return 'Secundaria';
+        return nivel;
+    };
+    const mostrarGrado = (grado) => {
+        if (!grado) return '-';
+        if (grado === 'IN4') return '4 años';
+        if (grado === 'IN5') return '5 años';
+        if (grado === 'PR1') return '1er grado';
+        if (grado === 'PR2') return '2do grado';
+        if (grado === 'PR3') return '3er grado';
+        if (grado === 'PR4') return '4to grado';
+        if (grado === 'PR5') return '5to grado';
+        if (grado === 'PR6') return '6to grado';
+        if (grado === 'SE1') return '1er grado';
+        if (grado === 'SE2') return '2do grado';
+        if (grado === 'SE3') return '3er grado';
+        if (grado === 'SE4') return '4to grado';
+        if (grado === 'SE5') return '5to grado';
+        return grado;
+    };
+
     return (
         <React.Fragment>
             <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb" sx={{ mb: 2 }}>
@@ -301,8 +370,40 @@ const AdminClienteDetalle = () => {
                     </Tabs>
                 </Box>
                 <Box>
-                    <Button variant="contained" sx={{ mr: 1 }}>EDITAR CLIENTE</Button>
-                    <Button variant="outlined" color="error">ELIMINAR CLIENTE</Button>
+                    <Button variant="contained" sx={{ mr: 1 }} onClick={() => {
+                        const tipoClienteCod = cliente.tipoCliente === 'Estudiante' ? 'E' : cliente.tipoCliente === 'Docente' ? 'D' : cliente.tipoCliente === 'General' ? 'G' : cliente.tipoCliente;
+                        const tipoDocCod = cliente.tipoDoc === 'Documento nacional de identidad (DNI)' ? 'DNI' : cliente.tipoDoc === 'Carnet de extranjería' ? 'CEX' : cliente.tipoDoc;
+                        let nivelCod = cliente.nivel;
+                        if (cliente.nivel === 'Inicial') nivelCod = 'IN';
+                        if (cliente.nivel === 'Primaria') nivelCod = 'PR';
+                        if (cliente.nivel === 'Secundaria') nivelCod = 'SE';
+                        let gradoCod = cliente.grado;
+                        if (cliente.grado === '4 años') gradoCod = 'IN4';
+                        if (cliente.grado === '5 años') gradoCod = 'IN5';
+                        if (cliente.grado === '1er grado') gradoCod = nivelCod === 'PR' ? 'PR1' : 'SE1';
+                        if (cliente.grado === '2do grado') gradoCod = nivelCod === 'PR' ? 'PR2' : 'SE2';
+                        if (cliente.grado === '3er grado') gradoCod = nivelCod === 'PR' ? 'PR3' : 'SE3';
+                        if (cliente.grado === '4to grado') gradoCod = nivelCod === 'PR' ? 'PR4' : 'SE4';
+                        if (cliente.grado === '5to grado') gradoCod = nivelCod === 'PR' ? 'PR5' : 'SE5';
+                        if (cliente.grado === '6to grado') gradoCod = 'PR6';
+                        setEditCliente({
+                            nombres: cliente.nombres || '',
+                            paterno: cliente.paterno || '',
+                            materno: cliente.materno || '',
+                            telefono1: cliente.telefono1 || '',
+                            telefono2: cliente.telefono2 || '',
+                            tipoCliente: tipoClienteCod || '',
+                            nivel: nivelCod || '',
+                            grado: gradoCod || '',
+                            numDoc: cliente.numDoc || '',
+                            tipoDoc: tipoDocCod || '',
+                            codigo: cliente.codigo || '',
+                            vigencia: cliente.vigencia || '',
+                            seccion: cliente.seccion || ''
+                        });
+                        setEditarClienteModalOpen(true);
+                    }}>EDITAR CLIENTE</Button>
+                    <Button variant="outlined" color="error" onClick={() => setEliminarClienteModalOpen(true)}>ELIMINAR CLIENTE</Button>
                 </Box>
             </Box>
             <Divider />
@@ -318,21 +419,21 @@ const AdminClienteDetalle = () => {
                                 <Grid item xs={12} sm={6}><InfoItem label="Nombres" value={cliente.nombres} /></Grid>
                                 <Grid item xs={12} sm={6}><InfoItem label="Apellido paterno" value={cliente.paterno} /></Grid>
                                 <Grid item xs={12} sm={6}><InfoItem label="Apellido materno" value={cliente.materno} /></Grid>
-                                <Grid item xs={12} sm={6}><InfoItem label="Tipo de documento de identidad" value={cliente.tipoDoc} /></Grid>
+                                <Grid item xs={12} sm={6}><InfoItem label="Tipo de documento de identidad" value={mostrarTipoDocumento(cliente.tipoDoc)} /></Grid>
                                 <Grid item xs={12} sm={6}><InfoItem label="Número de documento" value={cliente.numDoc} /></Grid>
-                                <Grid item xs={12} sm={6}><InfoItem label="Tipo de cliente" value={cliente.tipoCliente} /></Grid>
+                                <Grid item xs={12} sm={6}><InfoItem label="Tipo de cliente" value={mostrarTipoCliente(cliente.tipoCliente)} /></Grid>
+                                <Grid item xs={12} sm={6}><InfoItem label="Teléfono 1" value={cliente.telefono1} /></Grid>
+                                <Grid item xs={12} sm={6}><InfoItem label="Teléfono 2" value={cliente.telefono2} /></Grid>
                             </Grid>
                         </Paper>
                     </Grid>
                     <Grid item xs={12} md={4}>
                          <Paper sx={{ p: 3, border: '1px solid #e0e0e0', height: '100%' }} elevation={0}>
                              <Grid container spacing={3}>
-                                <Grid item xs={12}><InfoItem label="Nivel" value={cliente.nivel} /></Grid>
-                                <Grid item xs={12}><InfoItem label="Grado" value={cliente.grado} /></Grid>
+                                <Grid item xs={12}><InfoItem label="Nivel" value={mostrarNivel(cliente.nivel)} /></Grid>
+                                <Grid item xs={12}><InfoItem label="Grado" value={mostrarGrado(cliente.grado)} /></Grid>
                                 <Grid item xs={12}><InfoItem label="Sección" value={cliente.seccion} /></Grid>
-                                <Grid item xs={12}><InfoItem label="Teléfono 1" value={cliente.telefono1} /></Grid>
-                                <Grid item xs={12}><InfoItem label="Teléfono 2" value={cliente.telefono2} /></Grid>
-                                <Grid item xs={12}><InfoItem label="Estado" value={cliente.estado} /></Grid>
+                                <Grid item xs={12}><InfoItem label="Vigencia" value={cliente.vigencia} /></Grid>
                             </Grid>
                         </Paper>
                     </Grid>
@@ -349,67 +450,77 @@ const AdminClienteDetalle = () => {
                             <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => setNuevoContratoModalOpen(true)} disabled={filtrosAplicados}>NUEVO CONTRATO</Button>
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
-                            <TextField label="Ingrese el código" variant="outlined" size="small" sx={{ width: 150 }} value={filtroCodigo} onChange={e => setFiltroCodigo(e.target.value)} disabled={filtrosAplicados}/>
-                            
-                            {/* Filtros de fecha de creación */}
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="Fecha creación desde"
-                                    value={fechaCreacionDesde}
-                                    onChange={setFechaCreacionDesde}
-                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 180 }} disabled={filtrosAplicados} />}
-                                    inputFormat="DD/MM/YYYY"
-                                />
-                            </LocalizationProvider>
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="Fecha creación hasta"
-                                    value={fechaCreacionHasta}
-                                    onChange={setFechaCreacionHasta}
-                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 180 }} disabled={filtrosAplicados} />}
-                                    inputFormat="DD/MM/YYYY"
-                                />
-                            </LocalizationProvider>
-                            
-                            {/* Filtros de fecha de inicio de vigencia */}
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="Inicio vigencia desde"
-                                    value={fechaInicioVigenciaDesde}
-                                    onChange={setFechaInicioVigenciaDesde}
-                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 180 }} disabled={filtrosAplicados} />}
-                                    inputFormat="DD/MM/YYYY"
-                                />
-                            </LocalizationProvider>
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="Inicio vigencia hasta"
-                                    value={fechaInicioVigenciaHasta}
-                                    onChange={setFechaInicioVigenciaHasta}
-                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 180 }} disabled={filtrosAplicados} />}
-                                    inputFormat="DD/MM/YYYY"
-                                />
-                            </LocalizationProvider>
-                            
-                            {/* Filtros de fecha de fin de vigencia */}
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="Fin vigencia desde"
-                                    value={fechaFinVigenciaDesde}
-                                    onChange={setFechaFinVigenciaDesde}
-                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 180 }} disabled={filtrosAplicados} />}
-                                    inputFormat="DD/MM/YYYY"
-                                />
-                            </LocalizationProvider>
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="Fin vigencia hasta"
-                                    value={fechaFinVigenciaHasta}
-                                    onChange={setFechaFinVigenciaHasta}
-                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 180 }} disabled={filtrosAplicados} />}
-                                    inputFormat="DD/MM/YYYY"
-                                />
-                            </LocalizationProvider>
+                            <Grid container spacing={2}>
+                                <Grid item xs={12} md={4}>
+                                    <TextField label="Ingrese el código" variant="outlined" size="small" fullWidth value={filtroCodigo} onChange={e => setFiltroCodigo(e.target.value)} disabled={filtrosAplicados}/>
+                                </Grid>
+                                <Grid item xs={12} md={4}>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <DatePicker
+                                            label="Fecha creación desde"
+                                            value={fechaCreacionDesde}
+                                            onChange={setFechaCreacionDesde}
+                                            renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
+                                            inputFormat="DD/MM/YYYY"
+                                        />
+                                    </LocalizationProvider>
+                                </Grid>
+                                <Grid item xs={12} md={4}>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <DatePicker
+                                            label="Fecha creación hasta"
+                                            value={fechaCreacionHasta}
+                                            onChange={setFechaCreacionHasta}
+                                            renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
+                                            inputFormat="DD/MM/YYYY"
+                                        />
+                                    </LocalizationProvider>
+                                </Grid>
+                                <Grid item xs={12} md={3}>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <DatePicker
+                                            label="Inicio vigencia desde"
+                                            value={fechaInicioVigenciaDesde}
+                                            onChange={setFechaInicioVigenciaDesde}
+                                            renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
+                                            inputFormat="DD/MM/YYYY"
+                                        />
+                                    </LocalizationProvider>
+                                </Grid>
+                                <Grid item xs={12} md={3}>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <DatePicker
+                                            label="Inicio vigencia hasta"
+                                            value={fechaInicioVigenciaHasta}
+                                            onChange={setFechaInicioVigenciaHasta}
+                                            renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
+                                            inputFormat="DD/MM/YYYY"
+                                        />
+                                    </LocalizationProvider>
+                                </Grid>
+                                <Grid item xs={12} md={3}>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <DatePicker
+                                            label="Fin vigencia desde"
+                                            value={fechaFinVigenciaDesde}
+                                            onChange={setFechaFinVigenciaDesde}
+                                            renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
+                                            inputFormat="DD/MM/YYYY"
+                                        />
+                                    </LocalizationProvider>
+                                </Grid>
+                                <Grid item xs={12} md={3}>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <DatePicker
+                                            label="Fin vigencia hasta"
+                                            value={fechaFinVigenciaHasta}
+                                            onChange={setFechaFinVigenciaHasta}
+                                            renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
+                                            inputFormat="DD/MM/YYYY"
+                                        />
+                                    </LocalizationProvider>
+                                </Grid>
+                            </Grid>
                         </Box>
                     </Box>
                     <Divider sx={{ my: 2 }} />
@@ -430,13 +541,13 @@ const AdminClienteDetalle = () => {
                             <TableBody>
                                 {contratosFiltrados.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((contrato) => (
                                     <TableRow key={contrato.codigo} hover>
-                                        <TableCell>{contrato.codigo}</TableCell>
-                                        <TableCell>{contrato.fechaCreacion}</TableCell>
-                                        <TableCell>{contrato.inicioVigencia}</TableCell>
-                                        <TableCell>{contrato.finVigencia}</TableCell>
-                                        <TableCell>{contrato.importeAbonos}</TableCell>
-                                        <TableCell>{contrato.importeConsumos}</TableCell>
-                                        <TableCell>{contrato.importeSaldo}</TableCell>
+                                        <TableCell>{contrato.codigo || '-'}</TableCell>
+                                        <TableCell>{contrato.fechaCreacion ? dayjs(contrato.fechaCreacion).format('DD/MM/YYYY') : '-'}</TableCell>
+                                        <TableCell>{contrato.inicioVigencia ? dayjs(contrato.inicioVigencia).format('DD/MM/YYYY') : '-'}</TableCell>
+                                        <TableCell>{contrato.finVigencia ? dayjs(contrato.finVigencia).format('DD/MM/YYYY') : '-'}</TableCell>
+                                        <TableCell>{(contrato.importeAbonos !== undefined && contrato.importeAbonos !== null) ? `S/. ${Number(contrato.importeAbonos).toFixed(2)}` : '-'}</TableCell>
+                                        <TableCell>{(contrato.importeConsumos !== undefined && contrato.importeConsumos !== null) ? `S/. ${Number(contrato.importeConsumos).toFixed(2)}` : '-'}</TableCell>
+                                        <TableCell>{(contrato.importeSaldo !== undefined && contrato.importeSaldo !== null) ? `S/. ${Number(contrato.importeSaldo).toFixed(2)}` : '-'}</TableCell>
                                         <TableCell align="center">
                                             <IconButton size="small" onClick={() => navigate(`/admin/clientes/${id}/contrato/${contrato.codigo}`)}>
                                                 <VisibilityIcon />
@@ -459,53 +570,162 @@ const AdminClienteDetalle = () => {
                     />
                 </Paper>
             </TabPanel>
-            <Dialog open={nuevoContratoModalOpen} onClose={() => setNuevoContratoModalOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Nuevo Contrato</DialogTitle>
+            <Dialog open={editarClienteModalOpen} onClose={() => setEditarClienteModalOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Editar Cliente</DialogTitle>
                 <DialogContent>
-                    <Grid container spacing={2} sx={{ mt: 1 }}>
-                        <Grid item xs={12}>
-                            <TextField
-                                label="Código de contrato"
-                                fullWidth
-                                value={nuevoContrato.codigo}
-                                onChange={(e) => setNuevoContrato({ ...nuevoContrato, codigo: e.target.value })}
-                            />
+                    {editError && <Typography color="error" sx={{ mb: 1 }}>{editError}</Typography>}
+                    {editCliente && (
+                        <Grid container spacing={2} sx={{ mt: 1 }}>
+                            <Grid item xs={12} sm={6}>
+                                <TextField label="Nombres" fullWidth value={editCliente.nombres} onChange={e => setEditCliente({ ...editCliente, nombres: e.target.value })} />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField label="Apellido paterno" fullWidth value={editCliente.paterno} onChange={e => setEditCliente({ ...editCliente, paterno: e.target.value })} />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField label="Apellido materno" fullWidth value={editCliente.materno} onChange={e => setEditCliente({ ...editCliente, materno: e.target.value })} />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField label="Teléfono 1" fullWidth value={editCliente.telefono1} onChange={e => setEditCliente({ ...editCliente, telefono1: e.target.value })} />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField label="Teléfono 2" fullWidth value={editCliente.telefono2} onChange={e => setEditCliente({ ...editCliente, telefono2: e.target.value })} />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField label="Tipo de cliente" select fullWidth value={editCliente.tipoCliente} onChange={e => setEditCliente({ ...editCliente, tipoCliente: e.target.value, nivel: '', grado: '', seccion: '' })}>
+                                    <MenuItem value="">Seleccione</MenuItem>
+                                    {opcionesTipoCliente.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
+                                </TextField>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField label="Nivel" select fullWidth value={editCliente.nivel} onChange={e => setEditCliente({ ...editCliente, nivel: e.target.value, grado: '', seccion: '' })} disabled={editCliente.tipoCliente !== 'E'}>
+                                    <MenuItem value="">Seleccione</MenuItem>
+                                    {opcionesNivel.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
+                                </TextField>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField label="Grado" select fullWidth value={editCliente.grado} onChange={e => setEditCliente({ ...editCliente, grado: e.target.value, seccion: '' })} disabled={editCliente.tipoCliente !== 'E' || !editCliente.nivel}>
+                                    <MenuItem value="">Seleccione</MenuItem>
+                                    {opcionesGrado.filter(opt => (editCliente.nivel === 'IN' && opt.value.startsWith('IN')) || (editCliente.nivel === 'PR' && opt.value.startsWith('PR')) || (editCliente.nivel === 'SE' && opt.value.startsWith('SE'))).map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
+                                </TextField>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField label="Número de documento" fullWidth value={editCliente.numDoc} onChange={e => setEditCliente({ ...editCliente, numDoc: e.target.value })} />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField label="Tipo de documento" select fullWidth value={editCliente.tipoDoc} onChange={e => setEditCliente({ ...editCliente, tipoDoc: e.target.value })}>
+                                    <MenuItem value="">Seleccione</MenuItem>
+                                    {opcionesTipoDocumento.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
+                                </TextField>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField label="Código de cliente" fullWidth value={editCliente.codigo} onChange={e => setEditCliente({ ...editCliente, codigo: e.target.value })} />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField label="Vigencia" fullWidth value={editCliente.vigencia} disabled />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField label="Sección" select fullWidth value={editCliente.seccion} onChange={e => setEditCliente({ ...editCliente, seccion: e.target.value })} disabled={editCliente.tipoCliente !== 'E' || !editCliente.nivel || !editCliente.grado}>
+                                    <MenuItem value="">Seleccione</MenuItem>
+                                    <MenuItem value="A">A</MenuItem>
+                                    <MenuItem value="B">B</MenuItem>
+                                    <MenuItem value="C">C</MenuItem>
+                                    <MenuItem value="D">D</MenuItem>
+                                </TextField>
+                            </Grid>
                         </Grid>
-                        <Grid item xs={12}>
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="Fecha de creación"
-                                    value={nuevoContrato.fechaCreacion}
-                                    onChange={(date) => setNuevoContrato({ ...nuevoContrato, fechaCreacion: date })}
-                                    renderInput={(params) => <TextField {...params} fullWidth />}
-                                />
-                            </LocalizationProvider>
-                        </Grid>
-                        <Grid item xs={12}>
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="Inicio de vigencia"
-                                    value={nuevoContrato.inicioVigencia}
-                                    onChange={(date) => setNuevoContrato({ ...nuevoContrato, inicioVigencia: date })}
-                                    renderInput={(params) => <TextField {...params} fullWidth />}
-                                />
-                            </LocalizationProvider>
-                        </Grid>
-                        <Grid item xs={12}>
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="Fin de vigencia"
-                                    value={nuevoContrato.finVigencia}
-                                    onChange={(date) => setNuevoContrato({ ...nuevoContrato, finVigencia: date })}
-                                    renderInput={(params) => <TextField {...params} fullWidth />}
-                                />
-                            </LocalizationProvider>
-                        </Grid>
-                    </Grid>
+                    )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setNuevoContratoModalOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleGuardarNuevoContrato} variant="contained">Guardar</Button>
+                    <Button onClick={() => setEditarClienteModalOpen(false)}>Cancelar</Button>
+                    <Button variant="contained" onClick={async () => {
+                        setEditLoading(true);
+                        setEditError('');
+                        try {
+                            // Validar campos obligatorios antes de enviar
+                            const camposObligatorios = [
+                                'nombres','paterno','materno','telefono1','tipoCliente','numDoc','tipoDoc','codigo'
+                            ];
+                            for (const campo of camposObligatorios) {
+                                if (!editCliente[campo] || editCliente[campo].toString().trim() === '') {
+                                    setEditError('Todos los campos son obligatorios excepto Teléfono 2.');
+                                    setEditLoading(false);
+                                    return;
+                                }
+                            }
+                            if (editCliente.tipoCliente === 'E') {
+                                if (!editCliente.nivel || !editCliente.grado || !editCliente.seccion) {
+                                    setEditError('Nivel, grado y sección son obligatorios para estudiantes.');
+                                    setEditLoading(false);
+                                    return;
+                                }
+                                if (!['A','B','C','D'].includes(editCliente.seccion)) {
+                                    setEditError('La sección debe ser A, B, C o D.');
+                                    setEditLoading(false);
+                                    return;
+                                }
+                            }
+                            // Construir objeto para backend con todos los campos requeridos
+                            const payload = {
+                                codigoCliente: editCliente.codigo,
+                                nombres: editCliente.nombres,
+                                apellidoPaterno: editCliente.paterno,
+                                apellidoMaterno: editCliente.materno,
+                                telefono1: editCliente.telefono1,
+                                telefono2: editCliente.telefono2,
+                                seccion: editCliente.seccion,
+                                tipoCliente: editCliente.tipoCliente,
+                                nivel: editCliente.nivel,
+                                grado: editCliente.grado,
+                                numDocumento: editCliente.numDoc,
+                                tipoDocumento: editCliente.tipoDoc,
+                                clienteVigente: cliente.vigencia === 'Vigente',
+                                activo: true
+                            };
+                            console.log('Payload a enviar al backend:', payload);
+                            await clienteService.actualizar(id, payload);
+                            setCliente({ ...cliente, ...editCliente });
+                            setEditarClienteModalOpen(false);
+                        } catch (err) {
+                            setEditError('Error al guardar los cambios.');
+                            console.error('Error al guardar cliente:', err);
+                        } finally {
+                            setEditLoading(false);
+                        }
+                    }} disabled={
+                        editLoading ||
+                        !editCliente ||
+                        Object.entries(editCliente).some(([k, v]) => [
+                            'nombres','paterno','materno','telefono1','tipoCliente','numDoc','tipoDoc','codigo'
+                        ].includes(k) && (!v || v.toString().trim() === '')) ||
+                        (editCliente.tipoCliente === 'E' && (!editCliente.nivel || !editCliente.grado || !editCliente.seccion || !['A','B','C','D'].includes(editCliente.seccion)))
+                    }>
+                        Guardar
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            <Dialog open={eliminarClienteModalOpen} onClose={() => setEliminarClienteModalOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>Eliminar Cliente</DialogTitle>
+                <DialogContent>
+                    <Typography>¿Está seguro que desea eliminar este cliente? Esta acción no se puede deshacer.</Typography>
+                    {eliminarError && <Typography color="error" sx={{ mt: 1 }}>{eliminarError}</Typography>}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEliminarClienteModalOpen(false)}>Cancelar</Button>
+                    <Button color="error" variant="contained" onClick={async () => {
+                        setEliminarLoading(true);
+                        setEliminarError('');
+                        try {
+                            await clienteService.eliminar(id);
+                            setEliminarClienteModalOpen(false);
+                            navigate('/admin/clientes');
+                        } catch (err) {
+                            setEliminarError('Error al eliminar el cliente.');
+                            console.error('Error al eliminar cliente:', err);
+                        } finally {
+                            setEliminarLoading(false);
+                        }
+                    }} disabled={eliminarLoading}>Eliminar</Button>
                 </DialogActions>
             </Dialog>
         </React.Fragment>
