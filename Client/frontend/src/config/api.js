@@ -37,13 +37,7 @@ const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-  },
-  // Configuración para HTTPS local
-  ...(isProductionSim && {
-    httpsAgent: new (require('https').Agent)({
-      rejectUnauthorized: false
-    })
-  })
+  }
 });
 
 // Interceptor para agregar el token a todas las peticiones

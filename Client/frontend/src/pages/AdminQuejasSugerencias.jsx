@@ -36,8 +36,85 @@ const QuejasSugerenciasContent = ({ data, isQuejas, onDataChange }) => {
     const [currentItem, setCurrentItem] = useState(null);
     const [loading, setLoading] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+    // Filtros
+    const [filtroCodigo, setFiltroCodigo] = useState('');
+    const [filtroAsunto, setFiltroAsunto] = useState('');
+    const [filtroCliente, setFiltroCliente] = useState('');
+    const [filtroEstado, setFiltroEstado] = useState('todos');
     const [fechaDesde, setFechaDesde] = useState(null);
     const [fechaHasta, setFechaHasta] = useState(null);
+    const [filtrados, setFiltrados] = useState(data);
+    const [filtrosAplicados, setFiltrosAplicados] = useState(false);
+    // Estado para saber si los filtros están en su estado inicial
+    const filtrosIniciales = {
+        codigo: '',
+        asunto: '',
+        cliente: '',
+        estado: 'todos',
+        fechaDesde: null,
+        fechaHasta: null
+    };
+    const filtrosEnEstadoInicial =
+        filtroCodigo === filtrosIniciales.codigo &&
+        filtroAsunto === filtrosIniciales.asunto &&
+        filtroCliente === filtrosIniciales.cliente &&
+        filtroEstado === filtrosIniciales.estado &&
+        (!fechaDesde && !fechaHasta);
+
+    useEffect(() => {
+        setFiltrados(data);
+        setFiltrosAplicados(false);
+    }, [data]);
+
+    useEffect(() => {
+        // No hacer nada, solo para que React detecte el cambio y recalcule filtrosEnEstadoInicial
+    }, [filtroCodigo, filtroAsunto, filtroCliente, filtroEstado, fechaDesde, fechaHasta]);
+
+    const handleFechaDesde = (date) => {
+        setFechaDesde(date ? dayjs(date) : null);
+    };
+    const handleFechaHasta = (date) => {
+        setFechaHasta(date ? dayjs(date) : null);
+    };
+
+    const handleAplicarFiltros = () => {
+        let resultado = data.filter(item => {
+            const matchCodigo = !filtroCodigo || (item.codigo && item.codigo.toLowerCase().includes(filtroCodigo.toLowerCase()));
+            const matchAsunto = !filtroAsunto || (item.asunto && item.asunto.toLowerCase().includes(filtroAsunto.toLowerCase()));
+            const matchCliente = !filtroCliente || (item.cliente && item.cliente.toLowerCase().includes(filtroCliente.toLowerCase()));
+            let matchEstado = true;
+            if (isQuejas) {
+                matchEstado = filtroEstado === 'todos' ||
+                    (filtroEstado === 'resuelta' && item.estado === 'Resuelta') ||
+                    (filtroEstado === 'sin_resolver' && item.estado === 'Sin resolver');
+            }
+            let matchDesde = true, matchHasta = true;
+            if (fechaDesde) {
+                const fechaItem = dayjs(item.fecha, 'DD/MM/YYYY');
+                matchDesde = fechaItem.isSame(fechaDesde.startOf('day'), 'day') || fechaItem.isAfter(fechaDesde.startOf('day'), 'day');
+            }
+            if (fechaHasta) {
+                const fechaItem = dayjs(item.fecha, 'DD/MM/YYYY');
+                matchHasta = fechaItem.isSame(fechaHasta.endOf('day'), 'day') || fechaItem.isBefore(fechaHasta.endOf('day'), 'day');
+            }
+            return matchCodigo && matchAsunto && matchCliente && matchEstado && matchDesde && matchHasta;
+        });
+        setFiltrados(resultado);
+        setPage(0);
+        setFiltrosAplicados(true);
+    };
+
+    const handleLimpiarFiltros = () => {
+        setFiltroCodigo(filtrosIniciales.codigo);
+        setFiltroAsunto(filtrosIniciales.asunto);
+        setFiltroCliente(filtrosIniciales.cliente);
+        setFiltroEstado(filtrosIniciales.estado);
+        setFechaDesde(filtrosIniciales.fechaDesde);
+        setFechaHasta(filtrosIniciales.fechaHasta);
+        setFiltrados(data);
+        setPage(0);
+        setFiltrosAplicados(false);
+    };
 
     const handleSelectAllClick = (event) => {
         if (event.target.checked) {
@@ -121,20 +198,20 @@ const QuejasSugerenciasContent = ({ data, isQuejas, onDataChange }) => {
         <Paper sx={{ p: 2, border: '1px solid #e0e0e0', mt: 2 }} elevation={0}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 2 }}>
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                    <Button variant="contained" disabled>APLICAR FILTROS</Button>
-                    <Button variant="outlined" disabled>LIMPIAR FILTROS</Button>
+                    <Button variant="contained" onClick={handleAplicarFiltros} disabled={filtrosEnEstadoInicial || filtrosAplicados}>APLICAR FILTROS</Button>
+                    <Button variant="outlined" onClick={handleLimpiarFiltros} disabled={!filtrosAplicados}>LIMPIAR FILTROS</Button>
                 </Box>
                 {isQuejas && <Button variant="contained" disabled={selected.length === 0} onClick={handleOpenResolve}>MARCAR COMO RESUELTO</Button>}
             </Box>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-                <TextField label="Código" size="small" sx={{ width: 120 }}/>
-                <TextField label="Asunto" size="small" sx={{flex: 1, minWidth: 220}} />
+                <TextField label="Código" size="small" sx={{ width: 90 }} value={filtroCodigo} onChange={e => setFiltroCodigo(e.target.value)} disabled={filtrosAplicados} />
+                <TextField label="Asunto" size="small" sx={{flex: 1, minWidth: 220}} value={filtroAsunto} onChange={e => setFiltroAsunto(e.target.value)} disabled={filtrosAplicados} />
                 <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
                     <DatePicker
                         label="Desde"
                         value={fechaDesde}
-                        onChange={setFechaDesde}
-                        renderInput={(params) => <TextField {...params} size="small" sx={{ width: 120 }} />}
+                        onChange={handleFechaDesde}
+                        renderInput={(params) => <TextField {...params} size="small" sx={{ width: 120 }} disabled={filtrosAplicados} />} 
                         inputFormat="DD/MM/YYYY"
                     />
                 </LocalizationProvider>
@@ -142,16 +219,16 @@ const QuejasSugerenciasContent = ({ data, isQuejas, onDataChange }) => {
                     <DatePicker
                         label="Hasta"
                         value={fechaHasta}
-                        onChange={setFechaHasta}
-                        renderInput={(params) => <TextField {...params} size="small" sx={{ width: 120 }} />}
+                        onChange={handleFechaHasta}
+                        renderInput={(params) => <TextField {...params} size="small" sx={{ width: 120 }} disabled={filtrosAplicados} />} 
                         inputFormat="DD/MM/YYYY"
                     />
                 </LocalizationProvider>
-                <TextField label="Nombre cliente asociado" size="small" sx={{flex: 1, minWidth: 220}}/>
+                <TextField label="Nombre cliente asociado" size="small" sx={{flex: 1, minWidth: 220}} value={filtroCliente} onChange={e => setFiltroCliente(e.target.value)} disabled={filtrosAplicados} />
                 {isQuejas && (
-                    <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <FormControl size="small" sx={{ minWidth: 120 }} disabled={filtrosAplicados}>
                         <InputLabel>Estado</InputLabel>
-                        <Select label="Estado" defaultValue="todos">
+                        <Select label="Estado" value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} disabled={filtrosAplicados}>
                             <MenuItem value="todos">Todos</MenuItem>
                             <MenuItem value="resuelta">Resuelta</MenuItem>
                             <MenuItem value="sin_resolver">Sin resolver</MenuItem>
@@ -174,7 +251,7 @@ const QuejasSugerenciasContent = ({ data, isQuejas, onDataChange }) => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+                        {filtrados.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
                             const isItemSelected = isSelected(row.id);
                             return (
                                 <TableRow key={row.id} hover role="checkbox" aria-checked={isItemSelected} tabIndex={-1} selected={isItemSelected}>
@@ -215,7 +292,7 @@ const QuejasSugerenciasContent = ({ data, isQuejas, onDataChange }) => {
             <TablePagination
                 rowsPerPageOptions={[5, 10, 25]}
                 component="div"
-                count={data.length}
+                count={filtrados.length}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}
@@ -265,20 +342,18 @@ const AdminQuejasSugerencias = () => {
   const cargarQuejas = async () => {
     try {
       const response = await quejasService.obtenerTodas();
-      const quejasData = Array.isArray(response.data) ? response.data : [];
-      const quejasFormateadas = quejasData.map(queja => ({
+      const data = Array.isArray(response.data.data) ? response.data.data : [];
+      const quejasFormateadas = data.map(queja => ({
         id: queja.idQueja,
-        codigo: queja.codigoQueja || `QJ${queja.idQueja.toString().padStart(5, '0')}`,
+        codigo: queja.codigoQueja || `QJ${queja.idQueja?.toString().padStart(5, '0')}`,
         asunto: queja.asunto,
-        fecha: dayjs(queja.fechaCreacion).format('DD/MM/YYYY'),
+        fecha: queja.fechaCreacion ? dayjs(queja.fechaCreacion).format('DD/MM/YYYY') : '',
         cliente: queja.nombreCompletoCliente || queja.nombreUsuario || 'Cliente no identificado',
         estado: queja.resuelto ? 'Resuelta' : 'Sin resolver',
         detalle: queja.detalle
       }));
       setQuejas(quejasFormateadas);
     } catch (error) {
-      console.error('Error cargando quejas:', error);
-      setError('Error al cargar las quejas');
       setQuejas([]);
     }
   };
@@ -286,19 +361,18 @@ const AdminQuejasSugerencias = () => {
   const cargarSugerencias = async () => {
     try {
       const response = await sugerenciasService.obtenerTodas();
-      const sugerenciasData = Array.isArray(response.data) ? response.data : [];
-      const sugerenciasFormateadas = sugerenciasData.map(sugerencia => ({
+      const data = Array.isArray(response.data.data) ? response.data.data : [];
+      const sugerenciasFormateadas = data.map(sugerencia => ({
         id: sugerencia.idSugerencia,
-        codigo: sugerencia.codigoSugerencia || `SG${sugerencia.idSugerencia.toString().padStart(5, '0')}`,
+        codigo: sugerencia.codigoSugerencia || `SG${sugerencia.idSugerencia?.toString().padStart(5, '0')}`,
         asunto: sugerencia.asunto,
-        fecha: dayjs(sugerencia.fechaCreacion).format('DD/MM/YYYY'),
+        fecha: sugerencia.fechaCreacion ? dayjs(sugerencia.fechaCreacion).format('DD/MM/YYYY') : '',
         cliente: sugerencia.nombreCompletoCliente || sugerencia.nombreUsuario || 'Cliente no identificado',
+        estado: undefined, // No aplica para sugerencias
         detalle: sugerencia.detalle
       }));
       setSugerencias(sugerenciasFormateadas);
     } catch (error) {
-      console.error('Error cargando sugerencias:', error);
-      setError('Error al cargar las sugerencias');
       setSugerencias([]);
     }
   };

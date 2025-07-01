@@ -6,10 +6,11 @@ const router = express.Router();
 // Temporalmente deshabilitado para pruebas
 // router.use(authMiddleware);
 
-// Obtener todos los movimientos de una caja chica
-router.get('/caja/:idCajaChica', async (req, res) => {
+// Obtener todos los movimientos de todas las cajas chicas
+router.get('/', async (req, res) => {
   try {
-    const movimientos = await movimientoCajaChicaModel.obtenerPorCajaChica(req.params.idCajaChica);
+    const movimientos = await movimientoCajaChicaModel.obtenerTodos();
+    console.log('GET /api/movimientos-cajachica - Movimientos obtenidos:', movimientos);
     res.json({ message: 'Movimientos obtenidos exitosamente', data: movimientos });
   } catch (error) {
     res.status(500).json({ message: 'Error obteniendo movimientos', error: error.message });
@@ -135,6 +136,16 @@ router.get('/caja/:idCajaChica/saldo', async (req, res) => {
     res.json({ message: 'Saldo calculado exitosamente', data: { saldoGastado } });
   } catch (error) {
     res.status(500).json({ message: 'Error calculando saldo', error: error.message });
+  }
+});
+
+// Obtener todos los movimientos de una caja chica
+router.get('/caja/:idCajaChica', async (req, res) => {
+  try {
+    const movimientos = await movimientoCajaChicaModel.obtenerPorCajaChica(req.params.idCajaChica);
+    res.json({ message: 'Movimientos obtenidos exitosamente', data: movimientos });
+  } catch (error) {
+    res.status(500).json({ message: 'Error obteniendo movimientos', error: error.message });
   }
 });
 

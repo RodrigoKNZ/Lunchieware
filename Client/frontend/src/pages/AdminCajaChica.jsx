@@ -134,8 +134,9 @@ const AdminCajaChica = () => {
     setLoading(true);
     try {
       const response = await cajaChicaService.obtenerTodas();
-      // Validar que response.data sea un array
-      const cajasData = Array.isArray(response.data) ? response.data : [];
+      console.log('Respuesta cruda de backend (cajas chicas):', response);
+      // Validar que response.data.data sea un array
+      const cajasData = Array.isArray(response.data.data) ? response.data.data : [];
       // Adaptar los datos del backend al formato esperado por el frontend
       const adaptadas = cajasData.map(caja => ({
         id: caja.idCajaChica,
@@ -147,6 +148,7 @@ const AdminCajaChica = () => {
         estado: caja.abierta ? 'Abierta' : 'Cerrada',
         observaciones: caja.observaciones || ''
       }));
+      console.log('Datos adaptados para la tabla:', adaptadas);
       setCajas(adaptadas);
       setCajasFiltradas(adaptadas);
     } catch (err) {

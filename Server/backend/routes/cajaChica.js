@@ -10,6 +10,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const cajas = await cajaChicaModel.obtenerTodas();
+    console.log('GET /api/cajachica - Cajas obtenidas:', cajas);
     res.json({ message: 'Cajas chicas obtenidas exitosamente', data: cajas });
   } catch (error) {
     res.status(500).json({ message: 'Error obteniendo cajas chicas', error: error.message });
@@ -52,14 +53,17 @@ router.get('/:id', async (req, res) => {
 // Crear nueva caja chica
 router.post('/', async (req, res) => {
   try {
+    console.log('POST /api/cajachica - Body recibido:', req.body);
     const { fechaApertura, saldoInicial, observaciones } = req.body;
     
     // Validaciones
     if (!fechaApertura || !saldoInicial) {
+      console.log('Falta fechaApertura o saldoInicial');
       return res.status(400).json({ message: 'Fecha de apertura y saldo inicial son requeridos' });
     }
     
     if (saldoInicial <= 0) {
+      console.log('Saldo inicial inválido:', saldoInicial);
       return res.status(400).json({ message: 'El saldo inicial debe ser mayor a 0' });
     }
 
@@ -68,8 +72,10 @@ router.post('/', async (req, res) => {
       saldoInicial: parseFloat(saldoInicial),
       observaciones: observaciones || ''
     });
+    console.log('Caja chica creada exitosamente:', nuevaCaja);
     res.status(201).json({ message: 'Caja chica creada exitosamente', data: nuevaCaja });
   } catch (error) {
+    console.error('Error creando caja chica:', error);
     res.status(500).json({ message: 'Error creando caja chica', error: error.message });
   }
 });

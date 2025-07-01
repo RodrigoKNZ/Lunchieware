@@ -100,17 +100,19 @@ const AdminCajaChicaDetalle = () => {
       const response = await cajaChicaService.obtenerMovimientos(idCajaChica);
       
       // Adaptar los movimientos al formato esperado por el frontend
-      const movimientosAdaptados = response.data.map(mov => ({
-        id: mov.idMovimiento,
-        tipoDocumento: mov.tipoDocumento,
-        serie: mov.serie,
-        numero: mov.numero,
-        referencia: mov.referencia,
-        fecha: dayjs(mov.fechaMovimiento).format('DD/MM/YYYY'),
-        imponible: parseFloat(mov.montoImponible),
-        impuestos: parseFloat(mov.impuestos),
-        total: parseFloat(mov.montoTotal)
-      }));
+      const movimientosAdaptados = Array.isArray(response.data.data)
+        ? response.data.data.map(mov => ({
+            id: mov.idMovimiento,
+            tipoDocumento: mov.tipoDocumento,
+            serie: mov.serie,
+            numero: mov.numero,
+            referencia: mov.referencia,
+            fecha: dayjs(mov.fechaMovimiento).format('DD/MM/YYYY'),
+            imponible: parseFloat(mov.montoImponible),
+            impuestos: parseFloat(mov.impuestos),
+            total: parseFloat(mov.montoTotal)
+          }))
+        : [];
       
       setMovimientos(movimientosAdaptados);
     } catch (error) {

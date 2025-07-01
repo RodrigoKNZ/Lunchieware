@@ -82,8 +82,8 @@ const AdminProductos = () => {
     try {
       setLoading(true);
       const response = await productosService.obtenerTodos();
-      // Validar que response.data sea un array
-      const productosData = Array.isArray(response.data) ? response.data : [];
+      // Validar que response.data.data sea un array
+      const productosData = Array.isArray(response.data.data) ? response.data.data : [];
       setProductos(productosData);
       setProductosFiltrados(productosData);
       setError(null);
@@ -185,6 +185,14 @@ const AdminProductos = () => {
     setEditarModalOpen(true);
   };
 
+  // Función para adaptar un producto al formato esperado por la tabla
+  const adaptarProducto = (producto) => ({
+    ...producto,
+    costoUnitario: parseFloat(producto.costoUnitario),
+    afectoIGV: Boolean(producto.afectoIGV),
+    disponible: Boolean(producto.disponible)
+  });
+
   const handleGuardarEdicion = async () => {
     try {
       const productoData = {
@@ -197,13 +205,13 @@ const AdminProductos = () => {
       
       const response = await productosService.actualizar(editProducto.idProducto, productoData);
       const productoActualizado = response.data;
+      const productoActualizadoAdaptado = adaptarProducto(productoActualizado);
       const actualizados = productos.map(p => 
-        p.idProducto === editProducto.idProducto ? productoActualizado : p
+        p.idProducto === productoActualizadoAdaptado.idProducto ? productoActualizadoAdaptado : p
       );
       setProductos(actualizados);
       setProductosFiltrados(actualizados);
       setEditarModalOpen(false);
-      setProductoSeleccionado(null);
       mostrarNotificacion('Producto actualizado exitosamente', 'success');
     } catch (err) {
       mostrarNotificacion('Error al actualizar el producto', 'error');
