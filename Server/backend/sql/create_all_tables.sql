@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS "CuentaBancaria" (
   "idCuenta" SERIAL PRIMARY KEY,
   "idBanco" INTEGER NOT NULL,
   "codigoCuenta" VARCHAR(30) NOT NULL,
-  "codigoAgencia" VARCHAR(10) NOT NULL,
+  "codigoAgencia" VARCHAR(10) NULL,
   "tipoCuenta" VARCHAR(20) NOT NULL,
   "disponible" BOOLEAN NOT NULL DEFAULT true,
   "activo" BOOLEAN NOT NULL DEFAULT true,

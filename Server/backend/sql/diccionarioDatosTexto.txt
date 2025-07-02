@@ -192,7 +192,7 @@ Campo                    Tipo de dato        PK   FK   Nulo  Referencia         
 idCuenta                 INTEGER             Sí   No   No    —                             Identificador único de la cuenta bancaria registrada
 idBanco                  INTEGER             No   Sí   No    Banco(idBanco)                Banco al que pertenece la cuenta bancaria
 codigoCuenta             VARCHAR(30)         No   No   No    —                             Código o número de la cuenta bancaria
-codigoAgencia            VARCHAR(10)         No   No   No    —                             Código de la agencia asociada a la cuenta
+codigoAgencia            VARCHAR(10)         No   No   Sí    —                             Código de la agencia asociada a la cuenta
 tipoCuenta               VARCHAR(20)         No   No   No    —                             Tipo de cuenta (Ejemplo: Cuenta de recaudación)
 disponible               BOOLEAN             No   No   No    —                             Indica si la cuenta se encuentra disponible para operaciones.
 activo                   BOOLEAN             No   No   No    —                             Indica si el registro está activo. Usado para eliminación lógica.

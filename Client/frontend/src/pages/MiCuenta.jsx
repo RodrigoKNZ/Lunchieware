@@ -13,6 +13,7 @@ import DialogActions from '@mui/material/DialogActions';
 import clienteService from '../services/clienteService';
 import abonosService from '../services/abonosService';
 import mercadoPagoService from '../services/mercadoPagoService';
+import comprobanteVentaService from '../services/comprobanteVentaService';
 
 // Obtener nombre del cliente asociado al usuario logueado
 const obtenerNombreCliente = async () => {
@@ -89,47 +90,6 @@ const mediosPago = [
   { value: 'transferencia', label: 'Transferencia' },
 ];
 
-// Nueva data mockup de consumos para abril 2025 (excluyendo sábados y domingos)
-const historialConsumo = [
-  { fecha: '30/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '29/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '28/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '25/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '24/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '23/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '22/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '21/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '18/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '17/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '16/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '15/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '14/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '11/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '10/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '09/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '08/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '07/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '04/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '03/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-  { fecha: '02/04/2025', producto: 'Menú', cantidad: 1, total: 'S/. 10.50' },
-  { fecha: '01/04/2025', producto: 'Plato a la carta', cantidad: 1, total: 'S/. 13.50' },
-];
-const comprobantesPago = [
-  { codigo: 'ABN001', fecha: '20/04/2025', monto: 'S/. 50.00', medio: 'Yape' },
-  { codigo: 'ABN002', fecha: '18/04/2025', monto: 'S/. 30.00', medio: 'Yape' },
-  { codigo: 'ABN003', fecha: '15/04/2025', monto: 'S/. 25.00', medio: 'Transferencia' },
-  { codigo: 'ABN004', fecha: '12/04/2025', monto: 'S/. 40.00', medio: 'Yape' },
-  { codigo: 'ABN005', fecha: '10/04/2025', monto: 'S/. 35.00', medio: 'Yape' },
-  { codigo: 'ABN006', fecha: '08/04/2025', monto: 'S/. 45.00', medio: 'Transferencia' },
-  { codigo: 'ABN007', fecha: '05/04/2025', monto: 'S/. 20.00', medio: 'Yape' },
-  { codigo: 'ABN008', fecha: '03/04/2025', monto: 'S/. 55.00', medio: 'Yape' },
-  { codigo: 'ABN009', fecha: '01/04/2025', monto: 'S/. 30.00', medio: 'Transferencia' },
-  { codigo: 'ABN010', fecha: '30/03/2025', monto: 'S/. 40.00', medio: 'Yape' },
-  { codigo: 'ABN011', fecha: '28/03/2025', monto: 'S/. 25.00', medio: 'Yape' },
-  { codigo: 'ABN012', fecha: '25/03/2025', monto: 'S/. 35.00', medio: 'Transferencia' },
-  { codigo: 'ABN013', fecha: '22/03/2025', monto: 'S/. 50.00', medio: 'Yape' }
-];
-
 const MiCuenta = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -141,6 +101,7 @@ const MiCuenta = () => {
   const [abonos, setAbonos] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
+  const [historialConsumo, setHistorialConsumo] = React.useState([]);
 
   // Cargar datos del cliente al montar el componente
   React.useEffect(() => {
@@ -158,9 +119,32 @@ const MiCuenta = () => {
           // Cargar abonos del cliente
           const abonosCliente = await obtenerAbonosCliente(datos.cliente.idCliente);
           setAbonos(abonosCliente);
+          // Cargar historial de consumos reales
+          if (datos.contratoVigente && datos.contratoVigente.idContrato) {
+            const resp = await comprobanteVentaService.obtenerPorContrato(datos.contratoVigente.idContrato);
+            const comprobantes = resp.data?.data || [];
+            // Mapear a formato de la tabla
+            const consumos = [];
+            comprobantes.forEach(comprobante => {
+              if (Array.isArray(comprobante.detalles)) {
+                comprobante.detalles.forEach(det => {
+                  consumos.push({
+                    fecha: dayjs(comprobante.fechaDocumento).format('DD/MM/YYYY'),
+                    producto: det.nombreProducto || 'Producto',
+                    cantidad: det.cantidad,
+                    total: `S/. ${Number(det.importeTotal).toFixed(2)}`
+                  });
+                });
+              }
+            });
+            setHistorialConsumo(consumos);
+          } else {
+            setHistorialConsumo([]);
+          }
         }
       } catch (err) {
         setError('Error al cargar los datos del cliente');
+        setHistorialConsumo([]);
         console.error('Error cargando datos:', err);
       } finally {
         setLoading(false);
@@ -262,58 +246,51 @@ const MiCuenta = () => {
       }
       return match && matchDesde && matchHasta;
     });
-  }, [filtrosConsumo]);
+  }, [filtrosConsumo, historialConsumo]);
 
   // Mostrar todos los datos si no hay filtros aplicados
   const rowsConsumoToShow = filtrosAplicadosConsumo ? consumoFiltrado : historialConsumo;
 
-  // Filtrado de comprobantes (simulado)
+  // Filtrado de abonos reales
   const comprobantesFiltrados = React.useMemo(() => {
     if (!filtrosAplicadosAbonos) {
-      return comprobantesPago;
+      return abonos;
     }
-    
-    return comprobantesPago.filter(row => {
+    return abonos.filter(row => {
       let match = true;
-      
       // Filtro por fecha desde
       if (filtroDesdeComp) {
-        const fechaRow = dayjs(row.fecha, 'DD/MM/YYYY');
+        const fechaRow = dayjs(row.fechaAbono || row.fecha, 'DD/MM/YYYY');
         const desde = dayjs(filtroDesdeComp).startOf('day');
         match = match && (fechaRow.isSame(desde, 'day') || fechaRow.isAfter(desde, 'day'));
       }
-      
       // Filtro por fecha hasta
       if (filtroHastaComp) {
-        const fechaRow = dayjs(row.fecha, 'DD/MM/YYYY');
+        const fechaRow = dayjs(row.fechaAbono || row.fecha, 'DD/MM/YYYY');
         const hasta = dayjs(filtroHastaComp).endOf('day');
         match = match && (fechaRow.isSame(hasta, 'day') || fechaRow.isBefore(hasta, 'day'));
       }
-      
       // Filtro por monto mínimo
       if (filtroMontoMin && filtroMontoMin !== '') {
-        const montoRow = parseFloat(row.monto.replace('S/. ', ''));
+        const montoRow = parseFloat(row.importeAbono || row.monto || 0);
         const montoMin = parseFloat(filtroMontoMin);
         match = match && montoRow >= montoMin;
       }
-      
       // Filtro por monto máximo
       if (filtroMontoMax && filtroMontoMax !== '') {
-        const montoRow = parseFloat(row.monto.replace('S/. ', ''));
+        const montoRow = parseFloat(row.importeAbono || row.monto || 0);
         const montoMax = parseFloat(filtroMontoMax);
         match = match && montoRow <= montoMax;
       }
-      
       // Filtro por medio de pago
       if (filtroMedioPago !== 'todos') {
-        const medioRow = row.medio.toLowerCase();
+        const medioRow = (row.medioDePago || row.medio || '').toLowerCase();
         const medioFiltro = filtroMedioPago.toLowerCase();
         match = match && medioRow === medioFiltro;
       }
-      
       return match;
     });
-  }, [filtrosAplicadosAbonos, filtroDesdeComp, filtroHastaComp, filtroMontoMin, filtroMontoMax, filtroMedioPago]);
+  }, [filtrosAplicadosAbonos, abonos, filtroDesdeComp, filtroHastaComp, filtroMontoMin, filtroMontoMax, filtroMedioPago]);
 
   // Estado para el modal de recarga
   const [openRecarga, setOpenRecarga] = React.useState(false);
@@ -364,10 +341,15 @@ const MiCuenta = () => {
 
       // Obtener el ID del cliente actual
       let clienteId = null;
-      if (datosCliente && datosCliente.idCliente) {
-        clienteId = datosCliente.idCliente;
+      if (datosCliente && datosCliente.cliente && datosCliente.cliente.idCliente) {
+        clienteId = datosCliente.cliente.idCliente;
       }
 
+      // Log detallado para depuración
+      console.log('[Recarga] Usuario logueado:', localStorage.getItem('user'));
+      console.log('[Recarga] Objeto datosCliente:', datosCliente);
+      console.log('[Recarga] clienteId que se enviará a Mercado Pago:', clienteId);
+      
       // NO enviar información del usuario para evitar detección por Mercado Pago
       // Usar un email genérico que será reemplazado en el backend
       const payer_email = 'invitado@lunchieware.com';
@@ -660,12 +642,12 @@ const MiCuenta = () => {
                     <TableCell colSpan={4} align="center">No hay abonos registrados</TableCell>
                   </TableRow>
                 ) : (
-                  abonos.slice(pageComp * rowsPerPageComp, pageComp * rowsPerPageComp + rowsPerPageComp).map((abono, idx) => (
+                  comprobantesFiltrados.slice(pageComp * rowsPerPageComp, pageComp * rowsPerPageComp + rowsPerPageComp).map((abono, idx) => (
                     <TableRow key={abono.idAbono || idx}>
                       <TableCell sx={{ fontSize: 14, py: 0.5 }}>{abono.numRecibo}</TableCell>
                       <TableCell sx={{ fontSize: 14, py: 0.5 }}>{dayjs(abono.fechaAbono).format('DD/MM/YYYY')}</TableCell>
                       <TableCell sx={{ fontSize: 14, py: 0.5 }}>S/. {Number(abono.importeAbono).toFixed(2)}</TableCell>
-                      <TableCell sx={{ fontSize: 14, py: 0.5 }}>{abono.nombreBanco || 'N/A'}</TableCell>
+                      <TableCell sx={{ fontSize: 14, py: 0.5 }}>{abono.tipoCuenta || 'N/A'}</TableCell>
                     </TableRow>
                   ))
                 )}
@@ -673,7 +655,7 @@ const MiCuenta = () => {
             </Table>
             <TablePagination
               component="div"
-              count={abonos.length}
+              count={comprobantesFiltrados.length}
               page={pageComp}
               onPageChange={(_, newPage) => setPageComp(newPage)}
               rowsPerPage={rowsPerPageComp}

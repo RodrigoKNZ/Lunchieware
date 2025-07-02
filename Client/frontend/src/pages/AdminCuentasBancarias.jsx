@@ -31,28 +31,30 @@ import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import { Link as RouterLink } from 'react-router-dom';
+import bancosService from '../services/bancosService';
+import cuentasBancariasService from '../services/cuentasBancariasService';
 
 // Datos de prueba para bancos
-const banks = [
-  { id: 1, code: '0002', name: 'Banco de Crédito del Perú', acronym: 'BCP', status: 'Disponible' },
-  { id: 2, code: '0003', name: 'Interbank', acronym: 'IBK', status: 'Disponible' },
-  { id: 3, code: '0004', name: 'Scotiabank', acronym: 'SBP', status: 'No Disponible' },
-  { id: 4, code: '0005', name: 'BBVA', acronym: 'BBVA', status: 'Disponible' },
-  { id: 5, code: '0006', name: 'Banco de la Nación', acronym: 'BN', status: 'Disponible' },
-];
+// const banks = [
+//   { id: 1, code: '0002', name: 'Banco de Crédito del Perú', acronym: 'BCP', status: 'Disponible' },
+//   { id: 2, code: '0003', name: 'Interbank', acronym: 'IBK', status: 'Disponible' },
+//   { id: 3, code: '0004', name: 'Scotiabank', acronym: 'SBP', status: 'No Disponible' },
+//   { id: 4, code: '0005', name: 'BBVA', acronym: 'BBVA', status: 'Disponible' },
+//   { id: 5, code: '0006', name: 'Banco de la Nación', acronym: 'BN', status: 'Disponible' },
+// ];
 
 // Datos de prueba para cuentas
-const accountsData = {
-  1: [
-    { id: 1, accountCode: '539-2453972-0-47', agencyCode: '196', type: 'Cuenta de recaudación', bank: 'Banco de Crédito del Perú', status: 'Disponible' },
-    { id: 2, accountCode: '539-2453972-0-48', agencyCode: '196', type: 'Cuenta corriente', bank: 'Banco de Crédito del Perú', status: 'Disponible' },
-    { id: 3, accountCode: '539-2453972-0-49', agencyCode: '196', type: 'Aplicativo', bank: 'Banco de Crédito del Perú', status: 'No Disponible' },
-  ],
-  2: [
-    { id: 4, accountCode: '123-4567890-1-23', agencyCode: '050', type: 'Cuenta de ahorros', bank: 'Interbank', status: 'Disponible' },
-  ],
-  // Add more accounts for other banks if needed
-};
+// const accountsData = {
+//   1: [
+//     { id: 1, accountCode: '539-2453972-0-47', agencyCode: '196', type: 'Cuenta de recaudación', bank: 'Banco de Crédito del Perú', status: 'Disponible' },
+//     { id: 2, accountCode: '539-2453972-0-48', agencyCode: '196', type: 'Cuenta corriente', bank: 'Banco de Crédito del Perú', status: 'Disponible' },
+//     { id: 3, accountCode: '539-2453972-0-49', agencyCode: '196', type: 'Aplicativo', bank: 'Banco de Crédito del Perú', status: 'No Disponible' },
+//   ],
+//   2: [
+//     { id: 4, accountCode: '123-4567890-1-23', agencyCode: '050', type: 'Cuenta de ahorros', bank: 'Interbank', status: 'Disponible' },
+//   ],
+//   // Add more accounts for other banks if needed
+// };
 
 const AdminCuentasBancarias = () => {
   // Estados para bancos
@@ -61,8 +63,8 @@ const AdminCuentasBancarias = () => {
   const [filtroNombreBanco, setFiltroNombreBanco] = useState('');
   const [filtroSiglasBanco, setFiltroSiglasBanco] = useState('');
   const [filtroDisponibilidadBanco, setFiltroDisponibilidadBanco] = useState('todos');
-  const [bancos, setBancos] = useState(banks);
-  const [bancosFiltrados, setBancosFiltrados] = useState(banks);
+  const [bancos, setBancos] = useState([]);
+  const [bancosFiltrados, setBancosFiltrados] = useState([]);
   
   // Estados para control de filtros bancos
   const [filtrosAplicadosBanco, setFiltrosAplicadosBanco] = useState(false);
@@ -185,15 +187,54 @@ const AdminCuentasBancarias = () => {
     setFiltrosAplicadosCuenta(false);
   };
 
-  // Cargar cuentas al seleccionar banco
+  // Cargar cuentas reales al seleccionar banco
   useEffect(() => {
-    if (selectedBank) {
-      setCuentasFiltradas(accountsData[selectedBank] || []);
-      setFiltrosAplicadosCuenta(false);
-    } else {
-      setCuentasFiltradas([]);
+    async function fetchCuentas() {
+      if (selectedBank) {
+        try {
+          const res = await cuentasBancariasService.listarPorBanco(selectedBank);
+          const cuentasBD = (res.data?.data || []).map(c => ({
+            id: c.idCuenta,
+            accountCode: c.codigoCuenta,
+            agencyCode: c.codigoAgencia,
+            type: c.tipoCuenta,
+            bank: bancos.find(b => b.id === c.idBanco)?.name || '',
+            status: c.disponible ? 'Disponible' : 'No Disponible'
+          }));
+          setCuentasFiltradas(cuentasBD);
+          setFiltrosAplicadosCuenta(false);
+        } catch (err) {
+          setCuentasFiltradas([]);
+        }
+      } else {
+        setCuentasFiltradas([]);
+      }
     }
-  }, [selectedBank]);
+    fetchCuentas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBank, bancos]);
+
+  // Cargar bancos reales al montar
+  useEffect(() => {
+    async function fetchBancos() {
+      try {
+        const res = await bancosService.listar();
+        const bancosBD = (res.data?.data || []).map(b => ({
+          id: b.idBanco,
+          code: b.codigoBanco,
+          name: b.nombreBanco,
+          acronym: b.siglas,
+          status: b.disponible ? 'Disponible' : 'No Disponible'
+        }));
+        setBancos(bancosBD);
+        setBancosFiltrados(bancosBD);
+      } catch (err) {
+        setBancos([]);
+        setBancosFiltrados([]);
+      }
+    }
+    fetchBancos();
+  }, []);
 
   // Modales bancos
   const handleEditarBanco = (banco) => {
@@ -209,21 +250,51 @@ const AdminCuentasBancarias = () => {
     setEliminarBancoOpen(true);
   };
   
-  const handleGuardarEdicionBanco = () => {
+  const handleGuardarEdicionBanco = async () => {
     if (!editBancoNombre.trim() || !editBancoSiglas.trim()) return;
-    
-    setBancos(prev => prev.map(b => b.id === bancoSeleccionado.id ? { ...b, name: editBancoNombre, acronym: editBancoSiglas, status: editBancoEstado } : b));
-    setBancosFiltrados(prev => prev.map(b => b.id === bancoSeleccionado.id ? { ...b, name: editBancoNombre, acronym: editBancoSiglas, status: editBancoEstado } : b));
-    setEditarBancoOpen(false);
-    setBancoSeleccionado(null);
+    try {
+      await bancosService.editar(bancoSeleccionado.id, {
+        nombreBanco: editBancoNombre,
+        siglas: editBancoSiglas
+      });
+      // Recargar bancos
+      const res = await bancosService.listar();
+      const bancosBD = (res.data?.data || []).map(b => ({
+        id: b.idBanco,
+        code: b.codigoBanco,
+        name: b.nombreBanco,
+        acronym: b.siglas,
+        status: b.disponible ? 'Disponible' : 'No Disponible'
+      }));
+      setBancos(bancosBD);
+      setBancosFiltrados(bancosBD);
+      setEditarBancoOpen(false);
+      setBancoSeleccionado(null);
+    } catch (err) {
+      alert('Error al editar banco');
+    }
   };
   
-  const handleConfirmarEliminarBanco = () => {
-    setBancos(prev => prev.filter(b => b.id !== bancoSeleccionado.id));
-    setBancosFiltrados(prev => prev.filter(b => b.id !== bancoSeleccionado.id));
-    setEliminarBancoOpen(false);
-    setBancoSeleccionado(null);
-    if (selectedBank === bancoSeleccionado.id) setSelectedBank(null);
+  const handleConfirmarEliminarBanco = async () => {
+    try {
+      await bancosService.eliminar(bancoSeleccionado.id);
+      // Recargar bancos
+      const res = await bancosService.listar();
+      const bancosBD = (res.data?.data || []).map(b => ({
+        id: b.idBanco,
+        code: b.codigoBanco,
+        name: b.nombreBanco,
+        acronym: b.siglas,
+        status: b.disponible ? 'Disponible' : 'No Disponible'
+      }));
+      setBancos(bancosBD);
+      setBancosFiltrados(bancosBD);
+      setEliminarBancoOpen(false);
+      setBancoSeleccionado(null);
+      if (selectedBank === bancoSeleccionado.id) setSelectedBank(null);
+    } catch (err) {
+      alert('Error al eliminar banco');
+    }
   };
 
   // Nuevo banco
@@ -237,20 +308,32 @@ const AdminCuentasBancarias = () => {
     setNuevoBancoEstado('Disponible');
   };
   
-  const handleGuardarNuevoBanco = () => {
-    if (!nuevoBancoNombre.trim() || !nuevoBancoSiglas.trim()) return;
-    
-    const nuevoBanco = {
-      id: Math.max(...bancos.map(b => b.id)) + 1,
-      code: String(Math.max(...bancos.map(b => parseInt(b.code))) + 1).padStart(4, '0'),
-      name: nuevoBancoNombre,
-      acronym: nuevoBancoSiglas,
-      status: nuevoBancoEstado
-    };
-    
-    setBancos(prev => [...prev, nuevoBanco]);
-    setBancosFiltrados(prev => [...prev, nuevoBanco]);
-    setNuevoBancoOpen(false);
+  const handleGuardarNuevoBanco = async () => {
+    try {
+      await bancosService.crear({
+        nombreBanco: nuevoBancoNombre,
+        codigoBanco: nuevoBancoCodigo,
+        siglas: nuevoBancoSiglas
+      });
+      // Recargar bancos
+      const res = await bancosService.listar();
+      const bancosBD = (res.data?.data || []).map(b => ({
+        id: b.idBanco,
+        code: b.codigoBanco,
+        name: b.nombreBanco,
+        acronym: b.siglas,
+        status: b.disponible ? 'Disponible' : 'No Disponible'
+      }));
+      setBancos(bancosBD);
+      setBancosFiltrados(bancosBD);
+      setNuevoBancoOpen(false);
+      setNuevoBancoCodigo('');
+      setNuevoBancoNombre('');
+      setNuevoBancoSiglas('');
+      setNuevoBancoEstado('Disponible');
+    } catch (err) {
+      alert('Error al crear banco');
+    }
   };
 
   // Modales cuentas
@@ -268,23 +351,52 @@ const AdminCuentasBancarias = () => {
     setEliminarCuentaOpen(true);
   };
   
-  const handleGuardarEdicionCuenta = () => {
-    if (!editCuentaCodigo.trim() || !editCuentaAgencia.trim() || !editCuentaTipo.trim()) return;
-    
-    // Simular actualización de cuenta
-    setCuentasFiltradas(prev => prev.map(c => 
-      c.id === cuentaSeleccionada.id 
-        ? { ...c, accountCode: editCuentaCodigo, agencyCode: editCuentaAgencia, type: editCuentaTipo, status: editCuentaEstado }
-        : c
-    ));
-    setEditarCuentaOpen(false);
-    setCuentaSeleccionada(null);
+  const handleGuardarEdicionCuenta = async () => {
+    if (!editCuentaCodigo.trim() || !editCuentaTipo.trim()) return;
+    try {
+      await cuentasBancariasService.editar(cuentaSeleccionada.id, {
+        codigoCuenta: editCuentaCodigo,
+        codigoAgencia: editCuentaAgencia,
+        tipoCuenta: editCuentaTipo,
+        disponible: editCuentaEstado === 'Disponible'
+      });
+      // Recargar cuentas
+      const res = await cuentasBancariasService.listarPorBanco(selectedBank);
+      const cuentasBD = (res.data?.data || []).map(c => ({
+        id: c.idCuenta,
+        accountCode: c.codigoCuenta,
+        agencyCode: c.codigoAgencia,
+        type: c.tipoCuenta,
+        bank: bancos.find(b => b.id === c.idBanco)?.name || '',
+        status: c.disponible ? 'Disponible' : 'No Disponible'
+      }));
+      setCuentasFiltradas(cuentasBD);
+      setEditarCuentaOpen(false);
+      setCuentaSeleccionada(null);
+    } catch (err) {
+      alert('Error al editar cuenta');
+    }
   };
   
-  const handleConfirmarEliminarCuenta = () => {
-    setCuentasFiltradas(prev => prev.filter(c => c.id !== cuentaSeleccionada.id));
-    setEliminarCuentaOpen(false);
-    setCuentaSeleccionada(null);
+  const handleConfirmarEliminarCuenta = async () => {
+    try {
+      await cuentasBancariasService.eliminar(cuentaSeleccionada.id);
+      // Recargar cuentas
+      const res = await cuentasBancariasService.listarPorBanco(selectedBank);
+      const cuentasBD = (res.data?.data || []).map(c => ({
+        id: c.idCuenta,
+        accountCode: c.codigoCuenta,
+        agencyCode: c.codigoAgencia,
+        type: c.tipoCuenta,
+        bank: bancos.find(b => b.id === c.idBanco)?.name || '',
+        status: c.disponible ? 'Disponible' : 'No Disponible'
+      }));
+      setCuentasFiltradas(cuentasBD);
+      setEliminarCuentaOpen(false);
+      setCuentaSeleccionada(null);
+    } catch (err) {
+      alert('Error al eliminar cuenta');
+    }
   };
 
   // Nueva cuenta
@@ -296,20 +408,35 @@ const AdminCuentasBancarias = () => {
     setNuevaCuentaEstado('Disponible');
   };
   
-  const handleGuardarNuevaCuenta = () => {
-    if (!nuevaCuentaCodigo.trim() || !nuevaCuentaAgencia.trim() || !nuevaCuentaTipo.trim()) return;
-    
-    const nuevaCuenta = {
-      id: Math.max(...cuentasFiltradas.map(c => c.id)) + 1,
-      accountCode: nuevaCuentaCodigo,
-      agencyCode: nuevaCuentaAgencia,
-      type: nuevaCuentaTipo,
-      bank: selectedBankData?.name || '',
-      status: nuevaCuentaEstado
-    };
-    
-    setCuentasFiltradas(prev => [...prev, nuevaCuenta]);
-    setNuevaCuentaOpen(false);
+  const handleGuardarNuevaCuenta = async () => {
+    if (!nuevaCuentaCodigo.trim() || !nuevaCuentaTipo.trim()) return;
+    try {
+      await cuentasBancariasService.crear({
+        idBanco: selectedBank,
+        codigoCuenta: nuevaCuentaCodigo,
+        codigoAgencia: nuevaCuentaAgencia,
+        tipoCuenta: nuevaCuentaTipo,
+        disponible: nuevaCuentaEstado === 'Disponible'
+      });
+      // Recargar cuentas
+      const res = await cuentasBancariasService.listarPorBanco(selectedBank);
+      const cuentasBD = (res.data?.data || []).map(c => ({
+        id: c.idCuenta,
+        accountCode: c.codigoCuenta,
+        agencyCode: c.codigoAgencia,
+        type: c.tipoCuenta,
+        bank: bancos.find(b => b.id === c.idBanco)?.name || '',
+        status: c.disponible ? 'Disponible' : 'No Disponible'
+      }));
+      setCuentasFiltradas(cuentasBD);
+      setNuevaCuentaOpen(false);
+      setNuevaCuentaCodigo('');
+      setNuevaCuentaAgencia('');
+      setNuevaCuentaTipo('');
+      setNuevaCuentaEstado('Disponible');
+    } catch (err) {
+      alert('Error al crear cuenta');
+    }
   };
 
   return (
@@ -529,9 +656,11 @@ const AdminCuentasBancarias = () => {
                     disabled={filtrosAplicadosCuenta}
                   >
                     <MenuItem value="">Todos</MenuItem>
-                    <MenuItem value="recaudacion">Cuenta de recaudación</MenuItem>
-                    <MenuItem value="corriente">Cuenta corriente</MenuItem>
-                    <MenuItem value="aplicativo">Aplicativo</MenuItem>
+                    <MenuItem value="Recaudación">Recaudación</MenuItem>
+                    <MenuItem value="Corriente">Corriente</MenuItem>
+                    <MenuItem value="Ahorros">Ahorros</MenuItem>
+                    <MenuItem value="Aplicativo">Aplicativo</MenuItem>
+                    <MenuItem value="Pasarela de pago">Pasarela de pago</MenuItem>
                   </Select>
                 </FormControl>
                 <FormControl size="small" sx={{ width: 150 }}>
@@ -729,12 +858,16 @@ const AdminCuentasBancarias = () => {
           />
           <FormControl fullWidth margin="normal" size="small">
             <InputLabel>Tipo de cuenta</InputLabel>
-            <Select label="Tipo de cuenta" value={nuevaCuentaTipo} onChange={(e) => setNuevaCuentaTipo(e.target.value)}>
-              <MenuItem value="">Seleccione un tipo</MenuItem>
-              <MenuItem value="Cuenta de recaudación">Cuenta de recaudación</MenuItem>
-              <MenuItem value="Cuenta corriente">Cuenta corriente</MenuItem>
-              <MenuItem value="Cuenta de ahorros">Cuenta de ahorros</MenuItem>
+            <Select
+              label="Tipo de cuenta"
+              value={nuevaCuentaTipo}
+              onChange={e => setNuevaCuentaTipo(e.target.value)}
+            >
+              <MenuItem value="Recaudación">Recaudación</MenuItem>
+              <MenuItem value="Corriente">Corriente</MenuItem>
+              <MenuItem value="Ahorros">Ahorros</MenuItem>
               <MenuItem value="Aplicativo">Aplicativo</MenuItem>
+              <MenuItem value="Pasarela de pago">Pasarela de pago</MenuItem>
             </Select>
           </FormControl>
           <FormControl fullWidth margin="normal" size="small">
@@ -747,7 +880,7 @@ const AdminCuentasBancarias = () => {
         </DialogContent>
         <DialogActions sx={{ pr: 3, pb: 2 }}>
           <Button onClick={() => setNuevaCuentaOpen(false)} sx={{ fontWeight: 600 }}>Cancelar</Button>
-          <Button onClick={handleGuardarNuevaCuenta} autoFocus sx={{ fontWeight: 600 }} disabled={!nuevaCuentaCodigo.trim() || !nuevaCuentaAgencia.trim() || !nuevaCuentaTipo.trim()}>
+          <Button onClick={handleGuardarNuevaCuenta} autoFocus sx={{ fontWeight: 600 }} disabled={!nuevaCuentaCodigo.trim() || !nuevaCuentaTipo.trim()}>
             Guardar
           </Button>
         </DialogActions>
@@ -778,11 +911,16 @@ const AdminCuentasBancarias = () => {
           />
           <FormControl fullWidth margin="normal" size="small">
             <InputLabel>Tipo de cuenta</InputLabel>
-            <Select label="Tipo de cuenta" value={editCuentaTipo} onChange={(e) => setEditCuentaTipo(e.target.value)}>
-              <MenuItem value="Cuenta de recaudación">Cuenta de recaudación</MenuItem>
-              <MenuItem value="Cuenta corriente">Cuenta corriente</MenuItem>
-              <MenuItem value="Cuenta de ahorros">Cuenta de ahorros</MenuItem>
+            <Select
+              label="Tipo de cuenta"
+              value={editCuentaTipo}
+              onChange={e => setEditCuentaTipo(e.target.value)}
+            >
+              <MenuItem value="Recaudación">Recaudación</MenuItem>
+              <MenuItem value="Corriente">Corriente</MenuItem>
+              <MenuItem value="Ahorros">Ahorros</MenuItem>
               <MenuItem value="Aplicativo">Aplicativo</MenuItem>
+              <MenuItem value="Pasarela de pago">Pasarela de pago</MenuItem>
             </Select>
           </FormControl>
           <FormControl fullWidth margin="normal" size="small">
@@ -795,7 +933,7 @@ const AdminCuentasBancarias = () => {
         </DialogContent>
         <DialogActions sx={{ pr: 3, pb: 2 }}>
           <Button onClick={() => setEditarCuentaOpen(false)} sx={{ fontWeight: 600 }}>Cancelar</Button>
-          <Button onClick={handleGuardarEdicionCuenta} autoFocus sx={{ fontWeight: 600 }} disabled={!editCuentaCodigo.trim() || !editCuentaAgencia.trim() || !editCuentaTipo.trim()}>
+          <Button onClick={handleGuardarEdicionCuenta} autoFocus sx={{ fontWeight: 600 }} disabled={!editCuentaCodigo.trim() || !editCuentaTipo.trim()}>
             Guardar
           </Button>
         </DialogActions>

@@ -4,7 +4,7 @@ const abonosModel = {
   // Obtener todos los abonos
   async obtenerTodos() {
     const query = `
-      SELECT a.*, c."codigoContrato", cb."codigoCuenta", b."nombreBanco"
+      SELECT a.*, c."codigoContrato", cb."codigoCuenta", cb."tipoCuenta", b."nombreBanco"
       FROM "Abono" a
       LEFT JOIN "Contrato" c ON a."idContrato" = c."idContrato"
       LEFT JOIN "CuentaBancaria" cb ON a."idCuenta" = cb."idCuenta"
@@ -19,7 +19,7 @@ const abonosModel = {
   // Obtener abono por ID
   async obtenerPorId(idAbono) {
     const query = `
-      SELECT a.*, c."codigoContrato", cb."codigoCuenta", b."nombreBanco"
+      SELECT a.*, c."codigoContrato", cb."codigoCuenta", cb."tipoCuenta", b."nombreBanco"
       FROM "Abono" a
       LEFT JOIN "Contrato" c ON a."idContrato" = c."idContrato"
       LEFT JOIN "CuentaBancaria" cb ON a."idCuenta" = cb."idCuenta"
@@ -33,7 +33,7 @@ const abonosModel = {
   // Obtener abonos por contrato
   async obtenerPorContrato(idContrato) {
     const query = `
-      SELECT a.*, c."codigoContrato", cb."codigoCuenta", b."nombreBanco"
+      SELECT a.*, c."codigoContrato", cb."codigoCuenta", cb."tipoCuenta", b."nombreBanco"
       FROM "Abono" a
       LEFT JOIN "Contrato" c ON a."idContrato" = c."idContrato"
       LEFT JOIN "CuentaBancaria" cb ON a."idCuenta" = cb."idCuenta"
@@ -48,7 +48,7 @@ const abonosModel = {
   // Obtener abonos por cliente (a través de contratos)
   async obtenerPorCliente(idCliente) {
     const query = `
-      SELECT a.*, c."codigoContrato", cb."codigoCuenta", b."nombreBanco"
+      SELECT a.*, c."codigoContrato", cb."codigoCuenta", cb."tipoCuenta", b."nombreBanco"
       FROM "Abono" a
       LEFT JOIN "Contrato" c ON a."idContrato" = c."idContrato"
       LEFT JOIN "CuentaBancaria" cb ON a."idCuenta" = cb."idCuenta"

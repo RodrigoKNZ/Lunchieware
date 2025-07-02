@@ -13,55 +13,11 @@ import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import dayjs from 'dayjs';
-
-const mockConsumos = [
-    {
-        fechaConsumo: '20/03/2025',
-        producto: 'Menú',
-        tipoComprobante: 'Nota de venta',
-        numeroDocumento: 'B001-00064942',
-        formaPago: 'Cargo en cuenta',
-        medioPago: 'Cargo en cuenta',
-        cantidad: 1,
-        importeTotal: 'S/ 10.00'
-    }
-];
-
-const mockAbonos = [
-    {
-        fechaAbono: '20/03/2025',
-        banco: 'Banco de Crédito del Perú',
-        cuenta: '539-2453972-0-47',
-        tipoCuenta: 'Cuenta de recaudación',
-        numeroRecibo: 'B001-00064942',
-        importe: 'S/ 100.00',
-        registroManual: 'No'
-    }
-]
-
-const mockDevoluciones = [
-    {
-        fechaDevolucion: '20/03/2025',
-        banco: 'Banco de Crédito del Perú',
-        cuenta: '539-2453972-0-47',
-        tipoCuenta: 'Cuenta de recaudación',
-        numeroRecibo: 'B001-00064942',
-        importe: 'S/ 100.00'
-    }
-];
-
-const mockNotasDeCredito = [
-    {
-        fecha: '20/03/2025',
-        nroNotaCredito: 'C001-00023112',
-        nroComprobanteAfectado: 'B001-00064942',
-        importeInafecto: 'S/ 20.00',
-        importeImponible: 'S/ 20.00',
-        importeImpuestos: 'S/ 3.40',
-        importeTotal: 'S/ 43.40',
-        motivo: 'Anulación de la operación'
-    }
-];
+import consumosService from '../services/consumosService';
+import abonosService from '../services/abonosService';
+import devolucionesService from '../services/devolucionesService';
+import notasCreditoService from '../services/notasCreditoService';
+import comprobanteVentaService from '../services/comprobanteVentaService';
 
 const TabPanel = (props) => {
     const { children, value, index, ...other } = props;
@@ -82,16 +38,16 @@ const AdminContratoDetalle = () => {
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
     // Estados de datos
-    const [consumos, setConsumos] = useState(mockConsumos);
-    const [abonos, setAbonos] = useState(mockAbonos);
-    const [devoluciones, setDevoluciones] = useState(mockDevoluciones);
-    const [notasDeCredito, setNotasDeCredito] = useState(mockNotasDeCredito);
+    const [consumos, setConsumos] = useState([]);
+    const [abonos, setAbonos] = useState([]);
+    const [devoluciones, setDevoluciones] = useState([]);
+    const [notasDeCredito, setNotasDeCredito] = useState([]);
 
     // Estados de datos filtrados
-    const [consumosFiltrados, setConsumosFiltrados] = useState(mockConsumos);
-    const [abonosFiltrados, setAbonosFiltrados] = useState(mockAbonos);
-    const [devolucionesFiltradas, setDevolucionesFiltradas] = useState(mockDevoluciones);
-    const [notasDeCreditoFiltradas, setNotasDeCreditoFiltradas] = useState(mockNotasDeCredito);
+    const [consumosFiltrados, setConsumosFiltrados] = useState([]);
+    const [abonosFiltrados, setAbonosFiltrados] = useState([]);
+    const [devolucionesFiltradas, setDevolucionesFiltradas] = useState([]);
+    const [notasDeCreditoFiltradas, setNotasDeCreditoFiltradas] = useState([]);
 
     // Estados de filtros
     const [filtrosConsumos, setFiltrosConsumos] = useState({ 
@@ -170,7 +126,17 @@ const AdminContratoDetalle = () => {
     const [nuevaDevolucion, setNuevaDevolucion] = useState({ fechaDevolucion: null, banco: '', cuenta: '', tipoCuenta: '', numeroRecibo: '', importe: '' });
 
     const [notaCreditoModalOpen, setNotaCreditoModalOpen] = useState(false);
-    const [nuevaNotaCredito, setNuevaNotaCredito] = useState({ fecha: null, nroNotaCredito: '', nroComprobanteAfectado: '', importeInafecto: '', importeImponible: '', importeImpuestos: '', importeTotal: '', motivo: '' });
+    const [nuevaNotaCredito, setNuevaNotaCredito] = useState({ nroComprobanteAfectado: '', importeInafecto: '', importeImponible: '', importeImpuestos: '', motivo: '' });
+
+    // Estados para selects de bancos y cuentas
+    const [bancos, setBancos] = useState([]);
+    const [cuentas, setCuentas] = useState([]);
+    const [loadingCuentas, setLoadingCuentas] = useState(false);
+
+    // Estados para selects de bancos y cuentas en devoluciones
+    const [bancosDevolucion, setBancosDevolucion] = useState([]);
+    const [cuentasDevolucion, setCuentasDevolucion] = useState([]);
+    const [loadingCuentasDevolucion, setLoadingCuentasDevolucion] = useState(false);
 
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
@@ -291,34 +257,274 @@ const AdminContratoDetalle = () => {
     };
 
     // Lógica de Modales
-    const handleGuardarAbono = () => {
-        const nuevo = { ...nuevoAbono, fechaAbono: dayjs(nuevoAbono.fechaAbono).format('DD/MM/YYYY'), importe: `S/ ${parseFloat(nuevoAbono.importe).toFixed(2)}`, registroManual: 'Sí' };
-        const actualizados = [...abonos, nuevo];
-        setAbonos(actualizados);
-        setAbonosFiltrados(actualizados);
-        setAbonoModalOpen(false);
-        setNuevoAbono({ fechaAbono: null, banco: '', cuenta: '', tipoCuenta: '', numeroRecibo: '', importe: '' });
+    const handleGuardarAbono = async () => {
+        if (!abonoCamposCompletos) return;
+        try {
+            const abonoData = {
+                idContrato: contratoId,
+                fechaAbono: nuevoAbono.fechaAbono ? nuevoAbono.fechaAbono.format('YYYY-MM-DD') : null,
+                idCuenta: nuevoAbono.cuenta,
+                numRecibo: nuevoAbono.numeroRecibo,
+                importeAbono: parseFloat(nuevoAbono.importe),
+                registroManual: true
+            };
+            await import('../services/abonosService').then(m => m.default.crear(abonoData));
+            setAbonoModalOpen(false);
+            setNuevoAbono({ fechaAbono: null, banco: '', cuenta: '', tipoCuenta: '', numeroRecibo: '', importe: '' });
+            // Refrescar abonos
+            const abonosRes = await import('../services/abonosService').then(m => m.default.obtenerPorContrato(contratoId));
+            console.log('🟡 abonosRes (post-guardar):', abonosRes);
+            console.log('🟡 abonosRes.data:', abonosRes.data);
+            const abonosData = (abonosRes.data || []).map(a => ({
+                fechaAbono: a.fechaAbono ? dayjs(a.fechaAbono).format('DD/MM/YYYY') : '',
+                banco: a.nombreBanco || '',
+                cuenta: a.codigoCuenta || '',
+                tipoCuenta: a.tipoCuenta || '',
+                numeroRecibo: a.numRecibo || '',
+                importe: a.importeAbono ? `S/ ${Number(a.importeAbono).toFixed(2)}` : '',
+                registroManual: a.registroManual ? 'Sí' : 'No'
+            }));
+            console.log('🟡 abonosData (mapeado, post-guardar):', abonosData);
+            setAbonos(abonosData);
+            setAbonosFiltrados(abonosData);
+        } catch (err) {
+            alert('Error al registrar abono');
+        }
     };
 
-    const handleGuardarDevolucion = () => {
-        const nuevo = { ...nuevaDevolucion, fechaDevolucion: dayjs(nuevaDevolucion.fechaDevolucion).format('DD/MM/YYYY'), importe: `S/ ${parseFloat(nuevaDevolucion.importe).toFixed(2)}` };
-        const actualizados = [...devoluciones, nuevo];
-        setDevoluciones(actualizados);
-        setDevolucionesFiltradas(actualizados);
-        setDevolucionModalOpen(false);
-        setNuevaDevolucion({ fechaDevolucion: null, banco: '', cuenta: '', tipoCuenta: '', numeroRecibo: '', importe: '' });
+    const handleGuardarDevolucion = async () => {
+        if (!devolucionCamposCompletos) return;
+        try {
+            const devolucionData = {
+                idContrato: contratoId,
+                idCuenta: nuevaDevolucion.cuenta,
+                numRecibo: nuevaDevolucion.numeroRecibo,
+                importeDevolucion: parseFloat(nuevaDevolucion.importe)
+            };
+            await import('../services/devolucionesService').then(m => m.default.crear(devolucionData));
+            setDevolucionModalOpen(false);
+            setNuevaDevolucion({ fechaDevolucion: null, banco: '', cuenta: '', tipoCuenta: '', numeroRecibo: '', importe: '' });
+            // Refrescar devoluciones
+            const devolucionesRes = await import('../services/devolucionesService').then(m => m.default.obtenerPorContrato(contratoId));
+            const devolucionesData = (devolucionesRes.data?.data || []).map(d => ({
+                fechaDevolucion: d.fechaDevolucion ? dayjs(d.fechaDevolucion).format('DD/MM/YYYY') : '',
+                banco: d.nombreBanco || '',
+                cuenta: d.codigoCuenta || '',
+                tipoCuenta: d.tipoCuenta || '',
+                numeroRecibo: d.numRecibo || '',
+                importe: d["importeDevolución"] ? `S/ ${Number(d["importeDevolución"]).toFixed(2)}` : ''
+            }));
+            setDevoluciones(devolucionesData);
+            setDevolucionesFiltradas(devolucionesData);
+        } catch (err) {
+            alert('Error al registrar devolución');
+        }
     };
 
-    const handleGuardarNotaCredito = () => {
-        const nuevo = { ...nuevaNotaCredito, fecha: dayjs(nuevaNotaCredito.fecha).format('DD/MM/YYYY') };
-        const actualizados = [...notasDeCredito, nuevo];
-        setNotasDeCredito(actualizados);
-        setNotasDeCreditoFiltradas(actualizados);
+    const handleGuardarNotaCredito = async () => {
+        try {
+            // Calcular importe total automáticamente
+            const importeInafecto = parseFloat(nuevaNotaCredito.importeInafecto) || 0;
+            const importeImponible = parseFloat(nuevaNotaCredito.importeImponible) || 0;
+            const importeImpuestos = parseFloat(nuevaNotaCredito.importeImpuestos) || 0;
+            const importeTotal = importeInafecto + importeImponible + importeImpuestos;
+
+            const datosNotaCredito = {
+                idContrato: contratoId,
+                numeroNotaCredito: '000000', // Código temporal
+                numeroComprobanteAfectado: nuevaNotaCredito.nroComprobanteAfectado,
+                importeInafecto: importeInafecto,
+                importeImponible: importeImponible,
+                importeImpuesto: importeImpuestos,
+                importeTotal: importeTotal,
+                motivo: nuevaNotaCredito.motivo
+            };
+
+            // Llamar al servicio para crear la nota de crédito
+            const resultado = await notasCreditoService.crear(datosNotaCredito);
+            
+            // Actualizar el código con el ID formateado
+            if (resultado.data && resultado.data.data && resultado.data.data.idNotaDeCredito) {
+                const idNota = resultado.data.data.idNotaDeCredito;
+                const codigoFormateado = idNota.toString().padStart(6, '0');
+                await notasCreditoService.actualizarCodigo(idNota, codigoFormateado);
+            }
+
+            // Recargar los datos
+            const notasRes = await notasCreditoService.obtenerPorContrato(contratoId);
+            const notasData = (notasRes.data?.data || []).map(n => ({
+                fecha: n.fechaDocumento ? dayjs(n.fechaDocumento).format('DD/MM/YYYY') : '',
+                nroNotaCredito: n.numeroNotaCredito || '',
+                nroComprobanteAfectado: n.numeroComprobanteAfectado || '',
+                importeInafecto: n.importeInafecto ? `S/ ${Number(n.importeInafecto).toFixed(2)}` : '',
+                importeImponible: n.importeImponible ? `S/ ${Number(n.importeImponible).toFixed(2)}` : '',
+                importeImpuestos: n.importeImpuesto ? `S/ ${Number(n.importeImpuesto).toFixed(2)}` : '',
+                importeTotal: n.importeTotal ? `S/ ${Number(n.importeTotal).toFixed(2)}` : '',
+                motivo: n.motivo || ''
+            }));
+
+            setNotasDeCredito(notasData);
+            setNotasDeCreditoFiltradas(notasData);
         setNotaCreditoModalOpen(false);
-        setNuevaNotaCredito({ fecha: null, nroNotaCredito: '', nroComprobanteAfectado: '', importeInafecto: '', importeImponible: '', importeImpuestos: '', importeTotal: '', motivo: '' });
+            setNuevaNotaCredito({ nroComprobanteAfectado: '', importeInafecto: '', importeImponible: '', importeImpuestos: '', motivo: '' });
+        } catch (error) {
+            console.error('Error guardando nota de crédito:', error);
+            alert('Error al guardar la nota de crédito');
+        }
     };
 
     const nombreCompleto = "Oscar Rodrigo Canez Rodriguez"; // Mock data, replace with actual data fetching
+
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                // Comprobantes de venta (para consumos)
+                const comprobantesRes = await comprobanteVentaService.obtenerPorContrato(contratoId);
+                const comprobantesData = (comprobantesRes.data?.data || []).map(c => ({
+                    fechaConsumo: c.fechaDocumento ? dayjs(c.fechaDocumento).format('DD/MM/YYYY') : '',
+                    producto: c.detalles && c.detalles[0] ? c.detalles[0].nombreProducto : '',
+                    tipoComprobante: c.tipoComprobanteNombre || 'Nota de Venta',
+                    numeroDocumento: c.numeroComprobante || '',
+                    formaPago: c.formaDePago || '',
+                    medioPago: c.medioDePago || '',
+                    cantidad: c.detalles && c.detalles[0] ? c.detalles[0].cantidad : '',
+                    importeTotal: c.detalles && c.detalles[0] ? `S/ ${Number(c.detalles[0].importeTotal).toFixed(2)}` : (c.importeTotal ? `S/ ${Number(c.importeTotal).toFixed(2)}` : '')
+                }));
+                setConsumos(comprobantesData);
+                setConsumosFiltrados(comprobantesData);
+                // Abonos
+                const abonosRes = await abonosService.obtenerPorContrato(contratoId);
+                console.log('🟡 abonosRes:', abonosRes);
+                console.log('🟡 abonosRes.data:', abonosRes.data);
+                const abonosData = (abonosRes.data || []).map(a => ({
+                    fechaAbono: a.fechaAbono ? dayjs(a.fechaAbono).format('DD/MM/YYYY') : '',
+                    banco: a.nombreBanco || '',
+                    cuenta: a.codigoCuenta || '',
+                    tipoCuenta: a.tipoCuenta || '',
+                    numeroRecibo: a.numRecibo || '',
+                    importe: a.importeAbono ? `S/ ${Number(a.importeAbono).toFixed(2)}` : '',
+                    registroManual: a.registroManual ? 'Sí' : 'No'
+                }));
+                console.log('🟡 abonosData (mapeado):', abonosData);
+                // Devoluciones
+                const devolucionesRes = await devolucionesService.obtenerPorContrato(contratoId);
+                const devolucionesData = (devolucionesRes.data?.data || []).map(d => ({
+                    fechaDevolucion: d.fechaDevolucion ? dayjs(d.fechaDevolucion).format('DD/MM/YYYY') : '',
+                    banco: d.nombreBanco || '',
+                    cuenta: d.codigoCuenta || '',
+                    tipoCuenta: d.tipoCuenta || '',
+                    numeroRecibo: d.numRecibo || '',
+                    importe: d["importeDevolución"] ? `S/ ${Number(d["importeDevolución"]).toFixed(2)}` : ''
+                }));
+                // Notas de crédito
+                const notasRes = await notasCreditoService.obtenerPorContrato(contratoId);
+                const notasData = (notasRes.data?.data || []).map(n => ({
+                    fecha: n.fechaDocumento ? dayjs(n.fechaDocumento).format('DD/MM/YYYY') : '',
+                    nroNotaCredito: n.numeroNotaCredito || '',
+                    nroComprobanteAfectado: n.numeroComprobanteAfectado || '',
+                    importeInafecto: n.importeInafecto ? `S/ ${Number(n.importeInafecto).toFixed(2)}` : '',
+                    importeImponible: n.importeImponible ? `S/ ${Number(n.importeImponible).toFixed(2)}` : '',
+                    importeImpuestos: n.importeImpuesto ? `S/ ${Number(n.importeImpuesto).toFixed(2)}` : '',
+                    importeTotal: n.importeTotal ? `S/ ${Number(n.importeTotal).toFixed(2)}` : '',
+                    motivo: n.motivo || ''
+                }));
+                setAbonos(abonosData);
+                setAbonosFiltrados(abonosData);
+                setDevoluciones(devolucionesData);
+                setDevolucionesFiltradas(devolucionesData);
+                setNotasDeCredito(notasData);
+                setNotasDeCreditoFiltradas(notasData);
+            } catch (err) {
+                console.error('Error cargando datos del contrato:', err);
+            }
+        }
+        fetchData();
+    }, [contratoId]);
+
+    // Cargar bancos al abrir modal
+    useEffect(() => {
+        if (abonoModalOpen) {
+            (async () => {
+                try {
+                    const res = await import('../services/bancosService').then(m => m.default.listar());
+                    setBancos(res.data?.data || []);
+                } catch {
+                    setBancos([]);
+                }
+            })();
+        }
+    }, [abonoModalOpen]);
+
+    // Cargar cuentas al seleccionar banco
+    useEffect(() => {
+        if (nuevoAbono.banco) {
+            setLoadingCuentas(true);
+            (async () => {
+                try {
+                    const res = await import('../services/cuentasBancariasService').then(m => m.default.listarPorBanco(nuevoAbono.banco));
+                    setCuentas(res.data?.data || []);
+                } catch {
+                    setCuentas([]);
+                } finally {
+                    setLoadingCuentas(false);
+                }
+            })();
+        } else {
+            setCuentas([]);
+        }
+    }, [nuevoAbono.banco]);
+
+    // Cargar bancos al abrir modal de devolución
+    useEffect(() => {
+        if (devolucionModalOpen) {
+            (async () => {
+                try {
+                    const res = await import('../services/bancosService').then(m => m.default.listar());
+                    setBancosDevolucion(res.data?.data || []);
+                } catch {
+                    setBancosDevolucion([]);
+                }
+            })();
+        }
+    }, [devolucionModalOpen]);
+
+    // Cargar cuentas al seleccionar banco en devolución
+    useEffect(() => {
+        if (nuevaDevolucion.banco) {
+            setLoadingCuentasDevolucion(true);
+            (async () => {
+                try {
+                    const res = await import('../services/cuentasBancariasService').then(m => m.default.listarPorBanco(nuevaDevolucion.banco));
+                    setCuentasDevolucion(res.data?.data || []);
+                } catch {
+                    setCuentasDevolucion([]);
+                } finally {
+                    setLoadingCuentasDevolucion(false);
+                }
+            })();
+        } else {
+            setCuentasDevolucion([]);
+        }
+    }, [nuevaDevolucion.banco]);
+
+    // Validación de campos completos
+    const abonoCamposCompletos =
+        !!nuevoAbono.fechaAbono &&
+        !!nuevoAbono.banco &&
+        !!nuevoAbono.cuenta &&
+        !!nuevoAbono.numeroRecibo.trim() &&
+        !!nuevoAbono.importe &&
+        !isNaN(Number(nuevoAbono.importe)) &&
+        Number(nuevoAbono.importe) > 0;
+
+    // Validación de campos completos para devolución
+    const devolucionCamposCompletos =
+        !!nuevaDevolucion.banco &&
+        !!nuevaDevolucion.cuenta &&
+        !!nuevaDevolucion.numeroRecibo.trim() &&
+        !!nuevaDevolucion.importe &&
+        !isNaN(Number(nuevaDevolucion.importe)) &&
+        Number(nuevaDevolucion.importe) > 0;
 
     return (
         <React.Fragment>
@@ -681,17 +887,62 @@ const AdminContratoDetalle = () => {
                 <DialogTitle>Registrar Abono</DialogTitle>
                 <DialogContent>
                     <Grid container spacing={2} sx={{ mt: 1 }}>
-                        <Grid item xs={12}><LocalizationProvider dateAdapter={AdapterDayjs}><DatePicker label="Fecha de Abono" value={nuevoAbono.fechaAbono} onChange={date => setNuevoAbono({...nuevoAbono, fechaAbono: date})} renderInput={(params) => <TextField {...params} fullWidth />} /></LocalizationProvider></Grid>
-                        <Grid item xs={12}><TextField fullWidth label="Banco" value={nuevoAbono.banco} onChange={e => setNuevoAbono({...nuevoAbono, banco: e.target.value})} /></Grid>
-                        <Grid item xs={12}><TextField fullWidth label="Cuenta" value={nuevoAbono.cuenta} onChange={e => setNuevoAbono({...nuevoAbono, cuenta: e.target.value})} /></Grid>
-                        <Grid item xs={12}><TextField fullWidth label="Tipo de cuenta" value={nuevoAbono.tipoCuenta} onChange={e => setNuevoAbono({...nuevoAbono, tipoCuenta: e.target.value})} /></Grid>
-                        <Grid item xs={12}><TextField fullWidth label="Número de recibo" value={nuevoAbono.numeroRecibo} onChange={e => setNuevoAbono({...nuevoAbono, numeroRecibo: e.target.value})} /></Grid>
-                        <Grid item xs={12}><TextField fullWidth label="Importe" value={nuevoAbono.importe} onChange={e => setNuevoAbono({...nuevoAbono, importe: e.target.value})} /></Grid>
+                        <Grid item xs={12}>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker label="Fecha de Abono" value={nuevoAbono.fechaAbono} onChange={date => setNuevoAbono({ ...nuevoAbono, fechaAbono: date })} renderInput={(params) => <TextField {...params} fullWidth />} />
+                            </LocalizationProvider>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <FormControl fullWidth>
+                                <InputLabel>Banco</InputLabel>
+                                <Select
+                                    label="Banco"
+                                    value={nuevoAbono.banco}
+                                    onChange={e => setNuevoAbono({ ...nuevoAbono, banco: e.target.value, cuenta: '' })}
+                                >
+                                    {bancos.map(b => (
+                                        <MenuItem key={b.idBanco} value={b.idBanco}>{b.nombreBanco}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <FormControl fullWidth disabled={!nuevoAbono.banco || loadingCuentas}>
+                                <InputLabel>Cuenta</InputLabel>
+                                <Select
+                                    label="Cuenta"
+                                    value={nuevoAbono.cuenta}
+                                    onChange={e => {
+                                        const cuentaSel = cuentas.find(c => c.idCuenta === e.target.value);
+                                        setNuevoAbono({ ...nuevoAbono, cuenta: e.target.value, tipoCuenta: cuentaSel?.tipoCuenta || '' });
+                                    }}
+                                >
+                                    {cuentas.map(c => (
+                                        <MenuItem key={c.idCuenta} value={c.idCuenta}>{`${c.tipoCuenta} - ${c.codigoCuenta}`}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField fullWidth label="Número de recibo" value={nuevoAbono.numeroRecibo} onChange={e => setNuevoAbono({ ...nuevoAbono, numeroRecibo: e.target.value })} />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="Importe"
+                                value={nuevoAbono.importe}
+                                onChange={e => {
+                                    const val = e.target.value.replace(/[^\d.]/g, '');
+                                    if (/^\d*(\.\d{0,2})?$/.test(val)) setNuevoAbono({ ...nuevoAbono, importe: val });
+                                }}
+                                inputProps={{ inputMode: 'decimal', pattern: '^\\d*(\\.\\d{0,2})?$', min: 0 }}
+                            />
+                        </Grid>
                     </Grid>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setAbonoModalOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleGuardarAbono} variant="contained">Guardar</Button>
+                    <Button onClick={handleGuardarAbono} variant="contained" disabled={!abonoCamposCompletos}>Guardar</Button>
                 </DialogActions>
             </Dialog>
 
@@ -700,17 +951,57 @@ const AdminContratoDetalle = () => {
                 <DialogTitle>Registrar Devolución</DialogTitle>
                 <DialogContent>
                     <Grid container spacing={2} sx={{ mt: 1 }}>
-                        <Grid item xs={12}><LocalizationProvider dateAdapter={AdapterDayjs}><DatePicker label="Fecha de Devolución" value={nuevaDevolucion.fechaDevolucion} onChange={date => setNuevaDevolucion({...nuevaDevolucion, fechaDevolucion: date})} renderInput={(params) => <TextField {...params} fullWidth />} /></LocalizationProvider></Grid>
-                        <Grid item xs={12}><TextField fullWidth label="Banco" value={nuevaDevolucion.banco} onChange={e => setNuevaDevolucion({...nuevaDevolucion, banco: e.target.value})} /></Grid>
-                        <Grid item xs={12}><TextField fullWidth label="Cuenta" value={nuevaDevolucion.cuenta} onChange={e => setNuevaDevolucion({...nuevaDevolucion, cuenta: e.target.value})} /></Grid>
-                        <Grid item xs={12}><TextField fullWidth label="Tipo de cuenta" value={nuevaDevolucion.tipoCuenta} onChange={e => setNuevaDevolucion({...nuevaDevolucion, tipoCuenta: e.target.value})} /></Grid>
-                        <Grid item xs={12}><TextField fullWidth label="Número de recibo" value={nuevaDevolucion.numeroRecibo} onChange={e => setNuevaDevolucion({...nuevaDevolucion, numeroRecibo: e.target.value})} /></Grid>
-                        <Grid item xs={12}><TextField fullWidth label="Importe" value={nuevaDevolucion.importe} onChange={e => setNuevaDevolucion({...nuevaDevolucion, importe: e.target.value})} /></Grid>
+                        <Grid item xs={12}>
+                            <FormControl fullWidth>
+                                <InputLabel>Banco</InputLabel>
+                                <Select
+                                    label="Banco"
+                                    value={nuevaDevolucion.banco}
+                                    onChange={e => setNuevaDevolucion({ ...nuevaDevolucion, banco: e.target.value, cuenta: '' })}
+                                >
+                                    {bancosDevolucion.map(b => (
+                                        <MenuItem key={b.idBanco} value={b.idBanco}>{b.nombreBanco}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <FormControl fullWidth disabled={!nuevaDevolucion.banco || loadingCuentasDevolucion}>
+                                <InputLabel>Cuenta</InputLabel>
+                                <Select
+                                    label="Cuenta"
+                                    value={nuevaDevolucion.cuenta}
+                                    onChange={e => {
+                                        const cuentaSel = cuentasDevolucion.find(c => c.idCuenta === e.target.value);
+                                        setNuevaDevolucion({ ...nuevaDevolucion, cuenta: e.target.value, tipoCuenta: cuentaSel?.tipoCuenta || '' });
+                                    }}
+                                >
+                                    {cuentasDevolucion.map(c => (
+                                        <MenuItem key={c.idCuenta} value={c.idCuenta}>{`${c.tipoCuenta} - ${c.codigoCuenta}`}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField fullWidth label="Número de recibo" value={nuevaDevolucion.numeroRecibo} onChange={e => setNuevaDevolucion({ ...nuevaDevolucion, numeroRecibo: e.target.value })} />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="Importe"
+                                value={nuevaDevolucion.importe}
+                                onChange={e => {
+                                    const val = e.target.value.replace(/[^\d.]/g, '');
+                                    if (/^\d*(\.\d{0,2})?$/.test(val)) setNuevaDevolucion({ ...nuevaDevolucion, importe: val });
+                                }}
+                                inputProps={{ inputMode: 'decimal', pattern: '^\\d*(\\.\\d{0,2})?$', min: 0 }}
+                            />
+                        </Grid>
                     </Grid>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDevolucionModalOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleGuardarDevolucion} variant="contained">Guardar</Button>
+                    <Button onClick={handleGuardarDevolucion} variant="contained" disabled={!devolucionCamposCompletos}>Guardar</Button>
                 </DialogActions>
             </Dialog>
 
@@ -719,13 +1010,19 @@ const AdminContratoDetalle = () => {
                 <DialogTitle>Registrar Nota de Crédito</DialogTitle>
                 <DialogContent>
                     <Grid container spacing={2} sx={{ mt: 1 }}>
-                        <Grid item xs={12} sm={6}><LocalizationProvider dateAdapter={AdapterDayjs}><DatePicker label="Fecha" value={nuevaNotaCredito.fecha} onChange={date => setNuevaNotaCredito({...nuevaNotaCredito, fecha: date})} renderInput={(params) => <TextField {...params} fullWidth />} /></LocalizationProvider></Grid>
-                        <Grid item xs={12} sm={6}><TextField fullWidth label="Nro. Nota de Crédito" value={nuevaNotaCredito.nroNotaCredito} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, nroNotaCredito: e.target.value})} /></Grid>
                         <Grid item xs={12} sm={6}><TextField fullWidth label="Nro. Comprobante Afectado" value={nuevaNotaCredito.nroComprobanteAfectado} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, nroComprobanteAfectado: e.target.value})} /></Grid>
-                        <Grid item xs={12} sm={6}><TextField fullWidth label="Importe Inafecto" value={nuevaNotaCredito.importeInafecto} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, importeInafecto: e.target.value})} /></Grid>
-                        <Grid item xs={12} sm={6}><TextField fullWidth label="Importe Imponible" value={nuevaNotaCredito.importeImponible} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, importeImponible: e.target.value})} /></Grid>
-                        <Grid item xs={12} sm={6}><TextField fullWidth label="Importe Impuestos" value={nuevaNotaCredito.importeImpuestos} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, importeImpuestos: e.target.value})} /></Grid>
-                        <Grid item xs={12} sm={6}><TextField fullWidth label="Importe Total" value={nuevaNotaCredito.importeTotal} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, importeTotal: e.target.value})} /></Grid>
+                        <Grid item xs={12} sm={4}><TextField fullWidth label="Importe Inafecto" type="number" value={nuevaNotaCredito.importeInafecto} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, importeInafecto: e.target.value})} /></Grid>
+                        <Grid item xs={12} sm={4}><TextField fullWidth label="Importe Imponible" type="number" value={nuevaNotaCredito.importeImponible} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, importeImponible: e.target.value})} /></Grid>
+                        <Grid item xs={12} sm={4}><TextField fullWidth label="Importe Impuestos" type="number" value={nuevaNotaCredito.importeImpuestos} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, importeImpuestos: e.target.value})} /></Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField 
+                                fullWidth 
+                                label="Importe Total (Calculado)" 
+                                value={`S/ ${((parseFloat(nuevaNotaCredito.importeInafecto) || 0) + (parseFloat(nuevaNotaCredito.importeImponible) || 0) + (parseFloat(nuevaNotaCredito.importeImpuestos) || 0)).toFixed(2)}`}
+                                InputProps={{ readOnly: true }}
+                                sx={{ '& .MuiInputBase-input': { color: 'text.secondary' } }}
+                            />
+                        </Grid>
                         <Grid item xs={12}><TextField fullWidth label="Motivo" multiline rows={2} value={nuevaNotaCredito.motivo} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, motivo: e.target.value})} /></Grid>
                     </Grid>
                 </DialogContent>

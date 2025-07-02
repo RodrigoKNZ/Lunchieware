@@ -91,7 +91,7 @@ const contratosModel = {
 
       // Calcular nuevos valores
       const nuevoImporteAbonos = parseFloat(contrato.importeAbonos || 0) + parseFloat(montoAbono);
-      const nuevoSaldo = parseFloat(contrato.importeConsumos || 0) - nuevoImporteAbonos;
+      const nuevoSaldo = nuevoImporteAbonos - parseFloat(contrato.importeConsumos || 0);
 
       // Actualizar el contrato
       const datosActualizados = {

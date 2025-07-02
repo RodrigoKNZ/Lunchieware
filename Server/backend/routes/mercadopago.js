@@ -15,15 +15,19 @@ mercadopago.configure({
 async function obtenerCuentaMercadoPago() {
   try {
     const pool = require('../db');
-    const query = `
-      SELECT cb."idCuenta"
-      FROM "CuentaBancaria" cb
-      JOIN "Banco" b ON cb."idBanco" = b."idBanco"
-      WHERE b."codigoBanco" = 'MP001' AND cb."activo" = true
-      LIMIT 1
-    `;
-    const result = await pool.query(query);
-    return result.rows[0]?.idCuenta;
+    // Buscar banco con siglas 'MP' y una sola cuenta activa
+    const bancoQuery = `SELECT "idBanco" FROM "Banco" WHERE "siglas" = 'MP' AND "activo" = true LIMIT 1`;
+    const bancoResult = await pool.query(bancoQuery);
+    if (!bancoResult.rows.length) {
+      throw new Error('No existe un banco activo con siglas "MP"');
+    }
+    const idBanco = bancoResult.rows[0].idBanco;
+    const cuentaQuery = `SELECT "idCuenta" FROM "CuentaBancaria" WHERE "idBanco" = $1 AND "activo" = true`;
+    const cuentaResult = await pool.query(cuentaQuery, [idBanco]);
+    if (cuentaResult.rows.length !== 1) {
+      throw new Error('Debe existir exactamente una cuenta activa para el banco Mercado Pago (siglas MP)');
+    }
+    return cuentaResult.rows[0].idCuenta;
   } catch (error) {
     console.error('Error obteniendo cuenta de Mercado Pago:', error);
     return null;
@@ -244,9 +248,11 @@ router.post('/create-preference', async (req, res) => {
       },
       external_reference: externalRef,
       // Incluir notification_url solo en producción
-      ...(process.env.VERCEL_URL ? { 
-        notification_url: `${process.env.VERCEL_URL.startsWith('http') ? process.env.VERCEL_URL : 'https://' + process.env.VERCEL_URL}/api/mercadopago/webhook`
-      } : {})
+      ...(process.env.VERCEL_URL
+        ? { notification_url: `${process.env.VERCEL_URL.startsWith('http') ? process.env.VERCEL_URL : 'https://' + process.env.VERCEL_URL}/api/mercadopago/webhook` }
+        : process.env.NGROK_URL
+          ? { notification_url: `${process.env.NGROK_URL.startsWith('http') ? process.env.NGROK_URL : 'https://' + process.env.NGROK_URL}/api/mercadopago/webhook` }
+          : {})
     };
 
     console.log('Preference enviada a Mercado Pago (modo invitado):', JSON.stringify(preferenceData, null, 2));
@@ -311,7 +317,12 @@ router.post('/create-preference-api', async (req, res) => {
         failure: `${baseUrl}/payment-failure`,
         pending: `${baseUrl}/payment-pending`
       },
-      external_reference: externalRef
+      external_reference: externalRef,
+      ...(process.env.VERCEL_URL
+        ? { notification_url: `${process.env.VERCEL_URL.startsWith('http') ? process.env.VERCEL_URL : 'https://' + process.env.VERCEL_URL}/api/mercadopago/webhook` }
+        : process.env.NGROK_URL
+          ? { notification_url: `${process.env.NGROK_URL.startsWith('http') ? process.env.NGROK_URL : 'https://' + process.env.NGROK_URL}/api/mercadopago/webhook` }
+          : {})
     };
 
     console.log('Preference API enviada a Mercado Pago (modo invitado):', JSON.stringify(preferenceData, null, 2));

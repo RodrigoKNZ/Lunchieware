@@ -13,6 +13,37 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import Papa from 'papaparse';
 import clienteService from '../services/clienteService';
 
+// Opciones para selects según diccionario de datos
+const opcionesTipoCliente = [
+    { value: 'E', label: 'Estudiante' },
+    { value: 'D', label: 'Docente' },
+    { value: 'G', label: 'General' }
+];
+const opcionesNivel = [
+    { value: 'IN', label: 'Inicial' },
+    { value: 'PR', label: 'Primaria' },
+    { value: 'SE', label: 'Secundaria' }
+];
+const opcionesTipoDocumento = [
+    { value: 'DNI', label: 'DNI' },
+    { value: 'CEX', label: 'Carnet de extranjería' }
+];
+const opcionesGrado = [
+    { value: 'IN4', label: '4 años' },
+    { value: 'IN5', label: '5 años' },
+    { value: 'PR1', label: '1er grado' },
+    { value: 'PR2', label: '2do grado' },
+    { value: 'PR3', label: '3er grado' },
+    { value: 'PR4', label: '4to grado' },
+    { value: 'PR5', label: '5to grado' },
+    { value: 'PR6', label: '6to grado' },
+    { value: 'SE1', label: '1er grado' },
+    { value: 'SE2', label: '2do grado' },
+    { value: 'SE3', label: '3er grado' },
+    { value: 'SE4', label: '4to grado' },
+    { value: 'SE5', label: '5to grado' }
+];
+
 const mockClientes = [
     { id: '20200554', nombre: 'Oscar Rodrigo Canez Rodriguez', saldo: 'Deuda', monto: 20.00, nivel: 'Primaria', grado: '5to', seccion: 'C', tipo: 'Estudiante', vigencia: 'Vigente' },
     { id: '20200555', nombre: 'Valeria Isabela Torres Mendoza', saldo: 'Deuda', monto: 10.00, nivel: 'Primaria', grado: '5to', seccion: 'C', tipo: 'Estudiante', vigencia: 'Vigente' },
@@ -291,33 +322,10 @@ const ListaClientes = () => {
 
     const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
 
-    const opcionesGrado = () => {
-        if (nuevoCliente.nivel === 'IN') return [
-            { value: 'IN4', label: '4 años' },
-            { value: 'IN5', label: '5 años' },
-        ];
-        if (nuevoCliente.nivel === 'PR') return [
-            { value: 'PR1', label: '1er grado' },
-            { value: 'PR2', label: '2do grado' },
-            { value: 'PR3', label: '3er grado' },
-            { value: 'PR4', label: '4to grado' },
-            { value: 'PR5', label: '5to grado' },
-            { value: 'PR6', label: '6to grado' },
-        ];
-        if (nuevoCliente.nivel === 'SE') return [
-            { value: 'SE1', label: '1er grado' },
-            { value: 'SE2', label: '2do grado' },
-            { value: 'SE3', label: '3er grado' },
-            { value: 'SE4', label: '4to grado' },
-            { value: 'SE5', label: '5to grado' },
-        ];
-        return [];
-    };
-
     useEffect(() => {
         // Si el grado actual no está en las opciones, límpialo
-        const opciones = opcionesGrado().map(opt => opt.value);
-        if (nuevoCliente.grado && !opciones.includes(nuevoCliente.grado)) {
+        const opciones = opcionesGrado.map(opt => opt.value);
+        if (nuevoCliente.nivel === 'IN' && !opciones.includes(nuevoCliente.grado)) {
             setNuevoCliente(nc => ({ ...nc, grado: '' }));
         }
     }, [nuevoCliente.nivel]);
@@ -422,39 +430,76 @@ const ListaClientes = () => {
             <Dialog open={nuevoClienteOpen} onClose={() => setNuevoClienteOpen(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>Nuevo Cliente</DialogTitle>
                 <DialogContent>
+                    {nuevoCliente.error && <Typography color="error" sx={{ mb: 1 }}>{nuevoCliente.error}</Typography>}
                     <Grid container spacing={2} sx={{ mt: 1 }}>
                         <Grid item xs={12} sm={6}>
-                            <TextField label="Código" value={nuevoCliente.codigoCliente} onChange={e => setNuevoCliente({ ...nuevoCliente, codigoCliente: e.target.value })} fullWidth required />
+                            <TextField label="Nombres" fullWidth value={nuevoCliente.nombres} onChange={e => setNuevoCliente({ ...nuevoCliente, nombres: e.target.value })} required />
                         </Grid>
-                        <Grid item xs={12} sm={6}><TextField label="Nombres" value={nuevoCliente.nombres} onChange={e => setNuevoCliente({ ...nuevoCliente, nombres: e.target.value })} fullWidth required /></Grid>
-                        <Grid item xs={12} sm={6}><TextField label="Apellido paterno" value={nuevoCliente.apellidoPaterno} onChange={e => setNuevoCliente({ ...nuevoCliente, apellidoPaterno: e.target.value })} fullWidth required /></Grid>
-                        <Grid item xs={12} sm={6}><TextField label="Apellido materno" value={nuevoCliente.apellidoMaterno} onChange={e => setNuevoCliente({ ...nuevoCliente, apellidoMaterno: e.target.value })} fullWidth /></Grid>
-                        <Grid item xs={12} sm={6}><FormControl fullWidth required><InputLabel>Nivel</InputLabel><Select value={nuevoCliente.nivel} label="Nivel" onChange={e => setNuevoCliente({ ...nuevoCliente, nivel: e.target.value, grado: '' })}><MenuItem value="IN">Inicial</MenuItem><MenuItem value="PR">Primaria</MenuItem><MenuItem value="SE">Secundaria</MenuItem></Select></FormControl></Grid>
                         <Grid item xs={12} sm={6}>
-                            <FormControl fullWidth required disabled={!nuevoCliente.nivel}>
-                                <InputLabel>Grado</InputLabel>
-                                <Select
-                                    value={nuevoCliente.grado}
-                                    label="Grado"
-                                    onChange={e => setNuevoCliente({ ...nuevoCliente, grado: e.target.value })}
-                                >
-                                    {opcionesGrado().map(opt => (
-                                        <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                            <TextField label="Apellido paterno" fullWidth value={nuevoCliente.apellidoPaterno} onChange={e => setNuevoCliente({ ...nuevoCliente, apellidoPaterno: e.target.value })} required />
                         </Grid>
-                        <Grid item xs={12} sm={6}><FormControl fullWidth><InputLabel>Sección</InputLabel><Select value={nuevoCliente.seccion} label="Sección" onChange={e => setNuevoCliente({ ...nuevoCliente, seccion: e.target.value })}><MenuItem value="A">A</MenuItem><MenuItem value="B">B</MenuItem><MenuItem value="C">C</MenuItem><MenuItem value="D">D</MenuItem></Select></FormControl></Grid>
-                        <Grid item xs={12} sm={6}><FormControl fullWidth required><InputLabel>Tipo de cliente</InputLabel><Select value={nuevoCliente.tipoCliente} label="Tipo de cliente" onChange={e => setNuevoCliente({ ...nuevoCliente, tipoCliente: e.target.value })}><MenuItem value="E">Estudiante</MenuItem><MenuItem value="D">Docente</MenuItem><MenuItem value="G">General</MenuItem></Select></FormControl></Grid>
-                        <Grid item xs={12} sm={6}><FormControl fullWidth required><InputLabel>Tipo de documento</InputLabel><Select value={nuevoCliente.tipoDocumento} label="Tipo de documento" onChange={e => setNuevoCliente({ ...nuevoCliente, tipoDocumento: e.target.value })}><MenuItem value="DNI">DNI</MenuItem><MenuItem value="CEX">Carnet de extranjería</MenuItem></Select></FormControl></Grid>
-                        <Grid item xs={12} sm={6}><TextField label="N° Documento" value={nuevoCliente.numDocumento} onChange={e => setNuevoCliente({ ...nuevoCliente, numDocumento: e.target.value })} fullWidth required /></Grid>
-                        <Grid item xs={12} sm={6}><TextField label="Teléfono 1" value={nuevoCliente.telefono1} onChange={e => setNuevoCliente({ ...nuevoCliente, telefono1: e.target.value })} fullWidth required /></Grid>
-                        <Grid item xs={12} sm={6}><TextField label="Teléfono 2" value={nuevoCliente.telefono2} onChange={e => setNuevoCliente({ ...nuevoCliente, telefono2: e.target.value })} fullWidth /></Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField label="Apellido materno" fullWidth value={nuevoCliente.apellidoMaterno} onChange={e => setNuevoCliente({ ...nuevoCliente, apellidoMaterno: e.target.value })} />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField label="Teléfono 1" fullWidth value={nuevoCliente.telefono1} onChange={e => setNuevoCliente({ ...nuevoCliente, telefono1: e.target.value })} required />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField label="Teléfono 2" fullWidth value={nuevoCliente.telefono2} onChange={e => setNuevoCliente({ ...nuevoCliente, telefono2: e.target.value })} />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField label="Tipo de cliente" select fullWidth value={nuevoCliente.tipoCliente} onChange={e => setNuevoCliente({ ...nuevoCliente, tipoCliente: e.target.value, nivel: '', grado: '', seccion: '' })} required>
+                                <MenuItem value="">Seleccione</MenuItem>
+                                {opcionesTipoCliente.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
+                            </TextField>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField label="Nivel" select fullWidth value={nuevoCliente.nivel} onChange={e => setNuevoCliente({ ...nuevoCliente, nivel: e.target.value, grado: '', seccion: '' })} disabled={nuevoCliente.tipoCliente !== 'E'} required={nuevoCliente.tipoCliente === 'E'}>
+                                <MenuItem value="">Seleccione</MenuItem>
+                                {opcionesNivel.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
+                            </TextField>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField label="Grado" select fullWidth value={nuevoCliente.grado} onChange={e => setNuevoCliente({ ...nuevoCliente, grado: e.target.value, seccion: '' })} disabled={nuevoCliente.tipoCliente !== 'E' || !nuevoCliente.nivel} required={nuevoCliente.tipoCliente === 'E'}>
+                                <MenuItem value="">Seleccione</MenuItem>
+                                {opcionesGrado.filter(opt => (nuevoCliente.nivel === 'IN' && opt.value.startsWith('IN')) || (nuevoCliente.nivel === 'PR' && opt.value.startsWith('PR')) || (nuevoCliente.nivel === 'SE' && opt.value.startsWith('SE'))).map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
+                            </TextField>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField label="Número de documento" fullWidth value={nuevoCliente.numDocumento} onChange={e => setNuevoCliente({ ...nuevoCliente, numDocumento: e.target.value })} required />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField label="Tipo de documento" select fullWidth value={nuevoCliente.tipoDocumento} onChange={e => setNuevoCliente({ ...nuevoCliente, tipoDocumento: e.target.value })} required>
+                                <MenuItem value="">Seleccione</MenuItem>
+                                {opcionesTipoDocumento.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
+                            </TextField>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField label="Código de cliente" fullWidth value={nuevoCliente.codigoCliente} onChange={e => setNuevoCliente({ ...nuevoCliente, codigoCliente: e.target.value })} required />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField label="Sección" select fullWidth value={nuevoCliente.seccion} onChange={e => setNuevoCliente({ ...nuevoCliente, seccion: e.target.value })} disabled={nuevoCliente.tipoCliente !== 'E' || !nuevoCliente.nivel || !nuevoCliente.grado} required={nuevoCliente.tipoCliente === 'E'}>
+                                <MenuItem value="">Seleccione</MenuItem>
+                                <MenuItem value="A">A</MenuItem>
+                                <MenuItem value="B">B</MenuItem>
+                                <MenuItem value="C">C</MenuItem>
+                                <MenuItem value="D">D</MenuItem>
+                            </TextField>
+                        </Grid>
                     </Grid>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setNuevoClienteOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleGuardarNuevoCliente} variant="contained" disabled={!esNuevoClienteValido()}>Guardar</Button>
+                    <Button onClick={handleGuardarNuevoCliente} variant="contained" disabled={
+                        !nuevoCliente.nombres.trim() ||
+                        !nuevoCliente.apellidoPaterno.trim() ||
+                        !nuevoCliente.telefono1.trim() ||
+                        !nuevoCliente.tipoCliente ||
+                        !nuevoCliente.numDocumento.trim() ||
+                        !nuevoCliente.tipoDocumento ||
+                        !nuevoCliente.codigoCliente.trim() ||
+                        (nuevoCliente.tipoCliente === 'E' && (!nuevoCliente.nivel || !nuevoCliente.grado || !nuevoCliente.seccion || !['A','B','C','D'].includes(nuevoCliente.seccion)))
+                    }>Guardar</Button>
                 </DialogActions>
             </Dialog>
             <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>

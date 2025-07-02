@@ -19,6 +19,11 @@ const contratosRoutes = require('./routes/contratos');
 const abonosRoutes = require('./routes/abonos');
 const mercadopagoRoutes = require('./routes/mercadopago');
 const comprobanteVentaRoutes = require('./routes/comprobanteVenta');
+const consumosRoutes = require('./routes/consumos');
+const devolucionesRoutes = require('./routes/devoluciones');
+const notasCreditoRoutes = require('./routes/notasCredito');
+const bancosRouter = require('./routes/bancos');
+const cuentasBancariasRouter = require('./routes/cuentasBancarias');
 
 const app = express();
 
@@ -99,6 +104,11 @@ app.use('/api/contratos', contratosRoutes);
 app.use('/api/abonos', abonosRoutes);
 app.use('/api/mercadopago', mercadopagoRoutes);
 app.use('/api/comprobantes', comprobanteVentaRoutes);
+app.use('/api/consumos', consumosRoutes);
+app.use('/api/devoluciones', devolucionesRoutes);
+app.use('/api/notas-credito', notasCreditoRoutes);
+app.use('/api/bancos', bancosRouter);
+app.use('/api/cuentas-bancarias', cuentasBancariasRouter);
 
 // Middleware para manejar errores
 app.use((error, req, res, next) => {
@@ -126,6 +136,9 @@ function startHttpServer() {
     console.log(`📄 Endpoints de abonos: http://localhost:${PORT}/api/abonos`);
     console.log(`📄 Endpoints de Mercado Pago: http://localhost:${PORT}/api/mercadopago`);
     console.log(`📄 Endpoints de comprobantes: http://localhost:${PORT}/api/comprobantes`);
+    console.log(`📄 Endpoints de consumos: http://localhost:${PORT}/api/consumos`);
+    console.log(`📄 Endpoints de devoluciones: http://localhost:${PORT}/api/devoluciones`);
+    console.log(`📄 Endpoints de notas de crédito: http://localhost:${PORT}/api/notas-credito`);
   });
 }
 
@@ -155,6 +168,9 @@ function startHttpsServer() {
       console.log(`📄 Endpoints de abonos: https://localhost:${PORT}/api/abonos`);
       console.log(`📄 Endpoints de Mercado Pago: https://localhost:${PORT}/api/mercadopago`);
       console.log(`📄 Endpoints de comprobantes: https://localhost:${PORT}/api/comprobantes`);
+      console.log(`📄 Endpoints de consumos: https://localhost:${PORT}/api/consumos`);
+      console.log(`📄 Endpoints de devoluciones: https://localhost:${PORT}/api/devoluciones`);
+      console.log(`📄 Endpoints de notas de crédito: https://localhost:${PORT}/api/notas-credito`);
     });
   } else {
     console.log('⚠️  Certificados SSL no encontrados. Iniciando servidor HTTP...');

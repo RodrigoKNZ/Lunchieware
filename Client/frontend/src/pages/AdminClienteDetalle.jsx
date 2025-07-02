@@ -212,19 +212,19 @@ const AdminClienteDetalle = () => {
         { value: 'CEX', label: 'Carnet de extranjería' }
     ];
     const opcionesGrado = [
-        { value: 'IN4', label: 'Inicial - 4 años' },
-        { value: 'IN5', label: 'Inicial - 5 años' },
-        { value: 'PR1', label: 'Primaria - 1er grado' },
-        { value: 'PR2', label: 'Primaria - 2do grado' },
-        { value: 'PR3', label: 'Primaria - 3er grado' },
-        { value: 'PR4', label: 'Primaria - 4to grado' },
-        { value: 'PR5', label: 'Primaria - 5to grado' },
-        { value: 'PR6', label: 'Primaria - 6to grado' },
-        { value: 'SE1', label: 'Secundaria - 1er grado' },
-        { value: 'SE2', label: 'Secundaria - 2do grado' },
-        { value: 'SE3', label: 'Secundaria - 3er grado' },
-        { value: 'SE4', label: 'Secundaria - 4to grado' },
-        { value: 'SE5', label: 'Secundaria - 5to grado' }
+        { value: 'IN4', label: '4 años' },
+        { value: 'IN5', label: '5 años' },
+        { value: 'PR1', label: '1er grado' },
+        { value: 'PR2', label: '2do grado' },
+        { value: 'PR3', label: '3er grado' },
+        { value: 'PR4', label: '4to grado' },
+        { value: 'PR5', label: '5to grado' },
+        { value: 'PR6', label: '6to grado' },
+        { value: 'SE1', label: '1er grado' },
+        { value: 'SE2', label: '2do grado' },
+        { value: 'SE3', label: '3er grado' },
+        { value: 'SE4', label: '4to grado' },
+        { value: 'SE5', label: '5to grado' }
     ];
 
     if (loading) {

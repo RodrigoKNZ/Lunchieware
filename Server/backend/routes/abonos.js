@@ -1,5 +1,6 @@
 const express = require('express');
 const abonosModel = require('../models/abonos');
+const contratosModel = require('../models/contratos');
 const { authMiddleware, requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -122,11 +123,20 @@ router.post('/', async (req, res) => {
       registroManual
     });
 
+    // Actualizar importeAbonos y saldo del contrato
+    let contratoActualizado = null;
+    try {
+      contratoActualizado = await contratosModel.actualizarSaldoDespuesAbono(idContrato, importeAbono);
+    } catch (err) {
+      console.error('Error actualizando importeAbonos del contrato:', err);
+    }
+
     console.log('🟢 [Abonos] Abono creado exitosamente:', nuevoAbono);
 
     res.status(201).json({
       message: 'Abono creado exitosamente',
-      data: nuevoAbono
+      data: nuevoAbono,
+      contratoActualizado
     });
   } catch (error) {
     console.error('🔴 [Abonos] Error creando abono:', error);
