@@ -335,4 +335,24 @@ router.post('/masivo', async (req, res) => {
   }
 });
 
+// Obtener cliente por código
+router.get('/codigo/:codigo', async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    const cliente = await clientesModel.obtenerPorCodigo(codigo);
+    if (!cliente) {
+      return res.status(404).json({ message: 'Cliente no encontrado' });
+    }
+    // Agregar campo esVigente
+    const clienteConVigencia = { ...cliente, esVigente: !!cliente.clienteVigente };
+    res.json({
+      message: 'Cliente obtenido exitosamente',
+      data: clienteConVigencia
+    });
+  } catch (error) {
+    console.error('Error obteniendo cliente por código:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 module.exports = router; 

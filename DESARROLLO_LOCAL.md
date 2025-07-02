@@ -165,4 +165,39 @@ VITE_APP_URL=https://localhost:5173
 - [Documentación de Express](https://expressjs.com/)
 - [mkcert - Certificados SSL locales](https://github.com/FiloSottile/mkcert)
 - [ngrok - Tunneling local](https://ngrok.com/)
-- [Mercado Pago Webhooks](https://www.mercadopago.com.ar/developers/es/docs/notifications/webhooks) 
+- [Mercado Pago Webhooks](https://www.mercadopago.com.ar/developers/es/docs/notifications/webhooks)
+
+## Simulación de Producción Local ("production-sim")
+
+Sigue estos pasos para levantar el backend y el frontend en modo simulación de producción, usando HTTPS en ambos servicios:
+
+### 1. Requisitos previos
+- Tener los certificados SSL en la carpeta `ssl` en la raíz del proyecto:
+  - `ssl/localhost.pem`
+  - `ssl/localhost-key.pem`
+- Tener configurados los archivos `.env` necesarios en backend y frontend.
+
+### 2. Levantar el backend en modo producción-sim
+Abre una terminal y ejecuta:
+```bash
+cd Server/backend
+npm run dev:prod-sim
+```
+Esto levantará el backend en `https://localhost:5000`.
+
+### 3. Levantar el frontend en modo producción-sim
+Abre otra terminal y ejecuta:
+```bash
+cd Client/frontend
+npm run dev -- --mode production-sim
+```
+Esto levantará el frontend en `https://localhost:5173`.
+
+### 4. Acceso y advertencias
+- Accede al frontend en: `https://localhost:5173`
+- Es posible que el navegador te pida aceptar el certificado SSL (hazlo para pruebas locales).
+- Todas las peticiones del frontend irán a `https://localhost:5000/api`.
+
+### 5. Notas
+- Si cambias los certificados o el `.env`, reinicia ambos servidores.
+- Si tienes problemas de CORS, revisa la configuración en `Server/backend/index.js`. 

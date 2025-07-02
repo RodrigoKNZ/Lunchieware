@@ -47,6 +47,12 @@ const clienteService = {
   async obtenerContratos(idCliente) {
     const response = await apiClient.get(`/contratos/cliente/${idCliente}`);
     return response.data;
+  },
+
+  // Obtener cliente por código
+  async obtenerPorCodigo(codigo) {
+    const response = await apiClient.get(`/clientes/codigo/${codigo}`);
+    return response.data;
   }
 };
 

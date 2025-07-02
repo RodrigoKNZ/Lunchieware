@@ -18,8 +18,8 @@ export default defineConfig(({ command, mode }) => {
 
   // Configuración para HTTPS local
   if (mode === 'production-sim' || command === 'serve') {
-    const certPath = path.resolve(__dirname, '../ssl/localhost.pem')
-    const keyPath = path.resolve(__dirname, '../ssl/localhost-key.pem')
+    const certPath = path.resolve(__dirname, '../../ssl/localhost.pem')
+    const keyPath = path.resolve(__dirname, '../../ssl/localhost-key.pem')
     
     if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
       config.server.https = {

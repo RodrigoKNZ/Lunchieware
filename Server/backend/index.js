@@ -18,6 +18,7 @@ const sugerenciasRoutes = require('./routes/sugerencias');
 const contratosRoutes = require('./routes/contratos');
 const abonosRoutes = require('./routes/abonos');
 const mercadopagoRoutes = require('./routes/mercadopago');
+const comprobanteVentaRoutes = require('./routes/comprobanteVenta');
 
 const app = express();
 
@@ -97,6 +98,7 @@ app.use('/api/movimientos-cajachica', movimientoCajaChicaRoutes);
 app.use('/api/contratos', contratosRoutes);
 app.use('/api/abonos', abonosRoutes);
 app.use('/api/mercadopago', mercadopagoRoutes);
+app.use('/api/comprobantes', comprobanteVentaRoutes);
 
 // Middleware para manejar errores
 app.use((error, req, res, next) => {
@@ -123,6 +125,7 @@ function startHttpServer() {
     console.log(`📄 Endpoints de contratos: http://localhost:${PORT}/api/contratos`);
     console.log(`📄 Endpoints de abonos: http://localhost:${PORT}/api/abonos`);
     console.log(`📄 Endpoints de Mercado Pago: http://localhost:${PORT}/api/mercadopago`);
+    console.log(`📄 Endpoints de comprobantes: http://localhost:${PORT}/api/comprobantes`);
   });
 }
 
@@ -151,6 +154,7 @@ function startHttpsServer() {
       console.log(`📄 Endpoints de contratos: https://localhost:${PORT}/api/contratos`);
       console.log(`📄 Endpoints de abonos: https://localhost:${PORT}/api/abonos`);
       console.log(`📄 Endpoints de Mercado Pago: https://localhost:${PORT}/api/mercadopago`);
+      console.log(`📄 Endpoints de comprobantes: https://localhost:${PORT}/api/comprobantes`);
     });
   } else {
     console.log('⚠️  Certificados SSL no encontrados. Iniciando servidor HTTP...');
