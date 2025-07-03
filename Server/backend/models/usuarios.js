@@ -116,6 +116,28 @@ const usuariosModel = {
     `;
     const result = await pool.query(query, [rol]);
     return result.rows;
+  },
+
+  // Crear usuario con los campos: nombreUsuario, password (hash), rol ('A' o 'C'), activo (por defecto true)
+  async create({ nombreUsuario, password }) {
+    if (!nombreUsuario || !password) throw new Error('Faltan campos obligatorios');
+    // Solo se permite rol 'C'
+    const rol = 'C';
+    // Validar usuario único
+    const existe = await this.findByUsuario(nombreUsuario);
+    if (existe) throw new Error('El usuario ya existe');
+    const hash = await bcrypt.hash(password, 10);
+    const result = await pool.query(
+      'INSERT INTO "Usuario" ("nombreUsuario", "password", "rol", "activo") VALUES ($1, $2, $3, true) RETURNING *',
+      [nombreUsuario, hash, rol]
+    );
+    return result.rows[0];
+  },
+
+  // Buscar usuario por nombre de usuario
+  async findByUsuario(nombreUsuario) {
+    const result = await pool.query('SELECT * FROM "Usuario" WHERE "nombreUsuario" = $1', [nombreUsuario]);
+    return result.rows[0];
   }
 };
 

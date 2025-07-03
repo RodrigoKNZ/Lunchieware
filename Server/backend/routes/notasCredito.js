@@ -7,7 +7,7 @@ router.post('/', async (req, res) => {
   try {
     const {
       idContrato,
-      numeroNotaCredito,
+      numeroSerie,
       numeroComprobanteAfectado,
       importeInafecto,
       importeImponible,
@@ -16,15 +16,15 @@ router.post('/', async (req, res) => {
       motivo
     } = req.body;
 
-    if (!idContrato || !numeroNotaCredito || !numeroComprobanteAfectado || !motivo) {
+    if (!idContrato || !numeroSerie || !numeroComprobanteAfectado || !motivo) {
       return res.status(400).json({ 
-        message: 'Los campos contrato, número de nota de crédito, número de comprobante afectado y motivo son requeridos' 
+        message: 'Los campos contrato, serie, número de comprobante afectado y motivo son requeridos' 
       });
     }
 
     const nuevaNota = await notasCreditoModel.crear({
       idContrato,
-      numeroNotaCredito,
+      numeroSerie,
       numeroComprobanteAfectado,
       importeInafecto: importeInafecto || 0,
       importeImponible: importeImponible || 0,

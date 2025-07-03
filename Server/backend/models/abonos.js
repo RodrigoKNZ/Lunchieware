@@ -63,27 +63,14 @@ const abonosModel = {
   // Crear nuevo abono
   async crear(datos) {
     console.log('🟦 [AbonosModel] Iniciando creación de abono con datos:', datos);
-    
     const {
       idContrato,
       fechaAbono,
       idCuenta,
-      numRecibo,
       importeAbono,
       registroManual = false,
       activo = true
     } = datos;
-
-    console.log('🟦 [AbonosModel] Datos procesados:', {
-      idContrato,
-      fechaAbono,
-      idCuenta,
-      numRecibo,
-      importeAbono,
-      registroManual,
-      activo
-    });
-
     const query = `
       INSERT INTO "Abono" (
         "idContrato", "fechaAbono", "idCuenta", "numRecibo", 
@@ -93,16 +80,20 @@ const abonosModel = {
       RETURNING *
     `;
     const values = [
-      idContrato, fechaAbono, idCuenta, numRecibo,
+      idContrato, fechaAbono, idCuenta, '0000000',
       importeAbono, registroManual, activo
     ];
-    
     console.log('🟦 [AbonosModel] Ejecutando query con valores:', values);
-    
     try {
       const result = await pool.query(query, values);
-      console.log('🟢 [AbonosModel] Abono creado exitosamente en BD:', result.rows[0]);
-      return result.rows[0];
+      let abono = result.rows[0];
+      // Actualizar el número de recibo con el idAbono en 7 dígitos
+      const nuevoNumRecibo = abono.idAbono.toString().padStart(7, '0');
+      const updateQuery = 'UPDATE "Abono" SET "numRecibo" = $1 WHERE "idAbono" = $2 RETURNING *';
+      const updateResult = await pool.query(updateQuery, [nuevoNumRecibo, abono.idAbono]);
+      abono = updateResult.rows[0];
+      console.log('🟢 [AbonosModel] Abono creado y actualizado:', abono);
+      return abono;
     } catch (error) {
       console.error('🔴 [AbonosModel] Error en la consulta SQL:', error);
       throw error;

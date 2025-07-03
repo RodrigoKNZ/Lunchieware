@@ -23,14 +23,14 @@ const bancosModel = {
     const result = await pool.query(query);
     return result.rows;
   },
-  async editar(idBanco, { nombreBanco, siglas }) {
+  async editar(idBanco, { nombreBanco, siglas, disponible }) {
     const query = `
       UPDATE "Banco"
-      SET "nombreBanco" = $1, "siglas" = $2
-      WHERE "idBanco" = $3
+      SET "nombreBanco" = $1, "siglas" = $2, "disponible" = $3
+      WHERE "idBanco" = $4
       RETURNING *
     `;
-    const result = await pool.query(query, [nombreBanco, siglas, idBanco]);
+    const result = await pool.query(query, [nombreBanco, siglas, disponible, idBanco]);
     return result.rows[0];
   },
   async eliminar(idBanco) {

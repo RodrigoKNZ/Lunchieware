@@ -30,11 +30,11 @@ router.get('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombreBanco, siglas } = req.body;
+    const { nombreBanco, siglas, disponible } = req.body;
     if (!nombreBanco || !siglas) {
       return res.status(400).json({ message: 'Faltan campos obligatorios' });
     }
-    const banco = await bancosModel.editar(id, { nombreBanco, siglas });
+    const banco = await bancosModel.editar(id, { nombreBanco, siglas, disponible });
     res.json({ message: 'Banco editado', data: banco });
   } catch (error) {
     res.status(500).json({ message: 'Error editando banco', error: error.message });

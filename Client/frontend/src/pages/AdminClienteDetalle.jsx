@@ -14,6 +14,7 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import dayjs from 'dayjs';
 import clienteService from '../services/clienteService';
+import Chip from '@mui/material/Chip';
 
 const mockClienteDetalle = {
     '20200554': {
@@ -447,7 +448,6 @@ const AdminClienteDetalle = () => {
                                 <Button variant="contained" onClick={handleAplicarFiltros} disabled={filtrosEnEstadoInicial || filtrosAplicados}>APLICAR FILTROS</Button>
                                 <Button variant="outlined" onClick={handleLimpiarFiltros} disabled={!filtrosAplicados}>LIMPIAR FILTROS</Button>
                             </Box>
-                            <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => setNuevoContratoModalOpen(true)} disabled={filtrosAplicados}>NUEVO CONTRATO</Button>
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
                             <Grid container spacing={2}>
@@ -532,8 +532,7 @@ const AdminClienteDetalle = () => {
                                     <TableCell>Fecha creación</TableCell>
                                     <TableCell>Inicio vigencia</TableCell>
                                     <TableCell>Fin vigencia</TableCell>
-                                    <TableCell>Importe abonos</TableCell>
-                                    <TableCell>Importe consumos</TableCell>
+                                    <TableCell>Saldo o deuda</TableCell>
                                     <TableCell>Importe saldo</TableCell>
                                     <TableCell align="center">Detalle</TableCell>
                                 </TableRow>
@@ -545,9 +544,19 @@ const AdminClienteDetalle = () => {
                                         <TableCell>{contrato.fechaCreacion ? dayjs(contrato.fechaCreacion).format('DD/MM/YYYY') : '-'}</TableCell>
                                         <TableCell>{contrato.inicioVigencia ? dayjs(contrato.inicioVigencia).format('DD/MM/YYYY') : '-'}</TableCell>
                                         <TableCell>{contrato.finVigencia ? dayjs(contrato.finVigencia).format('DD/MM/YYYY') : '-'}</TableCell>
-                                        <TableCell>{(contrato.importeAbonos !== undefined && contrato.importeAbonos !== null) ? `S/. ${Number(contrato.importeAbonos).toFixed(2)}` : '-'}</TableCell>
-                                        <TableCell>{(contrato.importeConsumos !== undefined && contrato.importeConsumos !== null) ? `S/. ${Number(contrato.importeConsumos).toFixed(2)}` : '-'}</TableCell>
-                                        <TableCell>{(contrato.importeSaldo !== undefined && contrato.importeSaldo !== null) ? `S/. ${Number(contrato.importeSaldo).toFixed(2)}` : '-'}</TableCell>
+                                        <TableCell>
+                                            {(contrato.importeSaldo !== undefined && contrato.importeSaldo !== null) ? (
+                                                <Chip
+                                                    label={Number(contrato.importeSaldo) < 0 ? 'Deuda' : 'Saldo'}
+                                                    color={Number(contrato.importeSaldo) < 0 ? 'error' : 'success'}
+                                                    size="small"
+                                                    sx={{ fontWeight: 600 }}
+                                                />
+                                            ) : '-' }
+                                        </TableCell>
+                                        <TableCell>
+                                            {(contrato.importeSaldo !== undefined && contrato.importeSaldo !== null) ? `S/. ${Number(contrato.importeSaldo).toFixed(2)}` : '-' }
+                                        </TableCell>
                                         <TableCell align="center">
                                             <IconButton size="small" onClick={() => navigate(`/admin/clientes/${id}/contrato/${contrato.codigo}`)}>
                                                 <VisibilityIcon />

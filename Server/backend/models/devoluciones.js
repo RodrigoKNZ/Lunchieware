@@ -30,7 +30,6 @@ const devolucionesModel = {
       idContrato,
       fechaDevolucion,
       idCuenta,
-      numRecibo,
       importeDevolucion
     } = datos;
     const query = `
@@ -39,12 +38,18 @@ const devolucionesModel = {
       ) VALUES ($1, $2, $3, $4, $5, true)
       RETURNING *
     `;
-    const values = [idContrato, fechaDevolucion, idCuenta, numRecibo, importeDevolucion];
+    const values = [idContrato, fechaDevolucion, idCuenta, '0000000', importeDevolucion];
     console.log('🟦 [DevolucionesModel] Ejecutando query con valores:', values);
     try {
       const result = await pool.query(query, values);
-      console.log('🟢 [DevolucionesModel] Devolución creada exitosamente en BD:', result.rows[0]);
-      return result.rows[0];
+      let devolucion = result.rows[0];
+      // Actualizar el número de recibo con el idDevolucion en 7 dígitos
+      const nuevoNumRecibo = devolucion.idDevolucion.toString().padStart(7, '0');
+      const updateQuery = 'UPDATE "Devolucion" SET "numRecibo" = $1 WHERE "idDevolucion" = $2 RETURNING *';
+      const updateResult = await pool.query(updateQuery, [nuevoNumRecibo, devolucion.idDevolucion]);
+      devolucion = updateResult.rows[0];
+      console.log('🟢 [DevolucionesModel] Devolución creada y actualizada:', devolucion);
+      return devolucion;
     } catch (error) {
       console.error('🔴 [DevolucionesModel] Error en la consulta SQL:', error);
       throw error;

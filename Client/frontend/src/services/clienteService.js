@@ -53,6 +53,12 @@ const clienteService = {
   async obtenerPorCodigo(codigo) {
     const response = await apiClient.get(`/clientes/codigo/${codigo}`);
     return response.data;
+  },
+
+  // Búsqueda avanzada de clientes
+  async buscarAvanzado(filtros) {
+    const response = await apiClient.post('/clientes/buscar-avanzado', filtros);
+    return response.data;
   }
 };
 

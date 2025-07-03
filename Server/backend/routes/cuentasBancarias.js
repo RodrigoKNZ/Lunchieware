@@ -2,6 +2,16 @@ const express = require('express');
 const cuentaBancariaModel = require('../models/cuentaBancaria');
 const router = express.Router();
 
+// Listar todas las cuentas bancarias agrupadas por banco
+router.get('/', async (req, res) => {
+  try {
+    const cuentas = await cuentaBancariaModel.listarTodas();
+    res.json({ message: 'Cuentas obtenidas', data: cuentas });
+  } catch (error) {
+    res.status(500).json({ message: 'Error obteniendo cuentas', error: error.message });
+  }
+});
+
 // Crear cuenta bancaria
 router.post('/', async (req, res) => {
   try {

@@ -23,6 +23,8 @@ import AdminContratoDetalle from './pages/AdminContratoDetalle';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailure from './pages/PaymentFailure';
 import PaymentPending from './pages/PaymentPending';
+import AdminCrearUsuario from './pages/AdminCrearUsuario';
+import AdminReportes from './pages/AdminReportes';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -84,6 +86,8 @@ function App() {
             <Route path="caja-chica/:id" element={<AdminCajaChicaDetalle />} />
             <Route path="programacion-menu" element={<AdminMenuProgramacion />} />
             <Route path="quejas-sugerencias" element={<AdminQuejasSugerencias />} />
+            <Route path="usuarios/crear" element={<AdminCrearUsuario />} />
+            <Route path="reportes" element={<AdminReportes />} />
             {/* Aquí se agregarán las demás rutas del admin */}
           </Route>
           {/* Redirigir cualquier otra ruta a /admin */}

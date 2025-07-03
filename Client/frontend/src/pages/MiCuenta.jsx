@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Box, Typography, Tabs, Tab, Divider, TextField, MenuItem, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, useMediaQuery, Card, CardContent
+  Box, Typography, Tabs, Tab, Divider, TextField, MenuItem, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, useMediaQuery, Card, CardContent, Breadcrumbs, IconButton
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
@@ -14,6 +14,10 @@ import clienteService from '../services/clienteService';
 import abonosService from '../services/abonosService';
 import mercadoPagoService from '../services/mercadoPagoService';
 import comprobanteVentaService from '../services/comprobanteVentaService';
+import cuentasBancariasService from '../services/cuentasBancariasService';
+import HomeIcon from '@mui/icons-material/Home';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import { Link as RouterLink } from 'react-router-dom';
 
 // Obtener nombre del cliente asociado al usuario logueado
 const obtenerNombreCliente = async () => {
@@ -102,6 +106,7 @@ const MiCuenta = () => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
   const [historialConsumo, setHistorialConsumo] = React.useState([]);
+  const [cuentasBancarias, setCuentasBancarias] = React.useState([]);
 
   // Cargar datos del cliente al montar el componente
   React.useEffect(() => {
@@ -119,6 +124,17 @@ const MiCuenta = () => {
           // Cargar abonos del cliente
           const abonosCliente = await obtenerAbonosCliente(datos.cliente.idCliente);
           setAbonos(abonosCliente);
+          
+          // Cargar cuentas bancarias
+          try {
+            const respCuentas = await cuentasBancariasService.listarTodas();
+            const cuentas = respCuentas.data?.data || [];
+            setCuentasBancarias(cuentas);
+          } catch (err) {
+            console.error('Error cargando cuentas bancarias:', err);
+            setCuentasBancarias([]);
+          }
+          
           // Cargar historial de consumos reales
           if (datos.contratoVigente && datos.contratoVigente.idContrato) {
             const resp = await comprobanteVentaService.obtenerPorContrato(datos.contratoVigente.idContrato);
@@ -250,6 +266,21 @@ const MiCuenta = () => {
 
   // Mostrar todos los datos si no hay filtros aplicados
   const rowsConsumoToShow = filtrosAplicadosConsumo ? consumoFiltrado : historialConsumo;
+
+  // Agrupar cuentas bancarias por banco (solo cuentas de recaudación disponibles)
+  const cuentasAgrupadasPorBanco = React.useMemo(() => {
+    const agrupadas = {};
+    cuentasBancarias.forEach(cuenta => {
+      // Solo incluir cuentas de recaudación que estén disponibles
+      if (cuenta.tipoCuenta === 'Recaudación' && cuenta.disponible) {
+        if (!agrupadas[cuenta.nombreBanco]) {
+          agrupadas[cuenta.nombreBanco] = [];
+        }
+        agrupadas[cuenta.nombreBanco].push(cuenta);
+      }
+    });
+    return agrupadas;
+  }, [cuentasBancarias]);
 
   // Filtrado de abonos reales
   const comprobantesFiltrados = React.useMemo(() => {
@@ -430,16 +461,26 @@ const MiCuenta = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', maxWidth: 1100, mx: 'auto', mt: isMobile ? 1 : 4, mb: 4, pl: { xs: 1, md: 3 } }}>
-      <Box sx={{ mb: 1 }}>
-        <Typography variant="h5" fontWeight={600} sx={{ mb: 0.5 }}>{nombreCliente}</Typography>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ minHeight: 40, mb: 2 }}>
-          <Tab label="Historial de consumo" sx={{ fontWeight: 500, minWidth: 180 }} />
-          <Tab label="Historial de abonos" sx={{ fontWeight: 500, minWidth: 200 }} />
-          <Tab label="Mi saldo / Recargar saldo" sx={{ fontWeight: 500, minWidth: 240 }} />
-        </Tabs>
-        <Divider />
-      </Box>
+    <Box sx={{ width: '100%', maxWidth: 1100, mx: 'auto', pl: isMobile ? 1 : 3, mb: 4 }}>
+      {/* Header y breadcrumb unificado */}
+      {!isMobile && (
+        <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb" sx={{ mb: 2, mt: 0 }}>
+          <IconButton component={RouterLink} to="/inicio" size="small" sx={{ color: 'inherit', p: 0.5 }}>
+            <HomeIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+          <Typography color="text.primary">Mi cuenta</Typography>
+        </Breadcrumbs>
+      )}
+      <Typography variant="h4" fontWeight={500} sx={{ mb: 1, textAlign: 'left' }}>
+        {nombreCliente}
+      </Typography>
+      {/* Tabs de la sección */}
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ minHeight: 40, mb: 2 }}>
+        <Tab label="Historial de consumo" sx={{ fontWeight: 500, minWidth: 180 }} />
+        <Tab label="Historial de abonos" sx={{ fontWeight: 500, minWidth: 200 }} />
+        <Tab label="Mi saldo / Recargar saldo" sx={{ fontWeight: 500, minWidth: 240 }} />
+      </Tabs>
+      <Divider sx={{ mb: 3, width: '100%' }} />
       {/* HISTORIAL DE CONSUMO */}
       {tab === 0 && (
         <Box sx={{ mt: 3 }}>
@@ -668,7 +709,7 @@ const MiCuenta = () => {
       )}
       {/* MI SALDO / RECARGAR SALDO */}
       {tab === 2 && (
-        <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 800, mx: 'auto' }}>
           {loading ? (
             <Typography>Cargando información del saldo...</Typography>
           ) : error ? (
@@ -680,65 +721,54 @@ const MiCuenta = () => {
                   + Recargar saldo
                 </Button>
               </Box>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                <Card sx={{ flex: '1 1 300px', minWidth: 280 }}>
-                  <CardContent>
-                    <Typography color="text.secondary" fontSize={14} gutterBottom>
-                      {datosCliente?.contratoVigente ? 
-                        `Actualizado al ${dayjs(datosCliente.contratoVigente.fechaCreacion).format('DD/MM/YYYY')}` : 
-                        'Sin contrato vigente'
-                      }
-                    </Typography>
-                    <Typography variant="h6" fontWeight={600}>Saldo</Typography>
-                    <Typography variant="h5" fontWeight={700} color="primary.main">
-                      {datosCliente?.contratoVigente ? 
-                        `S/. ${Number(datosCliente.contratoVigente.importeSaldo).toFixed(2)}` : 
-                        'S/. 0.00'
-                      }
-                    </Typography>
-                  </CardContent>
-                </Card>
-                <Card sx={{ flex: '1 1 300px', minWidth: 280 }}>
-                  <CardContent>
-                    <Typography color="text.secondary" fontSize={14} gutterBottom>
-                      {datosCliente?.contratoVigente ? 
-                        `Actualizado al ${dayjs(datosCliente.contratoVigente.fechaCreacion).format('DD/MM/YYYY')}` : 
-                        'Sin contrato vigente'
-                      }
-                    </Typography>
-                    <Typography variant="h6" fontWeight={600}>Deuda pendiente</Typography>
-                    <Typography variant="h5" fontWeight={700} color="error.main">
-                      {datosCliente?.contratoVigente && Number(datosCliente.contratoVigente.importeSaldo) < 0 ? 
-                        `S/. ${Math.abs(Number(datosCliente.contratoVigente.importeSaldo)).toFixed(2)}` : 
-                        'S/. 0.00'
-                      }
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Box>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                <Card sx={{ flex: '1 1 300px', minWidth: 280 }}>
-                  <CardContent>
-                    <Typography color="text.secondary" fontSize={14} gutterBottom>
-                      {datosCliente?.contratoVigente ? 
-                        `Actualizado al ${dayjs(datosCliente.contratoVigente.fechaCreacion).format('DD/MM/YYYY')}` : 
-                        'Sin contrato vigente'
-                      }
-                    </Typography>
-                    <Typography variant="h6" fontWeight={600}>Medios de pago</Typography>
-                    <Typography variant="body1">Yape, Plin, Transferencia</Typography>
-                  </CardContent>
-                </Card>
-                <Card sx={{ flex: '1 1 300px', minWidth: 280 }}>
-                  <CardContent>
-                    <Typography color="text.secondary" fontSize={14} gutterBottom>
-                      {datosCliente?.contratoVigente ? 
-                        `Actualizado al ${dayjs(datosCliente.contratoVigente.fechaCreacion).format('DD/MM/YYYY')}` : 
-                        'Sin contrato vigente'
-                      }
-                    </Typography>
+              <Box sx={{ maxWidth: 620, mx: 'auto' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, mb: 2 }}>
+                  <Card sx={{ minWidth: 300, maxWidth: 300, flex: 1 }}>
+                    <CardContent>
+                      <Typography variant="h6" fontWeight={600}>Saldo</Typography>
+                      <Typography variant="h5" fontWeight={700} color="success.dark">
+                        {datosCliente?.contratoVigente ?
+                          `S/. ${Number(datosCliente.contratoVigente.importeSaldo).toFixed(2)}` :
+                          'S/. 0.00'
+                        }
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                  <Card sx={{ minWidth: 300, maxWidth: 300, flex: 1 }}>
+                    <CardContent>
+                      <Typography variant="h6" fontWeight={600}>Deuda pendiente</Typography>
+                      <Typography variant="h5" fontWeight={700} color="error.main">
+                        {datosCliente?.contratoVigente && Number(datosCliente.contratoVigente.importeSaldo) < 0 ?
+                          `S/. ${Math.abs(Number(datosCliente.contratoVigente.importeSaldo)).toFixed(2)}` :
+                          'S/. 0.00'
+                        }
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Box>
+                <Card sx={{ width: '100%', boxShadow: 1, my: 0, minWidth: 300, maxWidth: 620 }}>
+                  <CardContent sx={{ pb: 0.25, pt: 1.5, px: 2 }}>
                     <Typography variant="h6" fontWeight={600}>Nuestras cuentas bancarias</Typography>
-                    <Typography variant="body1">BCP: 123-4567890-0-12<br/>Interbank: 123-4567890-0-13</Typography>
+                    {Object.keys(cuentasAgrupadasPorBanco).length > 0 ? (
+                      <Box sx={{ mt: 0.5, mb: 0 }}>
+                        {Object.entries(cuentasAgrupadasPorBanco).map(([nombreBanco, cuentas]) => (
+                          <Box key={nombreBanco} sx={{ mb: 0.25 }}>
+                            <Typography variant="subtitle1" fontWeight={600} color="primary.main" sx={{ mb: 0.1 }}>
+                              {nombreBanco}
+                            </Typography>
+                            {cuentas.map((cuenta, index) => (
+                              <Typography key={cuenta.idCuenta} variant="body2" sx={{ ml: 2, mb: 0 }}>
+                                Recaudación: {cuenta.codigoCuenta}
+                              </Typography>
+                            ))}
+                          </Box>
+                        ))}
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        No hay cuentas bancarias disponibles
+                      </Typography>
+                    )}
                   </CardContent>
                 </Card>
               </Box>

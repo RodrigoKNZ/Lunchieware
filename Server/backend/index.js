@@ -24,6 +24,8 @@ const devolucionesRoutes = require('./routes/devoluciones');
 const notasCreditoRoutes = require('./routes/notasCredito');
 const bancosRouter = require('./routes/bancos');
 const cuentasBancariasRouter = require('./routes/cuentasBancarias');
+const usuariosRouter = require('./routes/usuarios');
+const reportesRouter = require('./routes/reportes');
 
 const app = express();
 
@@ -109,6 +111,8 @@ app.use('/api/devoluciones', devolucionesRoutes);
 app.use('/api/notas-credito', notasCreditoRoutes);
 app.use('/api/bancos', bancosRouter);
 app.use('/api/cuentas-bancarias', cuentasBancariasRouter);
+app.use('/api/usuarios', usuariosRouter);
+app.use('/api/reportes', reportesRouter);
 
 // Middleware para manejar errores
 app.use((error, req, res, next) => {

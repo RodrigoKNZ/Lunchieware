@@ -14,6 +14,12 @@ import productosService from '../services/productosService';
 import clienteService from '../services/clienteService';
 import contratosService from '../services/programacionMenuService';
 import comprobanteVentaService from '../services/comprobanteVentaService';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import CircularProgress from '@mui/material/CircularProgress';
+import jsPDF from 'jspdf';
 
 const mediosPago = [
   { value: 'efectivo', label: 'Efectivo' },
@@ -21,6 +27,203 @@ const mediosPago = [
   { value: 'yape', label: 'Yape' },
   { value: 'plin', label: 'Plin' },
 ];
+
+// Traducciones para mostrar descripciones legibles en la tabla
+const traducirTipoCliente = (tipo) => {
+  if (tipo === 'E') return 'Estudiante';
+  if (tipo === 'D') return 'Docente';
+  if (tipo === 'G') return 'General';
+  return tipo;
+};
+const traducirNivel = (nivel) => {
+  if (nivel === 'PR') return 'Primaria';
+  if (nivel === 'IN') return 'Inicial';
+  if (nivel === 'SE') return 'Secundaria';
+  return nivel;
+};
+const traducirGrado = (grado) => {
+  if (!grado) return '-';
+  if (grado === 'IN4') return '4 años';
+  if (grado === 'IN5') return '5 años';
+  if (grado === 'PR1') return '1er grado';
+  if (grado === 'PR2') return '2do grado';
+  if (grado === 'PR3') return '3er grado';
+  if (grado === 'PR4') return '4to grado';
+  if (grado === 'PR5') return '5to grado';
+  if (grado === 'PR6') return '6to grado';
+  if (grado === 'SE1') return '1er grado';
+  if (grado === 'SE2') return '2do grado';
+  if (grado === 'SE3') return '3er grado';
+  if (grado === 'SE4') return '4to grado';
+  if (grado === 'SE5') return '5to grado';
+  return grado;
+};
+
+// Opciones para selects según diccionario de datos
+const opcionesTipoCliente = [
+  { value: 'Todos', label: 'Todos' },
+  { value: 'E', label: 'Estudiante' },
+  { value: 'D', label: 'Docente' },
+  { value: 'G', label: 'General' }
+];
+const opcionesNivel = [
+  { value: 'Todos', label: 'Todos' },
+  { value: 'IN', label: 'Inicial' },
+  { value: 'PR', label: 'Primaria' },
+  { value: 'SE', label: 'Secundaria' }
+];
+const opcionesGrado = [
+  { value: 'Todos', label: 'Todos' },
+  { value: 'IN4', label: '4 años' },
+  { value: 'IN5', label: '5 años' },
+  { value: 'PR1', label: '1er grado' },
+  { value: 'PR2', label: '2do grado' },
+  { value: 'PR3', label: '3er grado' },
+  { value: 'PR4', label: '4to grado' },
+  { value: 'PR5', label: '5to grado' },
+  { value: 'PR6', label: '6to grado' },
+  { value: 'SE1', label: '1er grado' },
+  { value: 'SE2', label: '2do grado' },
+  { value: 'SE3', label: '3er grado' },
+  { value: 'SE4', label: '4to grado' },
+  { value: 'SE5', label: '5to grado' }
+];
+const opcionesSeccion = [
+  { value: 'Todos', label: 'Todos' },
+  { value: 'A', label: 'A' },
+  { value: 'B', label: 'B' },
+  { value: 'C', label: 'C' },
+  { value: 'D', label: 'D' }
+];
+
+function BuscarClienteModal({ open, onClose, onSelect }) {
+  const [filtros, setFiltros] = useState({ nombres: '', apellidoPaterno: '', apellidoMaterno: '', tipoCliente: 'Todos', nivel: 'Todos', grado: 'Todos', seccion: 'Todos' });
+  const [resultados, setResultados] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [seleccionado, setSeleccionado] = useState(null);
+  const [buscado, setBuscado] = useState(false);
+
+  // Selects dependientes
+  const tipoEsEstudiante = filtros.tipoCliente === 'E';
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    let nuevosFiltros = { ...filtros, [name]: value };
+    if (name === 'tipoCliente' && value !== 'E') {
+      nuevosFiltros = { ...nuevosFiltros, nivel: 'Todos', grado: 'Todos', seccion: 'Todos' };
+    }
+    setFiltros(nuevosFiltros);
+  };
+
+  const handleBuscar = async () => {
+    setLoading(true);
+    setBuscado(true);
+    setResultados([]);
+    setSeleccionado(null);
+    try {
+      const res = await clienteService.buscarAvanzado(filtros);
+      setResultados(res.data || []);
+    } catch (e) {
+      setResultados([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAceptar = () => {
+    if (seleccionado) onSelect(seleccionado);
+  };
+
+  const handleCancelar = () => {
+    setFiltros({ nombres: '', apellidoPaterno: '', apellidoMaterno: '', tipoCliente: 'Todos', nivel: 'Todos', grado: 'Todos', seccion: 'Todos' });
+    setResultados([]);
+    setSeleccionado(null);
+    setBuscado(false);
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onClose={handleCancelar} maxWidth="md" fullWidth>
+      <DialogTitle sx={{ fontWeight: 600, fontSize: 20 }}>Búsqueda de cliente</DialogTitle>
+      <DialogContent sx={{ pb: 1 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+          <TextField label="Nombres" name="nombres" value={filtros.nombres} onChange={handleInputChange} size="small" sx={{ minWidth: 180 }} />
+          <TextField label="Apellido Paterno" name="apellidoPaterno" value={filtros.apellidoPaterno} onChange={handleInputChange} size="small" sx={{ minWidth: 180 }} />
+          <TextField label="Apellido Materno" name="apellidoMaterno" value={filtros.apellidoMaterno} onChange={handleInputChange} size="small" sx={{ minWidth: 180 }} />
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Tipo</InputLabel>
+            <Select label="Tipo" name="tipoCliente" value={filtros.tipoCliente} onChange={handleInputChange}>
+              {opcionesTipoCliente.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
+            </Select>
+          </FormControl>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Nivel</InputLabel>
+            <Select label="Nivel" name="nivel" value={filtros.nivel} onChange={handleInputChange} disabled={!tipoEsEstudiante}>
+              {opcionesNivel.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Grado</InputLabel>
+            <Select label="Grado" name="grado" value={filtros.grado} onChange={handleInputChange} disabled={!tipoEsEstudiante}>
+              {opcionesGrado.filter(opt => (filtros.nivel === 'IN' && opt.value.startsWith('IN')) || (filtros.nivel === 'PR' && opt.value.startsWith('PR')) || (filtros.nivel === 'SE' && opt.value.startsWith('SE')) || opt.value === 'Todos').map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Sección</InputLabel>
+            <Select label="Sección" name="seccion" value={filtros.seccion} onChange={handleInputChange} disabled={!tipoEsEstudiante}>
+              {opcionesSeccion.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
+            </Select>
+          </FormControl>
+          <Button variant="contained" onClick={handleBuscar} sx={{ minWidth: 100, height: 40, marginLeft: 'auto' }} startIcon={<SearchIcon />}>BUSCAR</Button>
+        </Box>
+        <Divider sx={{ mb: 1 }} />
+        <TableContainer sx={{ minHeight: 120, maxHeight: 260 }}>
+          <Table size="small" stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell>Seleccionar</TableCell>
+                <TableCell>Código</TableCell>
+                <TableCell>Nombre completo</TableCell>
+                <TableCell>Tipo</TableCell>
+                <TableCell>Nivel</TableCell>
+                <TableCell>Grado</TableCell>
+                <TableCell>Sección</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                <TableRow><TableCell colSpan={7} align="center"><CircularProgress size={24} /></TableCell></TableRow>
+              ) : resultados.length === 0 && buscado ? (
+                <TableRow><TableCell colSpan={7} align="center" sx={{ color: '#aaa' }}>No se encontraron resultados</TableCell></TableRow>
+              ) : !buscado ? (
+                <TableRow><TableCell colSpan={7} align="center" sx={{ color: '#aaa' }}>Ingrese los datos del cliente para realizar la búsqueda</TableCell></TableRow>
+              ) : (
+                resultados.map(row => (
+                  <TableRow key={row.idCliente} hover selected={seleccionado && seleccionado.idCliente === row.idCliente}>
+                    <TableCell>
+                      <Radio checked={seleccionado && seleccionado.idCliente === row.idCliente} onChange={() => setSeleccionado(row)} />
+                    </TableCell>
+                    <TableCell>{row.codigoCliente}</TableCell>
+                    <TableCell>{row.nombres} {row.apellidoPaterno} {row.apellidoMaterno}</TableCell>
+                    <TableCell><Box sx={{ bgcolor: traducirTipoCliente(row.tipoCliente) === 'Estudiante' ? '#fff9c4' : '#e3f2fd', px: 1.5, py: 0.2, borderRadius: 1, fontWeight: 600, display: 'inline-block' }}>{traducirTipoCliente(row.tipoCliente)}</Box></TableCell>
+                    <TableCell>{traducirNivel(row.nivel)}</TableCell>
+                    <TableCell>{traducirGrado(row.grado)}</TableCell>
+                    <TableCell>{row.seccion}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </DialogContent>
+      <DialogActions sx={{ pr: 3, pb: 2 }}>
+        <Button onClick={handleCancelar} color="primary" sx={{ fontWeight: 600 }}>CANCELAR</Button>
+        <Button onClick={handleAceptar} color="primary" variant="contained" sx={{ fontWeight: 600 }} disabled={!seleccionado}>ACEPTAR</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
 
 const AdminVenta = () => {
   // Estados
@@ -35,6 +238,8 @@ const AdminVenta = () => {
   const [infoContrato, setInfoContrato] = React.useState({ abonos: undefined, consumos: undefined, saldo: undefined });
   const [errorCliente, setErrorCliente] = useState(false);
   const [idContratoVigente, setIdContratoVigente] = useState(null);
+  const [modalBuscarCliente, setModalBuscarCliente] = useState(false);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
 
   // Cargar productos activos del backend y setear MEN001 por defecto
   useEffect(() => {
@@ -141,6 +346,40 @@ const AdminVenta = () => {
   // Determinar si el monto recibido es suficiente
   const montoInsuficiente = formaPago === 'contado' && montoRecibido !== '' && parseFloat(montoRecibido) < totalPagar;
 
+  // Función para generar el ticket PDF
+  const generarTicketPDF = (venta, cliente, detalles, productosDisponibles) => {
+    const doc = new jsPDF({ format: [80, 150] }); // Formato pequeño tipo ticket
+    doc.setFontSize(10);
+    doc.text('COMEDOR ESCOLAR', 40, 8, { align: 'center' });
+    doc.text('Ticket de venta', 40, 14, { align: 'center' });
+    doc.setFontSize(8);
+    doc.text(`Fecha: ${new Date().toLocaleString('es-PE')}`, 4, 22);
+    doc.text(`Comprobante: ${venta.comprobante.numeroComprobante}`, 4, 27);
+    doc.text(`Alumno: ${cliente.nombre}`, 4, 32);
+    doc.text(`Código: ${cliente.codigo}`, 4, 37);
+    doc.text('------------------------------', 4, 41);
+    let y = 45;
+    doc.text('Producto', 4, y);
+    doc.text('Cant.', 40, y);
+    doc.text('Total', 60, y);
+    y += 5;
+    detalles.forEach(item => {
+      const prod = productosDisponibles.find(p => p.codigoProducto === item.codigo);
+      doc.text((prod?.nombreCorto || prod?.nombreProducto || '-').substring(0, 12), 4, y);
+      doc.text(String(item.cantidad), 42, y, { align: 'right' });
+      const total = prod ? (Number(prod.costoUnitario) * item.cantidad).toFixed(2) : '0.00';
+      doc.text(`S/.${total}`, 60, y, { align: 'right' });
+      y += 5;
+    });
+    doc.text('------------------------------', 4, y);
+    y += 5;
+    doc.text(`Total: S/.${venta.comprobante.importeTotal}`, 4, y);
+    y += 7;
+    doc.setFontSize(7);
+    doc.text('Presente este ticket en el counter para recibir su comida.', 40, y, { align: 'center', maxWidth: 70 });
+    doc.save(`Ticket_${venta.comprobante.numeroComprobante}.pdf`);
+  };
+
   // Handler para confirmar venta
   const handleConfirmarVenta = async () => {
     if (!infoContrato || !infoContrato.saldo || !cliente.codigo || !idContratoVigente) {
@@ -159,7 +398,7 @@ const AdminVenta = () => {
       });
       // Serie y número (puedes mejorar la lógica de número correlativo)
       const numeroSerie = String(new Date().getFullYear());
-      const numeroComprobante = String(Date.now()); // Temporal, deberías usar un correlativo real
+      const numeroComprobante = '0000000'; // Siempre enviar '0000000' al backend
       // Fecha en formato YYYY-MM-DD
       const fechaDocumento = new Date().toISOString().slice(0, 10);
       // Saldo antes de la venta
@@ -173,30 +412,34 @@ const AdminVenta = () => {
       } else if (!medioPago || medioPago === 'cuenta') {
         medioPagoSeguro = 'Efectivo';
       }
-      console.log('[VENTA] Datos a enviar al endpoint de venta:', {
-        idContrato: idContratoVigente,
-        numeroSerie,
-        numeroComprobante,
-        fechaDocumento,
-        formaPago,
-        medioDePago: medioPagoSeguro,
-        detalles,
-        total,
-        saldoAlMomentoDeVenta
-      });
+      // Capitalizar la primera letra de formaPago y medioPagoSeguro
+      let formaPagoCapitalizada = formaPago;
+      if (formaPago === 'cuenta') {
+        formaPagoCapitalizada = 'Cargo en cuenta';
+      } else {
+        formaPagoCapitalizada = formaPago.charAt(0).toUpperCase() + formaPago.slice(1);
+      }
+      let medioPagoCapitalizado = medioPagoSeguro;
+      if (typeof medioPagoSeguro === 'string' && medioPagoSeguro.length > 0) {
+        medioPagoCapitalizado = medioPagoSeguro.charAt(0).toUpperCase() + medioPagoSeguro.slice(1);
+      }
       // Llamar al servicio de venta
       const ventaRes = await comprobanteVentaService.registrarVenta({
         idContrato: idContratoVigente,
         numeroSerie,
         numeroComprobante,
         fechaDocumento,
-        formaPago,
-        medioDePago: medioPagoSeguro,
+        formaPago: formaPagoCapitalizada,
+        medioDePago: medioPagoCapitalizado,
         detalles,
         total,
         saldoAlMomentoDeVenta
       });
       console.log('[VENTA] Respuesta del endpoint de venta:', ventaRes);
+      // Generar ticket PDF
+      if (ventaRes && ventaRes.data && ventaRes.data.comprobante) {
+        generarTicketPDF(ventaRes.data, cliente, detalleVenta, productosDisponibles);
+      }
       alert('¡Venta registrada exitosamente!');
       // Aquí podrías limpiar el formulario o recargar datos
     } catch (error) {
@@ -228,16 +471,16 @@ const AdminVenta = () => {
               <Typography variant="h6" fontWeight={500} sx={{ mb: { xs: 2, md: 0 } }}>
                 Información del cliente
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  variant="contained"
-                  startIcon={<SearchIcon />}
-                  sx={{ fontWeight: 600, minWidth: 160, height: 40, boxShadow: 1, textTransform: 'none', fontSize: 15 }}
-                  onClick={handleBuscarCliente}
-                >
-                  Buscar cliente
-                </Button>
-              </Box>
+                              <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<SearchIcon />}
+                    onClick={() => setModalBuscarCliente(true)}
+                    sx={{ ml: 2 }}
+                  >
+                    BUSCAR CLIENTE
+                  </Button>
+                </Box>
             </Box>
             <Grid container spacing={2} alignItems="stretch">
               <Grid item xs={12} md={6} lg={6} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'stretch' }}>
@@ -384,7 +627,6 @@ const AdminVenta = () => {
           <Typography fontWeight={500} sx={{ mb: 1 }}>Documento de venta</Typography>
           <Typography variant="body2">Tipo de documento: Nota de venta</Typography>
           <Typography variant="body2">Serie: {serie}</Typography>
-          <Typography variant="body2">Nro. comprobante: 000000</Typography>
           <Typography variant="body2" sx={{ mb: 2 }}>Fecha: {fechaStr}</Typography>
           <Typography fontWeight={500} sx={{ mb: 1 }}>Medio de pago</Typography>
           {formaPago === 'cuenta' ? (
@@ -439,6 +681,42 @@ const AdminVenta = () => {
           </Button>
         </Paper>
       </Box>
+      <BuscarClienteModal
+        open={modalBuscarCliente}
+        onClose={() => setModalBuscarCliente(false)}
+        onSelect={async cliente => {
+          setClienteSeleccionado(cliente);
+          setCliente({ codigo: cliente.codigoCliente, nombre: cliente.nombres + ' ' + cliente.apellidoPaterno + ' ' + cliente.apellidoMaterno });
+          setModalBuscarCliente(false);
+          // Disparar la búsqueda y carga de info como si se hubiera buscado por código
+          setErrorCliente(false);
+          setInfoContrato({ abonos: undefined, consumos: undefined, saldo: undefined });
+          setIdContratoVigente(null);
+          try {
+            const res = await clienteService.obtenerPorCodigo(cliente.codigoCliente);
+            if (!res.data || !res.data.esVigente) throw new Error('No vigente');
+            const clienteData = res.data;
+            setCliente({ codigo: clienteData.codigoCliente, nombre: clienteData.nombres + ' ' + clienteData.apellidoPaterno + ' ' + clienteData.apellidoMaterno });
+            const contratosRes = await clienteService.obtenerContratos(clienteData.idCliente);
+            const contrato = Array.isArray(contratosRes.data) && contratosRes.data.length > 0 ? contratosRes.data[0] : null;
+            if (contrato) {
+              setInfoContrato({
+                abonos: contrato.importeAbonos,
+                consumos: contrato.importeConsumos,
+                saldo: contrato.importeSaldo
+              });
+              setIdContratoVigente(contrato.idContrato);
+            } else {
+              throw new Error('No contrato');
+            }
+          } catch (e) {
+            setErrorCliente(true);
+            setCliente({ codigo: cliente.codigoCliente, nombre: '' });
+            setInfoContrato({ abonos: undefined, consumos: undefined, saldo: undefined });
+            setIdContratoVigente(null);
+          }
+        }}
+      />
     </React.Fragment>
   );
 };

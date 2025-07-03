@@ -168,6 +168,52 @@ const clientesModel = {
     // Por ahora, retornar null para que se use la lógica de fallback
     console.log('Búsqueda por email no implementada aún:', email);
     return null;
+  },
+
+  // Búsqueda avanzada de clientes
+  async buscarAvanzado(filtros) {
+    let condiciones = ['"activo" = true'];
+    let valores = [];
+    let idx = 1;
+    if (filtros.nombres) {
+      condiciones.push('LOWER("nombres") LIKE $' + idx);
+      valores.push(`%${filtros.nombres.toLowerCase()}%`);
+      idx++;
+    }
+    if (filtros.apellidoPaterno) {
+      condiciones.push('LOWER("apellidoPaterno") LIKE $' + idx);
+      valores.push(`%${filtros.apellidoPaterno.toLowerCase()}%`);
+      idx++;
+    }
+    if (filtros.apellidoMaterno) {
+      condiciones.push('LOWER("apellidoMaterno") LIKE $' + idx);
+      valores.push(`%${filtros.apellidoMaterno.toLowerCase()}%`);
+      idx++;
+    }
+    if (filtros.tipoCliente && filtros.tipoCliente !== 'Todos') {
+      condiciones.push('"tipoCliente" = $' + idx);
+      valores.push(filtros.tipoCliente);
+      idx++;
+    }
+    if (filtros.nivel && filtros.nivel !== 'Todos') {
+      condiciones.push('"nivel" = $' + idx);
+      valores.push(filtros.nivel);
+      idx++;
+    }
+    if (filtros.grado && filtros.grado !== 'Todos') {
+      condiciones.push('"grado" = $' + idx);
+      valores.push(filtros.grado);
+      idx++;
+    }
+    if (filtros.seccion && filtros.seccion !== 'Todos') {
+      condiciones.push('"seccion" = $' + idx);
+      valores.push(filtros.seccion);
+      idx++;
+    }
+    const where = condiciones.length ? 'WHERE ' + condiciones.join(' AND ') : '';
+    const query = `SELECT * FROM "Cliente" ${where} ORDER BY "nombres", "apellidoPaterno"`;
+    const result = await pool.query(query, valores);
+    return result.rows;
   }
 };
 

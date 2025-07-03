@@ -4,6 +4,9 @@ const cuentasBancariasService = {
   async listarPorBanco(idBanco) {
     return api.get(`/cuentas-bancarias/banco/${idBanco}`);
   },
+  async listarTodas() {
+    return api.get('/cuentas-bancarias');
+  },
   async crear(datos) {
     return api.post('/cuentas-bancarias', datos);
   },

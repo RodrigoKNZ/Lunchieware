@@ -355,4 +355,19 @@ router.get('/codigo/:codigo', async (req, res) => {
   }
 });
 
+// Búsqueda avanzada de clientes
+router.post('/buscar-avanzado', async (req, res) => {
+  try {
+    const filtros = req.body;
+    const clientes = await clientesModel.buscarAvanzado(filtros);
+    res.json({
+      message: 'Búsqueda avanzada completada',
+      data: clientes
+    });
+  } catch (error) {
+    console.error('Error en búsqueda avanzada de clientes:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 module.exports = router; 

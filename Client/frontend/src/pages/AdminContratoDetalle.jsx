@@ -138,6 +138,27 @@ const AdminContratoDetalle = () => {
     const [cuentasDevolucion, setCuentasDevolucion] = useState([]);
     const [loadingCuentasDevolucion, setLoadingCuentasDevolucion] = useState(false);
 
+    // Buscar el contrato actual y extraer el año de inicio de vigencia
+    const [contrato, setContrato] = useState(null);
+    const [cliente, setCliente] = useState(null);
+    useEffect(() => {
+        async function fetchContrato() {
+            const res = await import('../services/clienteService').then(m => m.default.obtenerContratos(id));
+            const contratos = res.data || [];
+            const contratoActual = contratos.find(c => String(c.codigoContrato) === String(contratoId));
+            setContrato(contratoActual || null);
+        }
+        fetchContrato();
+    }, [id, contratoId]);
+
+    useEffect(() => {
+        async function fetchCliente() {
+            const res = await import('../services/clienteService').then(m => m.default.obtenerPorId(id));
+            setCliente(res.data);
+        }
+        fetchCliente();
+    }, [id]);
+
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
         setPage(0);
@@ -321,17 +342,21 @@ const AdminContratoDetalle = () => {
         }
     };
 
+    const IGV = parseFloat(import.meta.env.VITE_IGV) || 0.18;
     const handleGuardarNotaCredito = async () => {
         try {
             // Calcular importe total automáticamente
             const importeInafecto = parseFloat(nuevaNotaCredito.importeInafecto) || 0;
             const importeImponible = parseFloat(nuevaNotaCredito.importeImponible) || 0;
-            const importeImpuestos = parseFloat(nuevaNotaCredito.importeImpuestos) || 0;
-            const importeTotal = importeInafecto + importeImponible + importeImpuestos;
+            const importeImpuestos = +(importeImponible * IGV).toFixed(2);
+            const importeTotal = +(importeInafecto + importeImponible + importeImpuestos).toFixed(2);
+
+            // Obtener el año de inicio de vigencia del contrato como serie
+            const serie = contrato && contrato.fechaInicioVigencia ? String(new Date(contrato.fechaInicioVigencia).getFullYear()) : String(new Date().getFullYear());
 
             const datosNotaCredito = {
                 idContrato: contratoId,
-                numeroNotaCredito: '000000', // Código temporal
+                numeroSerie: serie,
                 numeroComprobanteAfectado: nuevaNotaCredito.nroComprobanteAfectado,
                 importeInafecto: importeInafecto,
                 importeImponible: importeImponible,
@@ -340,6 +365,7 @@ const AdminContratoDetalle = () => {
                 motivo: nuevaNotaCredito.motivo
             };
 
+            console.log('Datos enviados para crear nota de crédito:', datosNotaCredito);
             // Llamar al servicio para crear la nota de crédito
             const resultado = await notasCreditoService.crear(datosNotaCredito);
             
@@ -365,7 +391,7 @@ const AdminContratoDetalle = () => {
 
             setNotasDeCredito(notasData);
             setNotasDeCreditoFiltradas(notasData);
-        setNotaCreditoModalOpen(false);
+            setNotaCreditoModalOpen(false);
             setNuevaNotaCredito({ nroComprobanteAfectado: '', importeInafecto: '', importeImponible: '', importeImpuestos: '', motivo: '' });
         } catch (error) {
             console.error('Error guardando nota de crédito:', error);
@@ -380,16 +406,35 @@ const AdminContratoDetalle = () => {
             try {
                 // Comprobantes de venta (para consumos)
                 const comprobantesRes = await comprobanteVentaService.obtenerPorContrato(contratoId);
-                const comprobantesData = (comprobantesRes.data?.data || []).map(c => ({
-                    fechaConsumo: c.fechaDocumento ? dayjs(c.fechaDocumento).format('DD/MM/YYYY') : '',
-                    producto: c.detalles && c.detalles[0] ? c.detalles[0].nombreProducto : '',
-                    tipoComprobante: c.tipoComprobanteNombre || 'Nota de Venta',
-                    numeroDocumento: c.numeroComprobante || '',
-                    formaPago: c.formaDePago || '',
-                    medioPago: c.medioDePago || '',
-                    cantidad: c.detalles && c.detalles[0] ? c.detalles[0].cantidad : '',
-                    importeTotal: c.detalles && c.detalles[0] ? `S/ ${Number(c.detalles[0].importeTotal).toFixed(2)}` : (c.importeTotal ? `S/ ${Number(c.importeTotal).toFixed(2)}` : '')
-                }));
+                // Generar una fila por cada detalle de comprobante
+                const comprobantesData = [];
+                (comprobantesRes.data?.data || []).forEach(c => {
+                  if (Array.isArray(c.detalles) && c.detalles.length > 0) {
+                    c.detalles.forEach(det => {
+                      comprobantesData.push({
+                        fechaConsumo: c.fechaDocumento ? dayjs(c.fechaDocumento).format('DD/MM/YYYY') : '',
+                        producto: det.nombreProducto || '',
+                        tipoComprobante: c.tipoComprobanteNombre || 'Nota de Venta',
+                        numeroDocumento: c.numeroComprobante || '',
+                        formaPago: c.formaDePago || '',
+                        medioPago: c.medioDePago || '',
+                        cantidad: det.cantidad || '',
+                        importeTotal: det.importeTotal ? `S/ ${Number(det.importeTotal).toFixed(2)}` : ''
+                      });
+                    });
+                  } else {
+                    comprobantesData.push({
+                      fechaConsumo: c.fechaDocumento ? dayjs(c.fechaDocumento).format('DD/MM/YYYY') : '',
+                      producto: '',
+                      tipoComprobante: c.tipoComprobanteNombre || 'Nota de Venta',
+                      numeroDocumento: c.numeroComprobante || '',
+                      formaPago: c.formaDePago || '',
+                      medioPago: c.medioDePago || '',
+                      cantidad: '',
+                      importeTotal: c.importeTotal ? `S/ ${Number(c.importeTotal).toFixed(2)}` : ''
+                    });
+                  }
+                });
                 setConsumos(comprobantesData);
                 setConsumosFiltrados(comprobantesData);
                 // Abonos
@@ -528,21 +573,26 @@ const AdminContratoDetalle = () => {
 
     return (
         <React.Fragment>
-            <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb" sx={{ mb: 2 }}>
-                <IconButton component={RouterLink} to="/admin" size="small" sx={{ color: 'inherit', p: 0.5 }}><HomeIcon sx={{ fontSize: 20 }} /></IconButton>
-                <IconButton component={RouterLink} to="/admin/clientes" size="small" sx={{ color: 'inherit', p: 0.5 }}><PeopleAltIcon sx={{ fontSize: 20 }} /></IconButton>
-                <RouterLink to={`/admin/clientes/${id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <Typography color="text.primary">{nombreCompleto}</Typography>
-                </RouterLink>
-                <Typography color="text.primary">Contrato {contratoId}</Typography>
-            </Breadcrumbs>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
-                <IconButton onClick={() => navigate(-1)}>
-                    <ArrowBackIcon />
-                </IconButton>
-                <Typography variant="h4" fontWeight={600}>Contrato {contratoId}</Typography>
-            </Box>
+            {contrato && contrato.fechaInicioVigencia && cliente && (
+                <>
+                    <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb" sx={{ mb: 2 }}>
+                        <IconButton component={RouterLink} to="/admin" size="small" sx={{ color: 'inherit', p: 0.5 }}><HomeIcon sx={{ fontSize: 20 }} /></IconButton>
+                        <IconButton component={RouterLink} to="/admin/clientes" size="small" sx={{ color: 'inherit', p: 0.5 }}><PeopleAltIcon sx={{ fontSize: 20 }} /></IconButton>
+                        <RouterLink to={`/admin/clientes/${id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <Typography color="text.primary">{cliente.nombres} {cliente.apellidoPaterno} {cliente.apellidoMaterno}</Typography>
+                        </RouterLink>
+                        <Typography color="text.primary">Contrato {dayjs(contrato.fechaInicioVigencia).format('YYYY')}</Typography>
+                    </Breadcrumbs>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+                        <IconButton onClick={() => navigate(-1)}>
+                            <ArrowBackIcon />
+                        </IconButton>
+                        <Typography variant="h4" fontWeight={600}>
+                            Contrato {dayjs(contrato.fechaInicioVigencia).format('YYYY')}
+                        </Typography>
+                    </Box>
+                </>
+            )}
 
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={tabValue} onChange={handleTabChange}>
@@ -843,7 +893,6 @@ const AdminContratoDetalle = () => {
                                     <TableCell>Nro. comprobante afectado</TableCell>
                                     <TableCell>Importe inafecto</TableCell>
                                     <TableCell>Importe imponible</TableCell>
-                                    <TableCell>Importe impuestos</TableCell>
                                     <TableCell>Importe total</TableCell>
                                     <TableCell>Motivo</TableCell>
                                     <TableCell align="center">Detalle</TableCell>
@@ -857,7 +906,6 @@ const AdminContratoDetalle = () => {
                                         <TableCell>{nota.nroComprobanteAfectado}</TableCell>
                                         <TableCell>{nota.importeInafecto}</TableCell>
                                         <TableCell>{nota.importeImponible}</TableCell>
-                                        <TableCell>{nota.importeImpuestos}</TableCell>
                                         <TableCell>{nota.importeTotal}</TableCell>
                                         <TableCell>{nota.motivo}</TableCell>
                                         <TableCell align="center">
@@ -1011,16 +1059,39 @@ const AdminContratoDetalle = () => {
                 <DialogContent>
                     <Grid container spacing={2} sx={{ mt: 1 }}>
                         <Grid item xs={12} sm={6}><TextField fullWidth label="Nro. Comprobante Afectado" value={nuevaNotaCredito.nroComprobanteAfectado} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, nroComprobanteAfectado: e.target.value})} /></Grid>
-                        <Grid item xs={12} sm={4}><TextField fullWidth label="Importe Inafecto" type="number" value={nuevaNotaCredito.importeInafecto} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, importeInafecto: e.target.value})} /></Grid>
-                        <Grid item xs={12} sm={4}><TextField fullWidth label="Importe Imponible" type="number" value={nuevaNotaCredito.importeImponible} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, importeImponible: e.target.value})} /></Grid>
-                        <Grid item xs={12} sm={4}><TextField fullWidth label="Importe Impuestos" type="number" value={nuevaNotaCredito.importeImpuestos} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, importeImpuestos: e.target.value})} /></Grid>
                         <Grid item xs={12} sm={6}>
-                            <TextField 
-                                fullWidth 
-                                label="Importe Total (Calculado)" 
-                                value={`S/ ${((parseFloat(nuevaNotaCredito.importeInafecto) || 0) + (parseFloat(nuevaNotaCredito.importeImponible) || 0) + (parseFloat(nuevaNotaCredito.importeImpuestos) || 0)).toFixed(2)}`}
+                            <TextField
+                                fullWidth
+                                label="Importe imponible"
+                                value={nuevaNotaCredito.importeImponible}
+                                onChange={e => setNuevaNotaCredito({ ...nuevaNotaCredito, importeImponible: e.target.value })}
+                                type="number"
+                                inputProps={{ min: 0, step: '0.01' }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Importe inafecto"
+                                value={nuevaNotaCredito.importeInafecto}
+                                onChange={e => setNuevaNotaCredito({ ...nuevaNotaCredito, importeInafecto: e.target.value })}
+                                type="number"
+                                inputProps={{ min: 0, step: '0.01' }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Importe total (calculado) (Incluyendo impuestos)"
+                                value={
+                                    (() => {
+                                        const imponible = parseFloat(nuevaNotaCredito.importeImponible) || 0;
+                                        const inafecto = parseFloat(nuevaNotaCredito.importeInafecto) || 0;
+                                        const impuestos = +(imponible * IGV).toFixed(2);
+                                        return (inafecto + imponible + impuestos).toFixed(2);
+                                    })()
+                                }
                                 InputProps={{ readOnly: true }}
-                                sx={{ '& .MuiInputBase-input': { color: 'text.secondary' } }}
                             />
                         </Grid>
                         <Grid item xs={12}><TextField fullWidth label="Motivo" multiline rows={2} value={nuevaNotaCredito.motivo} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, motivo: e.target.value})} /></Grid>

@@ -15,6 +15,25 @@ const cuentaBancariaModel = {
     const result = await pool.query(query, [idBanco]);
     return result.rows;
   },
+  async listarTodas() {
+    const query = `
+      SELECT 
+        cb."idCuenta",
+        cb."codigoCuenta",
+        cb."codigoAgencia",
+        cb."tipoCuenta",
+        cb."disponible",
+        b."idBanco",
+        b."nombreBanco",
+        b."siglas"
+      FROM "CuentaBancaria" cb
+      JOIN "Banco" b ON cb."idBanco" = b."idBanco"
+      WHERE cb."activo" = true AND b."activo" = true
+      ORDER BY b."nombreBanco" ASC, cb."codigoCuenta" ASC
+    `;
+    const result = await pool.query(query);
+    return result.rows;
+  },
   async editar(idCuenta, { codigoCuenta, codigoAgencia, tipoCuenta, disponible }) {
     const query = `
       UPDATE "CuentaBancaria"

@@ -135,6 +135,9 @@ const AdminCuentasBancarias = () => {
   const [editCuentaAgencia, setEditCuentaAgencia] = useState('');
 
   const selectedBankData = bancos.find(b => b.id === selectedBank);
+  
+  // Verificar si el banco seleccionado está disponible
+  const isSelectedBankAvailable = selectedBankData?.status === 'Disponible';
 
   // Filtrado bancos
   const handleAplicarFiltrosBanco = () => {
@@ -253,10 +256,38 @@ const AdminCuentasBancarias = () => {
   const handleGuardarEdicionBanco = async () => {
     if (!editBancoNombre.trim() || !editBancoSiglas.trim()) return;
     try {
+      // Verificar si el estado del banco cambió a "No Disponible"
+      const estadoAnterior = bancoSeleccionado.status;
+      const nuevoEstado = editBancoEstado;
+      const cambioANoDisponible = estadoAnterior === 'Disponible' && nuevoEstado === 'No Disponible';
+      
       await bancosService.editar(bancoSeleccionado.id, {
         nombreBanco: editBancoNombre,
-        siglas: editBancoSiglas
+        siglas: editBancoSiglas,
+        disponible: nuevoEstado === 'Disponible'
       });
+      
+      // Si el banco cambió a "No Disponible", actualizar todas sus cuentas
+      if (cambioANoDisponible) {
+        try {
+          // Obtener todas las cuentas del banco
+          const resCuentas = await cuentasBancariasService.listarPorBanco(bancoSeleccionado.id);
+          const cuentas = resCuentas.data?.data || [];
+          
+          // Actualizar cada cuenta a "No Disponible"
+          for (const cuenta of cuentas) {
+            await cuentasBancariasService.editar(cuenta.idCuenta, {
+              codigoCuenta: cuenta.codigoCuenta,
+              codigoAgencia: cuenta.codigoAgencia,
+              tipoCuenta: cuenta.tipoCuenta,
+              disponible: false
+            });
+          }
+        } catch (err) {
+          console.error('Error actualizando cuentas del banco:', err);
+        }
+      }
+      
       // Recargar bancos
       const res = await bancosService.listar();
       const bancosBD = (res.data?.data || []).map(b => ({
@@ -268,6 +299,21 @@ const AdminCuentasBancarias = () => {
       }));
       setBancos(bancosBD);
       setBancosFiltrados(bancosBD);
+      
+      // Si el banco editado es el seleccionado, recargar sus cuentas
+      if (selectedBank === bancoSeleccionado.id) {
+        const resCuentas = await cuentasBancariasService.listarPorBanco(selectedBank);
+        const cuentasBD = (resCuentas.data?.data || []).map(c => ({
+          id: c.idCuenta,
+          accountCode: c.codigoCuenta,
+          agencyCode: c.codigoAgencia,
+          type: c.tipoCuenta,
+          bank: bancosBD.find(b => b.id === c.idBanco)?.name || '',
+          status: c.disponible ? 'Disponible' : 'No Disponible'
+        }));
+        setCuentasFiltradas(cuentasBD);
+      }
+      
       setEditarBancoOpen(false);
       setBancoSeleccionado(null);
     } catch (err) {
@@ -342,7 +388,8 @@ const AdminCuentasBancarias = () => {
     setEditCuentaCodigo(cuenta.accountCode);
     setEditCuentaAgencia(cuenta.agencyCode);
     setEditCuentaTipo(cuenta.type);
-    setEditCuentaEstado(cuenta.status);
+    // Si el banco no está disponible, forzar que la cuenta esté no disponible
+    setEditCuentaEstado(isSelectedBankAvailable ? cuenta.status : 'No Disponible');
     setEditarCuentaOpen(true);
   };
   
@@ -353,12 +400,22 @@ const AdminCuentasBancarias = () => {
   
   const handleGuardarEdicionCuenta = async () => {
     if (!editCuentaCodigo.trim() || !editCuentaTipo.trim()) return;
+    
+    // Validación adicional: no permitir guardar cuenta disponible si banco no está disponible
+    if (!isSelectedBankAvailable && editCuentaEstado === 'Disponible') {
+      alert('No se puede guardar una cuenta en estado "Disponible" cuando el banco no está disponible');
+      return;
+    }
+    
     try {
+      // Si el banco no está disponible, forzar que la cuenta esté no disponible
+      const estadoFinal = isSelectedBankAvailable ? editCuentaEstado : 'No Disponible';
+      
       await cuentasBancariasService.editar(cuentaSeleccionada.id, {
         codigoCuenta: editCuentaCodigo,
         codigoAgencia: editCuentaAgencia,
         tipoCuenta: editCuentaTipo,
-        disponible: editCuentaEstado === 'Disponible'
+        disponible: estadoFinal === 'Disponible'
       });
       // Recargar cuentas
       const res = await cuentasBancariasService.listarPorBanco(selectedBank);
@@ -405,18 +462,29 @@ const AdminCuentasBancarias = () => {
     setNuevaCuentaCodigo('');
     setNuevaCuentaAgencia('');
     setNuevaCuentaTipo('');
-    setNuevaCuentaEstado('Disponible');
+    // Si el banco no está disponible, la cuenta debe estar no disponible
+    setNuevaCuentaEstado(isSelectedBankAvailable ? 'Disponible' : 'No Disponible');
   };
   
   const handleGuardarNuevaCuenta = async () => {
     if (!nuevaCuentaCodigo.trim() || !nuevaCuentaTipo.trim()) return;
+    
+    // Validación adicional: no permitir guardar cuenta disponible si banco no está disponible
+    if (!isSelectedBankAvailable && nuevaCuentaEstado === 'Disponible') {
+      alert('No se puede crear una cuenta en estado "Disponible" cuando el banco no está disponible');
+      return;
+    }
+    
     try {
+      // Si el banco no está disponible, forzar que la cuenta esté no disponible
+      const estadoFinal = isSelectedBankAvailable ? nuevaCuentaEstado : 'No Disponible';
+      
       await cuentasBancariasService.crear({
         idBanco: selectedBank,
         codigoCuenta: nuevaCuentaCodigo,
         codigoAgencia: nuevaCuentaAgencia,
         tipoCuenta: nuevaCuentaTipo,
-        disponible: nuevaCuentaEstado === 'Disponible'
+        disponible: estadoFinal === 'Disponible'
       });
       // Recargar cuentas
       const res = await cuentasBancariasService.listarPorBanco(selectedBank);
@@ -597,6 +665,11 @@ const AdminCuentasBancarias = () => {
         <Typography variant="h5" fontWeight={500} sx={{ mb: 2 }}>
           {selectedBankData ? `${selectedBankData.name} - Cuentas` : 'Cuentas'}
         </Typography>
+        {selectedBankData && !isSelectedBankAvailable && (
+          <Typography variant="body2" color="warning.main" sx={{ mb: 2, fontSize: '0.875rem' }}>
+            ⚠️ Este banco no está disponible. No se pueden crear ni editar cuentas en estado "Disponible"
+          </Typography>
+        )}
         {selectedBank ? (
           <>
             <Box>
@@ -810,6 +883,11 @@ const AdminCuentasBancarias = () => {
               <MenuItem value="No Disponible">No Disponible</MenuItem>
             </Select>
           </FormControl>
+          {editBancoEstado === 'No Disponible' && bancoSeleccionado?.status === 'Disponible' && (
+            <Typography variant="body2" color="warning.main" sx={{ mt: 1, fontSize: '0.875rem' }}>
+              ⚠️ Al cambiar el banco a "No Disponible", todas sus cuentas se cambiarán automáticamente a "No Disponible"
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions sx={{ pr: 3, pb: 2 }}>
           <Button onClick={() => setEditarBancoOpen(false)} sx={{ fontWeight: 600 }}>Cancelar</Button>
@@ -872,11 +950,27 @@ const AdminCuentasBancarias = () => {
           </FormControl>
           <FormControl fullWidth margin="normal" size="small">
             <InputLabel>Disponibilidad</InputLabel>
-            <Select label="Disponibilidad" value={nuevaCuentaEstado} onChange={(e) => setNuevaCuentaEstado(e.target.value)}>
-              <MenuItem value="Disponible">Disponible</MenuItem>
+            <Select 
+              label="Disponibilidad" 
+              value={nuevaCuentaEstado} 
+              onChange={(e) => {
+                // Si el banco no está disponible, solo permitir "No Disponible"
+                if (!isSelectedBankAvailable && e.target.value === 'Disponible') {
+                  return; // No permitir el cambio
+                }
+                setNuevaCuentaEstado(e.target.value);
+              }}
+              disabled={!isSelectedBankAvailable}
+            >
+              <MenuItem value="Disponible" disabled={!isSelectedBankAvailable}>Disponible</MenuItem>
               <MenuItem value="No Disponible">No Disponible</MenuItem>
             </Select>
           </FormControl>
+          {!isSelectedBankAvailable && (
+            <Typography variant="body2" color="warning.main" sx={{ mt: 1, fontSize: '0.875rem' }}>
+              ⚠️ No se pueden crear cuentas disponibles para un banco que no está disponible
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions sx={{ pr: 3, pb: 2 }}>
           <Button onClick={() => setNuevaCuentaOpen(false)} sx={{ fontWeight: 600 }}>Cancelar</Button>
@@ -925,11 +1019,27 @@ const AdminCuentasBancarias = () => {
           </FormControl>
           <FormControl fullWidth margin="normal" size="small">
             <InputLabel>Disponibilidad</InputLabel>
-            <Select label="Disponibilidad" value={editCuentaEstado} onChange={(e) => setEditCuentaEstado(e.target.value)}>
-              <MenuItem value="Disponible">Disponible</MenuItem>
+            <Select 
+              label="Disponibilidad" 
+              value={editCuentaEstado} 
+              onChange={(e) => {
+                // Si el banco no está disponible, solo permitir "No Disponible"
+                if (!isSelectedBankAvailable && e.target.value === 'Disponible') {
+                  return; // No permitir el cambio
+                }
+                setEditCuentaEstado(e.target.value);
+              }}
+              disabled={!isSelectedBankAvailable}
+            >
+              <MenuItem value="Disponible" disabled={!isSelectedBankAvailable}>Disponible</MenuItem>
               <MenuItem value="No Disponible">No Disponible</MenuItem>
             </Select>
           </FormControl>
+          {!isSelectedBankAvailable && (
+            <Typography variant="body2" color="warning.main" sx={{ mt: 1, fontSize: '0.875rem' }}>
+              ⚠️ No se pueden editar cuentas a estado disponible para un banco que no está disponible
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions sx={{ pr: 3, pb: 2 }}>
           <Button onClick={() => setEditarCuentaOpen(false)} sx={{ fontWeight: 600 }}>Cancelar</Button>

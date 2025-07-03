@@ -9,6 +9,7 @@ import WidgetsIcon from '@mui/icons-material/Widgets';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import React from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 
@@ -23,6 +24,7 @@ const menuItems = [
   { text: 'Productos', icon: <WidgetsIcon />, path: '/admin/productos' },
   { text: 'Programación del menú', icon: <RestaurantMenuIcon />, path: '/admin/programacion-menu' },
   { text: 'Quejas y sugerencias', icon: <ChatBubbleOutlineIcon />, path: '/admin/quejas-sugerencias' },
+  { text: 'Crear usuario', icon: <AdminPanelSettingsIcon />, path: '/admin/usuarios/crear' },
 ];
 
 const AdminLayout = ({ onLogout }) => {
