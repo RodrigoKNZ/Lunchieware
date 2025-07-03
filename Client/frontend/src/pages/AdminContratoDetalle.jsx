@@ -391,7 +391,7 @@ const AdminContratoDetalle = () => {
 
             setNotasDeCredito(notasData);
             setNotasDeCreditoFiltradas(notasData);
-            setNotaCreditoModalOpen(false);
+        setNotaCreditoModalOpen(false);
             setNuevaNotaCredito({ nroComprobanteAfectado: '', importeInafecto: '', importeImponible: '', importeImpuestos: '', motivo: '' });
         } catch (error) {
             console.error('Error guardando nota de crédito:', error);
@@ -412,12 +412,12 @@ const AdminContratoDetalle = () => {
                   if (Array.isArray(c.detalles) && c.detalles.length > 0) {
                     c.detalles.forEach(det => {
                       comprobantesData.push({
-                        fechaConsumo: c.fechaDocumento ? dayjs(c.fechaDocumento).format('DD/MM/YYYY') : '',
+                    fechaConsumo: c.fechaDocumento ? dayjs(c.fechaDocumento).format('DD/MM/YYYY') : '',
                         producto: det.nombreProducto || '',
-                        tipoComprobante: c.tipoComprobanteNombre || 'Nota de Venta',
-                        numeroDocumento: c.numeroComprobante || '',
-                        formaPago: c.formaDePago || '',
-                        medioPago: c.medioDePago || '',
+                    tipoComprobante: c.tipoComprobanteNombre || 'Nota de Venta',
+                    numeroDocumento: c.numeroComprobante || '',
+                    formaPago: c.formaDePago || '',
+                    medioPago: c.medioDePago || '',
                         cantidad: det.cantidad || '',
                         importeTotal: det.importeTotal ? `S/ ${Number(det.importeTotal).toFixed(2)}` : ''
                       });
@@ -575,22 +575,22 @@ const AdminContratoDetalle = () => {
         <React.Fragment>
             {contrato && contrato.fechaInicioVigencia && cliente && (
                 <>
-                    <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb" sx={{ mb: 2 }}>
-                        <IconButton component={RouterLink} to="/admin" size="small" sx={{ color: 'inherit', p: 0.5 }}><HomeIcon sx={{ fontSize: 20 }} /></IconButton>
-                        <IconButton component={RouterLink} to="/admin/clientes" size="small" sx={{ color: 'inherit', p: 0.5 }}><PeopleAltIcon sx={{ fontSize: 20 }} /></IconButton>
-                        <RouterLink to={`/admin/clientes/${id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb" sx={{ mb: 2 }}>
+                <IconButton component={RouterLink} to="/admin" size="small" sx={{ color: 'inherit', p: 0.5 }}><HomeIcon sx={{ fontSize: 20 }} /></IconButton>
+                <IconButton component={RouterLink} to="/admin/clientes" size="small" sx={{ color: 'inherit', p: 0.5 }}><PeopleAltIcon sx={{ fontSize: 20 }} /></IconButton>
+                <RouterLink to={`/admin/clientes/${id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                             <Typography color="text.primary">{cliente.nombres} {cliente.apellidoPaterno} {cliente.apellidoMaterno}</Typography>
-                        </RouterLink>
+                </RouterLink>
                         <Typography color="text.primary">Contrato {dayjs(contrato.fechaInicioVigencia).format('YYYY')}</Typography>
-                    </Breadcrumbs>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
-                        <IconButton onClick={() => navigate(-1)}>
-                            <ArrowBackIcon />
-                        </IconButton>
+            </Breadcrumbs>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+                <IconButton onClick={() => navigate(-1)}>
+                    <ArrowBackIcon />
+                </IconButton>
                         <Typography variant="h4" fontWeight={600}>
                             Contrato {dayjs(contrato.fechaInicioVigencia).format('YYYY')}
                         </Typography>
-                    </Box>
+            </Box>
                 </>
             )}
 
@@ -1060,8 +1060,8 @@ const AdminContratoDetalle = () => {
                     <Grid container spacing={2} sx={{ mt: 1 }}>
                         <Grid item xs={12} sm={6}><TextField fullWidth label="Nro. Comprobante Afectado" value={nuevaNotaCredito.nroComprobanteAfectado} onChange={e => setNuevaNotaCredito({...nuevaNotaCredito, nroComprobanteAfectado: e.target.value})} /></Grid>
                         <Grid item xs={12} sm={6}>
-                            <TextField
-                                fullWidth
+                            <TextField 
+                                fullWidth 
                                 label="Importe imponible"
                                 value={nuevaNotaCredito.importeImponible}
                                 onChange={e => setNuevaNotaCredito({ ...nuevaNotaCredito, importeImponible: e.target.value })}

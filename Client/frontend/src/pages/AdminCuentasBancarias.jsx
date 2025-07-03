@@ -135,7 +135,7 @@ const AdminCuentasBancarias = () => {
   const [editCuentaAgencia, setEditCuentaAgencia] = useState('');
 
   const selectedBankData = bancos.find(b => b.id === selectedBank);
-  
+
   // Verificar si el banco seleccionado está disponible
   const isSelectedBankAvailable = selectedBankData?.status === 'Disponible';
 

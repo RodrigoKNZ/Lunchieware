@@ -471,16 +471,16 @@ const AdminVenta = () => {
               <Typography variant="h6" fontWeight={500} sx={{ mb: { xs: 2, md: 0 } }}>
                 Información del cliente
               </Typography>
-                              <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    variant="contained"
-                    startIcon={<SearchIcon />}
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<SearchIcon />}
                     onClick={() => setModalBuscarCliente(true)}
                     sx={{ ml: 2 }}
-                  >
+                >
                     BUSCAR CLIENTE
-                  </Button>
-                </Box>
+                </Button>
+              </Box>
             </Box>
             <Grid container spacing={2} alignItems="stretch">
               <Grid item xs={12} md={6} lg={6} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'stretch' }}>
