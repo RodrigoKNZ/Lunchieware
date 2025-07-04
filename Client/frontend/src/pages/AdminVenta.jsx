@@ -240,6 +240,7 @@ const AdminVenta = () => {
   const [idContratoVigente, setIdContratoVigente] = useState(null);
   const [modalBuscarCliente, setModalBuscarCliente] = useState(false);
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+  const [buscarClienteKey, setBuscarClienteKey] = useState(0);
 
   // Cargar productos activos del backend y setear MEN001 por defecto
   useEffect(() => {
@@ -458,6 +459,8 @@ const AdminVenta = () => {
     setFormaPago('cuenta');
     setMedioPago('efectivo');
     setMontoRecibido('');
+    setModalBuscarCliente(false);
+    setBuscarClienteKey(prev => prev + 1);
     // Restaurar detalleVenta a un solo producto MEN001 o el primero disponible
     const menu = productosDisponibles.find(p => p.codigoProducto === 'MEN001');
     if (menu) {
@@ -702,42 +705,38 @@ const AdminVenta = () => {
           </Button>
         </Paper>
       </Box>
-      <BuscarClienteModal
-        open={modalBuscarCliente}
-        onClose={() => setModalBuscarCliente(false)}
-        onSelect={async cliente => {
-          setClienteSeleccionado(cliente);
-          setCliente({ codigo: cliente.codigoCliente, nombre: cliente.nombres + ' ' + cliente.apellidoPaterno + ' ' + cliente.apellidoMaterno });
-          setModalBuscarCliente(false);
-          // Disparar la búsqueda y carga de info como si se hubiera buscado por código
-          setErrorCliente(false);
+      <BuscarClienteModal key={buscarClienteKey} open={modalBuscarCliente} onClose={() => setModalBuscarCliente(false)} onSelect={async cliente => {
+        setClienteSeleccionado(cliente);
+        setCliente({ codigo: cliente.codigoCliente, nombre: cliente.nombres + ' ' + cliente.apellidoPaterno + ' ' + cliente.apellidoMaterno });
+        setModalBuscarCliente(false);
+        // Disparar la búsqueda y carga de info como si se hubiera buscado por código
+        setErrorCliente(false);
+        setInfoContrato({ abonos: undefined, consumos: undefined, saldo: undefined });
+        setIdContratoVigente(null);
+        try {
+          const res = await clienteService.obtenerPorCodigo(cliente.codigoCliente);
+          if (!res.data || !res.data.esVigente) throw new Error('No vigente');
+          const clienteData = res.data;
+          setCliente({ codigo: clienteData.codigoCliente, nombre: clienteData.nombres + ' ' + clienteData.apellidoPaterno + ' ' + clienteData.apellidoMaterno });
+          const contratosRes = await clienteService.obtenerContratos(clienteData.idCliente);
+          const contrato = Array.isArray(contratosRes.data) && contratosRes.data.length > 0 ? contratosRes.data[0] : null;
+          if (contrato) {
+            setInfoContrato({
+              abonos: contrato.importeAbonos,
+              consumos: contrato.importeConsumos,
+              saldo: contrato.importeSaldo
+            });
+            setIdContratoVigente(contrato.idContrato);
+          } else {
+            throw new Error('No contrato');
+          }
+        } catch (e) {
+          setErrorCliente(true);
+          setCliente({ codigo: cliente.codigoCliente, nombre: '' });
           setInfoContrato({ abonos: undefined, consumos: undefined, saldo: undefined });
           setIdContratoVigente(null);
-          try {
-            const res = await clienteService.obtenerPorCodigo(cliente.codigoCliente);
-            if (!res.data || !res.data.esVigente) throw new Error('No vigente');
-            const clienteData = res.data;
-            setCliente({ codigo: clienteData.codigoCliente, nombre: clienteData.nombres + ' ' + clienteData.apellidoPaterno + ' ' + clienteData.apellidoMaterno });
-            const contratosRes = await clienteService.obtenerContratos(clienteData.idCliente);
-            const contrato = Array.isArray(contratosRes.data) && contratosRes.data.length > 0 ? contratosRes.data[0] : null;
-            if (contrato) {
-              setInfoContrato({
-                abonos: contrato.importeAbonos,
-                consumos: contrato.importeConsumos,
-                saldo: contrato.importeSaldo
-              });
-              setIdContratoVigente(contrato.idContrato);
-            } else {
-              throw new Error('No contrato');
-            }
-          } catch (e) {
-            setErrorCliente(true);
-            setCliente({ codigo: cliente.codigoCliente, nombre: '' });
-            setInfoContrato({ abonos: undefined, consumos: undefined, saldo: undefined });
-            setIdContratoVigente(null);
-          }
-        }}
-      />
+        }
+      }} />
     </React.Fragment>
   );
 };
