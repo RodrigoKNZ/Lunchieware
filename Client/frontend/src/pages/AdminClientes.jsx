@@ -29,19 +29,19 @@ const opcionesTipoDocumento = [
     { value: 'CEX', label: 'Carnet de extranjería' }
 ];
 const opcionesGrado = [
-    { value: 'IN4', label: '4 años' },
-    { value: 'IN5', label: '5 años' },
-    { value: 'PR1', label: '1er grado' },
-    { value: 'PR2', label: '2do grado' },
-    { value: 'PR3', label: '3er grado' },
-    { value: 'PR4', label: '4to grado' },
-    { value: 'PR5', label: '5to grado' },
-    { value: 'PR6', label: '6to grado' },
-    { value: 'SE1', label: '1er grado' },
-    { value: 'SE2', label: '2do grado' },
-    { value: 'SE3', label: '3er grado' },
-    { value: 'SE4', label: '4to grado' },
-    { value: 'SE5', label: '5to grado' }
+    { nivel: 'IN', value: 'IN4', label: 'Inicial 4 años' },
+    { nivel: 'IN', value: 'IN5', label: 'Inicial 5 años' },
+    { nivel: 'PR', value: 'PR1', label: 'Primaria 1ro' },
+    { nivel: 'PR', value: 'PR2', label: 'Primaria 2do' },
+    { nivel: 'PR', value: 'PR3', label: 'Primaria 3ro' },
+    { nivel: 'PR', value: 'PR4', label: 'Primaria 4to' },
+    { nivel: 'PR', value: 'PR5', label: 'Primaria 5to' },
+    { nivel: 'PR', value: 'PR6', label: 'Primaria 6to' },
+    { nivel: 'SE', value: 'SE1', label: 'Secundaria 1ro' },
+    { nivel: 'SE', value: 'SE2', label: 'Secundaria 2do' },
+    { nivel: 'SE', value: 'SE3', label: 'Secundaria 3ro' },
+    { nivel: 'SE', value: 'SE4', label: 'Secundaria 4to' },
+    { nivel: 'SE', value: 'SE5', label: 'Secundaria 5to' },
 ];
 
 const mockClientes = [
@@ -173,6 +173,7 @@ const ListaClientes = () => {
                     grado: cli.grado || '-',
                     seccion: cli.seccion || '-',
                     tipo: cli.tipoCliente === 'E' ? 'Estudiante' : cli.tipoCliente === 'D' ? 'Docente' : 'General',
+                    tipoCliente: cli.tipoCliente,
                     vigencia,
                     idCliente: cli.idCliente
                 };
@@ -197,10 +198,10 @@ const ListaClientes = () => {
             const matchNombres = !filtroNombres || c.nombres.toLowerCase().includes(filtroNombres.toLowerCase());
             const matchApellidoPaterno = !filtroApellidoPaterno || c.apellidoPaterno.toLowerCase().includes(filtroApellidoPaterno.toLowerCase());
             const matchApellidoMaterno = !filtroApellidoMaterno || c.apellidoMaterno.toLowerCase().includes(filtroApellidoMaterno.toLowerCase());
-            const matchTipo = filtroTipo === 'todos' || c.tipo === filtroTipo;
-            const matchNivel = filtroNivel === 'todos' || c.nivel === filtroNivel;
-            const matchGrado = filtroGrado === 'todos' || c.grado === filtroGrado;
-            const matchSeccion = filtroSeccion === 'todos' || c.seccion === filtroSeccion;
+            const matchTipo = filtroTipo === 'todos' || c.tipoCliente === filtroTipo;
+            const matchNivel = filtroTipo !== 'E' || filtroNivel === 'todos' || c.nivel === filtroNivel;
+            const matchGrado = filtroTipo !== 'E' || filtroNivel === 'todos' || filtroGrado === 'todos' || c.grado === filtroGrado;
+            const matchSeccion = filtroTipo !== 'E' || filtroNivel === 'todos' || filtroGrado === 'todos' || filtroSeccion === 'todos' || c.seccion === filtroSeccion;
             const matchCodigo = !filtroCodigo || c.id.toLowerCase().includes(filtroCodigo.toLowerCase());
             const matchSaldoDeuda = filtroSaldoDeuda === 'ambos' || c.saldo === filtroSaldoDeuda;
             let matchSaldoMin = true, matchSaldoMax = true, matchDeudaMin = true, matchDeudaMax = true;
@@ -346,10 +347,54 @@ const ListaClientes = () => {
                 <TextField label="Nombres" size="small" value={filtroNombres} onChange={e => setFiltroNombres(e.target.value)} disabled={filtrosAplicados} />
                 <TextField label="Apellido paterno" size="small" value={filtroApellidoPaterno} onChange={e => setFiltroApellidoPaterno(e.target.value)} disabled={filtrosAplicados} />
                 <TextField label="Apellido materno" size="small" value={filtroApellidoMaterno} onChange={e => setFiltroApellidoMaterno(e.target.value)} disabled={filtrosAplicados} />
-                <FormControl size="small" disabled={filtrosAplicados}><InputLabel>Tipo</InputLabel><Select label="Tipo" value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}><MenuItem value="todos">Todos</MenuItem><MenuItem value="Estudiante">Estudiante</MenuItem><MenuItem value="Docente">Docente</MenuItem><MenuItem value="General">General</MenuItem></Select></FormControl>
-                <FormControl size="small" disabled={filtrosAplicados}><InputLabel>Nivel</InputLabel><Select label="Nivel" value={filtroNivel} onChange={e => setFiltroNivel(e.target.value)}><MenuItem value="todos">Todos</MenuItem><MenuItem value="Primaria">Primaria</MenuItem><MenuItem value="Secundaria">Secundaria</MenuItem></Select></FormControl>
-                <FormControl size="small" disabled={filtrosAplicados}><InputLabel>Grado</InputLabel><Select label="Grado" value={filtroGrado} onChange={e => setFiltroGrado(e.target.value)}><MenuItem value="todos">Todos</MenuItem><MenuItem value="1ro">1ro</MenuItem><MenuItem value="2do">2do</MenuItem><MenuItem value="3ro">3ro</MenuItem><MenuItem value="4to">4to</MenuItem><MenuItem value="5to">5to</MenuItem></Select></FormControl>
-                <FormControl size="small" disabled={filtrosAplicados}><InputLabel>Sección</InputLabel><Select label="Sección" value={filtroSeccion} onChange={e => setFiltroSeccion(e.target.value)}><MenuItem value="todos">Todos</MenuItem><MenuItem value="A">A</MenuItem><MenuItem value="B">B</MenuItem><MenuItem value="C">C</MenuItem></Select></FormControl>
+                <FormControl size="small" disabled={filtrosAplicados} sx={{ minWidth: 120 }}>
+                    <InputLabel>Tipo</InputLabel>
+                    <Select label="Tipo" value={filtroTipo} onChange={e => {
+                        setFiltroTipo(e.target.value);
+                        if (e.target.value !== 'E') {
+                            setFiltroNivel('todos');
+                            setFiltroGrado('todos');
+                            setFiltroSeccion('todos');
+                        }
+                    }}>
+                        <MenuItem value="todos">Todos</MenuItem>
+                        <MenuItem value="E">Estudiante</MenuItem>
+                        <MenuItem value="D">Docente</MenuItem>
+                        <MenuItem value="G">General</MenuItem>
+                    </Select>
+                </FormControl>
+                <FormControl size="small" disabled={filtrosAplicados || filtroTipo !== 'E'} sx={{ minWidth: 120 }}>
+                    <InputLabel>Nivel</InputLabel>
+                    <Select label="Nivel" value={filtroNivel} onChange={e => {
+                        setFiltroNivel(e.target.value);
+                        setFiltroGrado('todos');
+                        setFiltroSeccion('todos');
+                    }}>
+                        <MenuItem value="todos">Todos</MenuItem>
+                        <MenuItem value="IN">Inicial</MenuItem>
+                        <MenuItem value="PR">Primaria</MenuItem>
+                        <MenuItem value="SE">Secundaria</MenuItem>
+                    </Select>
+                </FormControl>
+                <FormControl size="small" disabled={filtrosAplicados || filtroTipo !== 'E' || filtroNivel === 'todos'} sx={{ minWidth: 120 }}>
+                    <InputLabel>Grado</InputLabel>
+                    <Select label="Grado" value={filtroGrado} onChange={e => setFiltroGrado(e.target.value)}>
+                        <MenuItem value="todos">Todos</MenuItem>
+                        {opcionesGrado.filter(opt => opt.nivel === filtroNivel).map(opt => (
+                            <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <FormControl size="small" disabled={filtrosAplicados || filtroTipo !== 'E' || filtroNivel === 'todos' || filtroGrado === 'todos'} sx={{ minWidth: 120 }}>
+                    <InputLabel>Sección</InputLabel>
+                    <Select label="Sección" value={filtroSeccion} onChange={e => setFiltroSeccion(e.target.value)}>
+                        <MenuItem value="todos">Todos</MenuItem>
+                        <MenuItem value="A">A</MenuItem>
+                        <MenuItem value="B">B</MenuItem>
+                        <MenuItem value="C">C</MenuItem>
+                        <MenuItem value="D">D</MenuItem>
+                    </Select>
+                </FormControl>
                 <TextField label="Código" size="small" value={filtroCodigo} onChange={e => setFiltroCodigo(e.target.value)} disabled={filtrosAplicados} />
                 <FormControl size="small" disabled={filtrosAplicados} sx={{ minWidth: 120, maxWidth: 140, mx: 0.5 }}><InputLabel>Saldo o Deuda</InputLabel><Select label="Saldo o Deuda" value={filtroSaldoDeuda} onChange={e => setFiltroSaldoDeuda(e.target.value)}><MenuItem value="ambos">Ambos</MenuItem><MenuItem value="Saldo">Saldo</MenuItem><MenuItem value="Deuda">Deuda</MenuItem></Select></FormControl>
                 <TextField label="Saldo mínimo" size="small" value={filtroSaldoMin} onChange={e => setFiltroSaldoMin(e.target.value)} disabled={filtrosAplicados} type="number" />
@@ -565,6 +610,8 @@ const AdminClientes = () => {
     const [successMsg, setSuccessMsg] = useState('');
     const [erroresCSV, setErroresCSV] = useState([]);
     const [resultadosMasivo, setResultadosMasivo] = useState([]);
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
@@ -657,14 +704,6 @@ const AdminClientes = () => {
             <TabPanel value={tabValue} index={1}>
                 <Paper sx={{ p: 3, maxWidth: 700, mx: 'auto', mt: 2 }} elevation={0}>
                     <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Carga/Actualización masiva de clientes</Typography>
-                    <Button
-                        variant="outlined"
-                        href="/plantilla_clientes.csv"
-                        download
-                        sx={{ mb: 2 }}
-                    >
-                        Descargar plantilla CSV
-                    </Button>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <input
                             accept=".csv"
@@ -680,8 +719,8 @@ const AdminClientes = () => {
                         {previewData.length > 0 && (
                             <Box sx={{ mt: 2 }}>
                                 <Typography variant="subtitle1">Vista previa de datos:</Typography>
-                                <TableContainer sx={{ maxHeight: 240 }}>
-                                    <Table size="small" stickyHeader>
+                                <TableContainer component={Paper}>
+                                    <Table size="small">
                                         <TableHead>
                                             <TableRow>
                                                 {CAMPOS_CSV.map((col) => (
@@ -690,7 +729,7 @@ const AdminClientes = () => {
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {previewData.slice(0, 5).map((row, idx) => (
+                                            {previewData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, idx) => (
                                                 <TableRow key={idx}>
                                                     {CAMPOS_CSV.map((col, i) => (
                                                         <TableCell key={i}>{row[col]}</TableCell>
@@ -700,7 +739,18 @@ const AdminClientes = () => {
                                         </TableBody>
                                     </Table>
                                 </TableContainer>
-                                {previewData.length > 5 && <Typography variant="body2" color="text.secondary">...y {previewData.length - 5} más</Typography>}
+                                <TablePagination
+                                    rowsPerPageOptions={[10, 25, 50]}
+                                    component="div"
+                                    count={previewData.length}
+                                    rowsPerPage={rowsPerPage}
+                                    page={page}
+                                    onPageChange={(e, newPage) => setPage(newPage)}
+                                    onRowsPerPageChange={(e) => {
+                                        setRowsPerPage(parseInt(e.target.value, 10));
+                                        setPage(0);
+                                    }}
+                                />
                             </Box>
                         )}
                         {erroresCSV.length > 0 && (

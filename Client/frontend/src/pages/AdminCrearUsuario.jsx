@@ -26,7 +26,7 @@ export default function AdminCrearUsuario() {
     setLoading(true);
     const password = generarPassword();
     try {
-      await api.post('/usuarios', { nombreUsuario, password });
+      await api.post('/usuarios', { nombreUsuario, password, rol: 'admin_caja' });
       setPasswordGenerada(password);
       setModalOpen(true);
       setNombreUsuario('');

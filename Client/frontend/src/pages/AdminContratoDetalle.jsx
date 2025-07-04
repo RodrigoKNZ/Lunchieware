@@ -18,6 +18,7 @@ import abonosService from '../services/abonosService';
 import devolucionesService from '../services/devolucionesService';
 import notasCreditoService from '../services/notasCreditoService';
 import comprobanteVentaService from '../services/comprobanteVentaService';
+import productosService from '../services/productosService';
 
 const TabPanel = (props) => {
     const { children, value, index, ...other } = props;
@@ -141,6 +142,8 @@ const AdminContratoDetalle = () => {
     // Buscar el contrato actual y extraer el año de inicio de vigencia
     const [contrato, setContrato] = useState(null);
     const [cliente, setCliente] = useState(null);
+    const [productos, setProductos] = useState([]);
+
     useEffect(() => {
         async function fetchContrato() {
             const res = await import('../services/clienteService').then(m => m.default.obtenerContratos(id));
@@ -158,6 +161,26 @@ const AdminContratoDetalle = () => {
         }
         fetchCliente();
     }, [id]);
+
+    useEffect(() => {
+        async function fetchProductos() {
+            try {
+                const res = await productosService.obtenerTodos();
+                let lista = [];
+                if (Array.isArray(res.data)) {
+                    lista = res.data;
+                } else if (res.data && Array.isArray(res.data.data)) {
+                    lista = res.data.data;
+                } else if (res.data && Array.isArray(res.data.productos)) {
+                    lista = res.data.productos;
+                }
+                setProductos(lista);
+            } catch (err) {
+                setProductos([]);
+            }
+        }
+        fetchProductos();
+    }, []);
 
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
@@ -391,7 +414,7 @@ const AdminContratoDetalle = () => {
 
             setNotasDeCredito(notasData);
             setNotasDeCreditoFiltradas(notasData);
-        setNotaCreditoModalOpen(false);
+            setNotaCreditoModalOpen(false);
             setNuevaNotaCredito({ nroComprobanteAfectado: '', importeInafecto: '', importeImponible: '', importeImpuestos: '', motivo: '' });
         } catch (error) {
             console.error('Error guardando nota de crédito:', error);
@@ -599,7 +622,7 @@ const AdminContratoDetalle = () => {
                     <Tab label="CONSUMOS" />
                     <Tab label="ABONOS" />
                     <Tab label="DEVOLUCIONES" />
-                    <Tab label="NOTAS DE CRÉDITO" />
+                    {/* <Tab label="NOTAS DE CRÉDITO" /> */}
                 </Tabs>
             </Box>
             <Divider />
@@ -614,41 +637,50 @@ const AdminContratoDetalle = () => {
                             </Box>
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
-                            <TextField
-                                label="Fecha desde"
-                                size="small"
-                                value={filtrosConsumos.fechaDesde ? dayjs(filtrosConsumos.fechaDesde).format('DD/MM/YYYY') : ''}
-                                onChange={(e) => setFiltrosConsumos({...filtrosConsumos, fechaDesde: e.target.value ? dayjs(e.target.value).toDate() : null})}
-                                sx={{ width: 220 }}
-                                disabled={filtrosAplicados.consumos}
-                            />
-                            <TextField
-                                label="Fecha hasta"
-                                size="small"
-                                value={filtrosConsumos.fechaHasta ? dayjs(filtrosConsumos.fechaHasta).format('DD/MM/YYYY') : ''}
-                                onChange={(e) => setFiltrosConsumos({...filtrosConsumos, fechaHasta: e.target.value ? dayjs(e.target.value).toDate() : null})}
-                                sx={{ width: 220 }}
-                                disabled={filtrosAplicados.consumos}
-                            />
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Fecha desde"
+                                    value={filtrosConsumos.fechaDesde}
+                                    onChange={date => setFiltrosConsumos({...filtrosConsumos, fechaDesde: date})}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 220 }} disabled={filtrosAplicados.consumos} />}
+                                    inputFormat="DD/MM/YYYY"
+                                />
+                            </LocalizationProvider>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Fecha hasta"
+                                    value={filtrosConsumos.fechaHasta}
+                                    onChange={date => setFiltrosConsumos({...filtrosConsumos, fechaHasta: date})}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 220 }} disabled={filtrosAplicados.consumos} />}
+                                    inputFormat="DD/MM/YYYY"
+                                />
+                            </LocalizationProvider>
                             <FormControl size="small" sx={{ minWidth: 150 }} disabled={filtrosAplicados.consumos}>
                                 <InputLabel>Producto</InputLabel>
                                 <Select label="Producto" value={filtrosConsumos.producto} onChange={e => setFiltrosConsumos({...filtrosConsumos, producto: e.target.value})}>
                                     <MenuItem value="Todos">Todos</MenuItem>
-                                    <MenuItem value="Menú">Menú</MenuItem>
+                                    {Array.isArray(productos) && productos.map((prod) => (
+                                        <MenuItem key={prod.idProducto || prod.id || prod.codigoProducto || prod.nombreProducto} value={prod.nombreProducto}>
+                                            {prod.nombreProducto}
+                                        </MenuItem>
+                                    ))}
                                 </Select>
                             </FormControl>
                             <FormControl size="small" sx={{ minWidth: 150 }} disabled={filtrosAplicados.consumos}>
                                 <InputLabel>Forma de pago</InputLabel>
-                                <Select label="Forma de pago" value={filtrosConsumos.formaPago} onChange={e => setFiltrosConsumos({...filtrosConsumos, formaPago: e.target.value})}>
+                                <Select label="Forma de pago" value={filtrosConsumos.formaPago} onChange={e => setFiltrosConsumos({...filtrosConsumos, formaPago: e.target.value, medioPago: 'Todos'})}>
                                     <MenuItem value="Todos">Todos</MenuItem>
-                                    <MenuItem value="Cargo en cuenta">Cargo en cuenta</MenuItem>
+                                    <MenuItem value="Contado">Contado</MenuItem>
+                                    <MenuItem value="Cuenta">Cuenta</MenuItem>
                                 </Select>
                             </FormControl>
-                            <FormControl size="small" sx={{ minWidth: 150 }} disabled={filtrosAplicados.consumos}>
+                            <FormControl size="small" sx={{ minWidth: 150 }} disabled={filtrosAplicados.consumos || filtrosConsumos.formaPago === 'Todos'}>
                                 <InputLabel>Medio de pago</InputLabel>
                                 <Select label="Medio de pago" value={filtrosConsumos.medioPago} onChange={e => setFiltrosConsumos({...filtrosConsumos, medioPago: e.target.value})}>
                                     <MenuItem value="Todos">Todos</MenuItem>
-                                    <MenuItem value="Cargo en cuenta">Cargo en cuenta</MenuItem>
+                                    {filtrosConsumos.formaPago === 'Contado' && <MenuItem value="Yape">Yape</MenuItem>}
+                                    {filtrosConsumos.formaPago === 'Contado' && <MenuItem value="Efectivo">Efectivo</MenuItem>}
+                                    {filtrosConsumos.formaPago === 'Cuenta' && <MenuItem value="Cargo en cuenta">Cargo en cuenta</MenuItem>}
                                 </Select>
                             </FormControl>
                         </Box>
@@ -707,29 +739,24 @@ const AdminContratoDetalle = () => {
                             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAbonoModalOpen(true)} disabled={filtrosAplicados.abonos}>REGISTRAR ABONO</Button>
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
-                            <TextField
-                                label="Fecha desde"
-                                size="small"
-                                value={filtrosAbonos.fechaDesde ? dayjs(filtrosAbonos.fechaDesde).format('DD/MM/YYYY') : ''}
-                                onChange={(e) => setFiltrosAbonos({...filtrosAbonos, fechaDesde: e.target.value ? dayjs(e.target.value).toDate() : null})}
-                                sx={{ width: 220 }}
-                                disabled={filtrosAplicados.abonos}
-                            />
-                            <TextField
-                                label="Fecha hasta"
-                                size="small"
-                                value={filtrosAbonos.fechaHasta ? dayjs(filtrosAbonos.fechaHasta).format('DD/MM/YYYY') : ''}
-                                onChange={(e) => setFiltrosAbonos({...filtrosAbonos, fechaHasta: e.target.value ? dayjs(e.target.value).toDate() : null})}
-                                sx={{ width: 220 }}
-                                disabled={filtrosAplicados.abonos}
-                            />
-                            <FormControl size="small" sx={{ minWidth: 150 }} disabled={filtrosAplicados.abonos}>
-                                <InputLabel>Banco</InputLabel>
-                                <Select label="Banco" value={filtrosAbonos.banco} onChange={e => setFiltrosAbonos({...filtrosAbonos, banco: e.target.value})}>
-                                    <MenuItem value="Todos">Todos</MenuItem>
-                                    <MenuItem value="Banco de Crédito del Perú">Banco de Crédito del Perú</MenuItem>
-                                </Select>
-                            </FormControl>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Fecha desde"
+                                    value={filtrosAbonos.fechaDesde}
+                                    onChange={date => setFiltrosAbonos({...filtrosAbonos, fechaDesde: date})}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 220 }} disabled={filtrosAplicados.abonos} />}
+                                    inputFormat="DD/MM/YYYY"
+                                />
+                            </LocalizationProvider>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Fecha hasta"
+                                    value={filtrosAbonos.fechaHasta}
+                                    onChange={date => setFiltrosAbonos({...filtrosAbonos, fechaHasta: date})}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 220 }} disabled={filtrosAplicados.abonos} />}
+                                    inputFormat="DD/MM/YYYY"
+                                />
+                            </LocalizationProvider>
                             <TextField label="Importe mínimo S/." variant="outlined" size="small" value={filtrosAbonos.importeMin} onChange={e => setFiltrosAbonos({...filtrosAbonos, importeMin: e.target.value})} disabled={filtrosAplicados.abonos} />
                             <TextField label="Importe máximo S/." variant="outlined" size="small" value={filtrosAbonos.importeMax} onChange={e => setFiltrosAbonos({...filtrosAbonos, importeMax: e.target.value})} disabled={filtrosAplicados.abonos} />
                         </Box>
@@ -786,29 +813,24 @@ const AdminContratoDetalle = () => {
                             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDevolucionModalOpen(true)} disabled={filtrosAplicados.devoluciones}>REGISTRAR DEVOLUCIÓN</Button>
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
-                            <TextField
-                                label="Fecha desde"
-                                size="small"
-                                value={filtrosDevoluciones.fechaDesde ? dayjs(filtrosDevoluciones.fechaDesde).format('DD/MM/YYYY') : ''}
-                                onChange={(e) => setFiltrosDevoluciones({...filtrosDevoluciones, fechaDesde: e.target.value ? dayjs(e.target.value).toDate() : null})}
-                                sx={{ width: 220 }}
-                                disabled={filtrosAplicados.devoluciones}
-                            />
-                            <TextField
-                                label="Fecha hasta"
-                                size="small"
-                                value={filtrosDevoluciones.fechaHasta ? dayjs(filtrosDevoluciones.fechaHasta).format('DD/MM/YYYY') : ''}
-                                onChange={(e) => setFiltrosDevoluciones({...filtrosDevoluciones, fechaHasta: e.target.value ? dayjs(e.target.value).toDate() : null})}
-                                sx={{ width: 220 }}
-                                disabled={filtrosAplicados.devoluciones}
-                            />
-                            <FormControl size="small" sx={{ minWidth: 150 }} disabled={filtrosAplicados.devoluciones}>
-                                <InputLabel>Banco</InputLabel>
-                                <Select label="Banco" value={filtrosDevoluciones.banco} onChange={e => setFiltrosDevoluciones({...filtrosDevoluciones, banco: e.target.value})}>
-                                    <MenuItem value="Todos">Todos</MenuItem>
-                                    <MenuItem value="Banco de Crédito del Perú">Banco de Crédito del Perú</MenuItem>
-                                </Select>
-                            </FormControl>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Fecha desde"
+                                    value={filtrosDevoluciones.fechaDesde}
+                                    onChange={date => setFiltrosDevoluciones({...filtrosDevoluciones, fechaDesde: date})}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 220 }} disabled={filtrosAplicados.devoluciones} />}
+                                    inputFormat="DD/MM/YYYY"
+                                />
+                            </LocalizationProvider>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Fecha hasta"
+                                    value={filtrosDevoluciones.fechaHasta}
+                                    onChange={date => setFiltrosDevoluciones({...filtrosDevoluciones, fechaHasta: date})}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 220 }} disabled={filtrosAplicados.devoluciones} />}
+                                    inputFormat="DD/MM/YYYY"
+                                />
+                            </LocalizationProvider>
                             <TextField label="Importe mínimo S/." variant="outlined" size="small" value={filtrosDevoluciones.importeMin} onChange={e => setFiltrosDevoluciones({...filtrosDevoluciones, importeMin: e.target.value})} disabled={filtrosAplicados.devoluciones} />
                             <TextField label="Importe máximo S/." variant="outlined" size="small" value={filtrosDevoluciones.importeMax} onChange={e => setFiltrosDevoluciones({...filtrosDevoluciones, importeMax: e.target.value})} disabled={filtrosAplicados.devoluciones} />
                         </Box>
@@ -865,22 +887,24 @@ const AdminContratoDetalle = () => {
                             </Button>
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
-                            <TextField
-                                label="Fecha desde"
-                                size="small"
-                                value={filtrosNotasCredito.fechaDesde ? dayjs(filtrosNotasCredito.fechaDesde).format('DD/MM/YYYY') : ''}
-                                onChange={(e) => setFiltrosNotasCredito({...filtrosNotasCredito, fechaDesde: e.target.value ? dayjs(e.target.value).toDate() : null})}
-                                sx={{ width: 220 }}
-                                disabled={filtrosAplicados.notasCredito}
-                            />
-                            <TextField
-                                label="Fecha hasta"
-                                size="small"
-                                value={filtrosNotasCredito.fechaHasta ? dayjs(filtrosNotasCredito.fechaHasta).format('DD/MM/YYYY') : ''}
-                                onChange={(e) => setFiltrosNotasCredito({...filtrosNotasCredito, fechaHasta: e.target.value ? dayjs(e.target.value).toDate() : null})}
-                                sx={{ width: 220 }}
-                                disabled={filtrosAplicados.notasCredito}
-                            />
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Fecha desde"
+                                    value={filtrosNotasCredito.fechaDesde}
+                                    onChange={date => setFiltrosNotasCredito({...filtrosNotasCredito, fechaDesde: date})}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 220 }} disabled={filtrosAplicados.notasCredito} />}
+                                    inputFormat="DD/MM/YYYY"
+                                />
+                            </LocalizationProvider>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Fecha hasta"
+                                    value={filtrosNotasCredito.fechaHasta}
+                                    onChange={date => setFiltrosNotasCredito({...filtrosNotasCredito, fechaHasta: date})}
+                                    renderInput={(params) => <TextField {...params} size="small" sx={{ width: 220 }} disabled={filtrosAplicados.notasCredito} />}
+                                    inputFormat="DD/MM/YYYY"
+                                />
+                            </LocalizationProvider>
                         </Box>
                     </Box>
                     <Divider sx={{ my: 2 }} />

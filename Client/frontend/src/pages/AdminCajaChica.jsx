@@ -14,6 +14,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import cajaChicaService from '../services/cajaChicaService';
+import CloseIcon from '@mui/icons-material/Close';
 
 // Datos mock
 const cajasMock = [
@@ -130,6 +131,28 @@ const AdminCajaChica = () => {
     cargarCajas();
   }, []);
 
+  // Calcular saldos finales dinámicamente
+  useEffect(() => {
+    async function calcularSaldosFinales() {
+      // Solo si hay cajas
+      if (!cajas.length) return;
+      const cajasConSaldo = await Promise.all(cajas.map(async (caja) => {
+        try {
+          const resp = await cajaChicaService.obtenerMovimientos(caja.id);
+          const movimientos = Array.isArray(resp.data.data) ? resp.data.data : [];
+          const sumaMovimientos = movimientos.reduce((acc, mov) => acc + parseFloat(mov.montoTotal || 0), 0);
+          return { ...caja, saldoFinal: caja.saldoInicial - sumaMovimientos };
+        } catch {
+          return { ...caja, saldoFinal: caja.saldoInicial };
+        }
+      }));
+      setCajas(cajasConSaldo);
+      setCajasFiltradas(cajasConSaldo);
+    }
+    calcularSaldosFinales();
+    // eslint-disable-next-line
+  }, [JSON.stringify(cajas)]);
+
   const cargarCajas = async () => {
     setLoading(true);
     try {
@@ -198,6 +221,21 @@ const AdminCajaChica = () => {
     }
   };
 
+  // Liquidar caja chica automáticamente
+  const handleLiquidarCaja = async (caja) => {
+    try {
+      // Liquidar con fecha del sistema y saldo final calculado
+      const datosCierre = {
+        fechaLiquidacion: dayjs().format('YYYY-MM-DD'),
+        saldoFinal: caja.saldoFinal
+      };
+      await cajaChicaService.cerrar(caja.id, datosCierre);
+      cargarCajas();
+    } catch (err) {
+      alert('Error al liquidar la caja chica');
+    }
+  };
+
   // Render
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#fafbfc', p: 0, display: 'flex', flexDirection: 'column' }}>
@@ -219,7 +257,7 @@ const AdminCajaChica = () => {
               <Button variant="contained" sx={{ fontWeight: 600 }} onClick={handleAplicarFiltros} disabled={filtrosEnEstadoInicial || filtrosAplicados}>APLICAR FILTROS</Button>
               <Button variant="outlined" sx={{ fontWeight: 600 }} onClick={handleLimpiarFiltros} disabled={!filtrosAplicados}>LIMPIAR FILTROS</Button>
             </Box>
-            <Button variant="contained" color="primary" sx={{ fontWeight: 600 }} onClick={() => setModalApertura(true)} disabled={filtrosAplicados}>
+            <Button variant="contained" color="primary" sx={{ fontWeight: 600 }} onClick={() => setModalApertura(true)} disabled={cajas.some(c => c.estado === 'Abierta')}>
               + APERTURAR NUEVA CAJA
             </Button>
           </Box>
@@ -304,6 +342,13 @@ const AdminCajaChica = () => {
                         <Visibility fontSize="small" />
                       </IconButton>
                     </Tooltip>
+                        {caja.estado === 'Abierta' && (
+                          <Tooltip title="Liquidar caja chica">
+                            <IconButton size="small" color="warning" onClick={() => handleLiquidarCaja(caja)}>
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                         <Tooltip title="Eliminar">
                           <IconButton size="small" onClick={() => handleEliminarCaja(caja)} color="error">
                             <Delete fontSize="small" />

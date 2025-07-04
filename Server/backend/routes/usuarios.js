@@ -4,8 +4,8 @@ const usuariosModel = require('../models/usuarios');
 
 router.post('/', async (req, res) => {
   try {
-    const { nombreUsuario, password } = req.body;
-    const nuevoUsuario = await usuariosModel.create({ nombreUsuario, password });
+    const { nombreUsuario, password, rol } = req.body;
+    const nuevoUsuario = await usuariosModel.crear({ nombreUsuario, password, rol });
     res.status(201).json({ nombreUsuario: nuevoUsuario.nombreUsuario, rol: nuevoUsuario.rol, activo: nuevoUsuario.activo });
   } catch (err) {
     res.status(400).json({ error: err.message });

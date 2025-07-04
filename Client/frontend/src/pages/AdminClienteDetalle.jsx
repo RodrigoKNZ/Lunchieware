@@ -152,41 +152,6 @@ const AdminClienteDetalle = () => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
-    // Estados de filtros
-    const [filtroCodigo, setFiltroCodigo] = useState('');
-    
-    // Filtros de fecha de creación
-    const [fechaCreacionDesde, setFechaCreacionDesde] = useState(null);
-    const [fechaCreacionHasta, setFechaCreacionHasta] = useState(null);
-    
-    // Filtros de fecha de inicio de vigencia
-    const [fechaInicioVigenciaDesde, setFechaInicioVigenciaDesde] = useState(null);
-    const [fechaInicioVigenciaHasta, setFechaInicioVigenciaHasta] = useState(null);
-    
-    // Filtros de fecha de fin de vigencia
-    const [fechaFinVigenciaDesde, setFechaFinVigenciaDesde] = useState(null);
-    const [fechaFinVigenciaHasta, setFechaFinVigenciaHasta] = useState(null);
-
-    // Estado de control de filtros
-    const [filtrosAplicados, setFiltrosAplicados] = useState(false);
-    const filtrosIniciales = {
-        codigo: '',
-        fechaCreacionDesde: null,
-        fechaCreacionHasta: null,
-        fechaInicioVigenciaDesde: null,
-        fechaInicioVigenciaHasta: null,
-        fechaFinVigenciaDesde: null,
-        fechaFinVigenciaHasta: null,
-    };
-    const filtrosEnEstadoInicial =
-        filtroCodigo === filtrosIniciales.codigo &&
-        !fechaCreacionDesde &&
-        !fechaCreacionHasta &&
-        !fechaInicioVigenciaDesde &&
-        !fechaInicioVigenciaHasta &&
-        !fechaFinVigenciaDesde &&
-        !fechaFinVigenciaHasta;
-
     // Estados de modales
     const [nuevoContratoModalOpen, setNuevoContratoModalOpen] = useState(false);
     const [editarClienteModalOpen, setEditarClienteModalOpen] = useState(false);
@@ -248,46 +213,6 @@ const AdminClienteDetalle = () => {
     
     const handleChangeRowsPerPage = (event) => {
         setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
-    };
-
-    // Lógica de filtros
-    const handleAplicarFiltros = () => {
-        let filtrados = contratos.filter(c => {
-            const matchCodigo = !filtroCodigo || c.codigo.toLowerCase().includes(filtroCodigo.toLowerCase());
-            
-            const fechaCreacionContrato = dayjs(c.fechaCreacion, 'DD/MM/YYYY');
-            const matchFechaCreacion = 
-                (!fechaCreacionDesde || fechaCreacionContrato.isSame(dayjs(fechaCreacionDesde), 'day') || fechaCreacionContrato.isAfter(dayjs(fechaCreacionDesde), 'day')) &&
-                (!fechaCreacionHasta || fechaCreacionContrato.isSame(dayjs(fechaCreacionHasta), 'day') || fechaCreacionContrato.isBefore(dayjs(fechaCreacionHasta), 'day'));
-
-            const inicioVigenciaContrato = dayjs(c.inicioVigencia, 'DD/MM/YYYY');
-            const matchInicioVigencia =
-                (!fechaInicioVigenciaDesde || inicioVigenciaContrato.isSame(dayjs(fechaInicioVigenciaDesde), 'day') || inicioVigenciaContrato.isAfter(dayjs(fechaInicioVigenciaDesde), 'day')) &&
-                (!fechaInicioVigenciaHasta || inicioVigenciaContrato.isSame(dayjs(fechaInicioVigenciaHasta), 'day') || inicioVigenciaContrato.isBefore(dayjs(fechaInicioVigenciaHasta), 'day'));
-
-            const finVigenciaContrato = dayjs(c.finVigencia, 'DD/MM/YYYY');
-            const matchFinVigencia =
-                (!fechaFinVigenciaDesde || finVigenciaContrato.isSame(dayjs(fechaFinVigenciaDesde), 'day') || finVigenciaContrato.isAfter(dayjs(fechaFinVigenciaDesde), 'day')) &&
-                (!fechaFinVigenciaHasta || finVigenciaContrato.isSame(dayjs(fechaFinVigenciaHasta), 'day') || finVigenciaContrato.isBefore(dayjs(fechaFinVigenciaHasta), 'day'));
-
-            return matchCodigo && matchFechaCreacion && matchInicioVigencia && matchFinVigencia;
-        });
-        setContratosFiltrados(filtrados);
-        setFiltrosAplicados(true);
-        setPage(0);
-    };
-
-    const handleLimpiarFiltros = () => {
-        setFiltroCodigo(filtrosIniciales.codigo);
-        setFechaCreacionDesde(null);
-        setFechaCreacionHasta(null);
-        setFechaInicioVigenciaDesde(null);
-        setFechaInicioVigenciaHasta(null);
-        setFechaFinVigenciaDesde(null);
-        setFechaFinVigenciaHasta(null);
-        setContratosFiltrados(contratos);
-        setFiltrosAplicados(false);
         setPage(0);
     };
 
@@ -443,84 +368,8 @@ const AdminClienteDetalle = () => {
             <TabPanel value={tabValue} index={1}>
                 <Paper elevation={0} sx={{ p: 2, border: '1px solid #e0e0e0', mt: 2 }}>
                     <Box>
-                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                                <Button variant="contained" onClick={handleAplicarFiltros} disabled={filtrosEnEstadoInicial || filtrosAplicados}>APLICAR FILTROS</Button>
-                                <Button variant="outlined" onClick={handleLimpiarFiltros} disabled={!filtrosAplicados}>LIMPIAR FILTROS</Button>
-                            </Box>
-                        </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
-                            <Grid container spacing={2}>
-                                <Grid item xs={12} md={4}>
-                                    <TextField label="Ingrese el código" variant="outlined" size="small" fullWidth value={filtroCodigo} onChange={e => setFiltroCodigo(e.target.value)} disabled={filtrosAplicados}/>
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                        <DatePicker
-                                            label="Fecha creación desde"
-                                            value={fechaCreacionDesde}
-                                            onChange={setFechaCreacionDesde}
-                                            renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
-                                            inputFormat="DD/MM/YYYY"
-                                        />
-                                    </LocalizationProvider>
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                        <DatePicker
-                                            label="Fecha creación hasta"
-                                            value={fechaCreacionHasta}
-                                            onChange={setFechaCreacionHasta}
-                                            renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
-                                            inputFormat="DD/MM/YYYY"
-                                        />
-                                    </LocalizationProvider>
-                                </Grid>
-                                <Grid item xs={12} md={3}>
-                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                        <DatePicker
-                                            label="Inicio vigencia desde"
-                                            value={fechaInicioVigenciaDesde}
-                                            onChange={setFechaInicioVigenciaDesde}
-                                            renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
-                                            inputFormat="DD/MM/YYYY"
-                                        />
-                                    </LocalizationProvider>
-                                </Grid>
-                                <Grid item xs={12} md={3}>
-                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                        <DatePicker
-                                            label="Inicio vigencia hasta"
-                                            value={fechaInicioVigenciaHasta}
-                                            onChange={setFechaInicioVigenciaHasta}
-                                            renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
-                                            inputFormat="DD/MM/YYYY"
-                                        />
-                                    </LocalizationProvider>
-                                </Grid>
-                                <Grid item xs={12} md={3}>
-                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                        <DatePicker
-                                            label="Fin vigencia desde"
-                                            value={fechaFinVigenciaDesde}
-                                            onChange={setFechaFinVigenciaDesde}
-                                            renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
-                                            inputFormat="DD/MM/YYYY"
-                                        />
-                                    </LocalizationProvider>
-                                </Grid>
-                                <Grid item xs={12} md={3}>
-                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                        <DatePicker
-                                            label="Fin vigencia hasta"
-                                            value={fechaFinVigenciaHasta}
-                                            onChange={setFechaFinVigenciaHasta}
-                                            renderInput={(params) => <TextField {...params} size="small" fullWidth disabled={filtrosAplicados} />}
-                                            inputFormat="DD/MM/YYYY"
-                                        />
-                                    </LocalizationProvider>
-                                </Grid>
-                            </Grid>
+                            {/* Eliminados los campos de filtro y botones de aplicar/limpiar filtros */}
                         </Box>
                     </Box>
                     <Divider sx={{ my: 2 }} />

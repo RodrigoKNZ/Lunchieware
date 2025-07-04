@@ -97,6 +97,27 @@ function App() {
     );
   }
 
+  if (user.rol === 'admin_caja') {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout onLogout={handleLogout} />}>
+            <Route index element={<AdminHome />} />
+            <Route path="venta" element={<AdminVenta />} />
+            <Route path="clientes" element={<AdminClientes />} />
+            <Route path="clientes/:id" element={<AdminClienteDetalle />} />
+            <Route path="clientes/:id/contrato/:contratoId" element={<AdminContratoDetalle />} />
+            <Route path="caja-chica" element={<AdminCajaChica />} />
+            <Route path="caja-chica/:id" element={<AdminCajaChicaDetalle />} />
+            <Route path="programacion-menu" element={<AdminMenuProgramacion />} />
+            <Route path="quejas-sugerencias" element={<AdminQuejasSugerencias />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/admin" />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
   if (user.rol === 'cliente') {
     return (
       <BrowserRouter>

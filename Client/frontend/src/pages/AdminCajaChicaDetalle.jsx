@@ -42,14 +42,12 @@ const AdminCajaChicaDetalle = () => {
   // Modals
   const [openEditModal, setOpenEditModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const [openLiquidarModal, setOpenLiquidarModal] = useState(false);
   const [openMovimientoModal, setOpenMovimientoModal] = useState(false);
   const [openDeleteMovimientoModal, setOpenDeleteMovimientoModal] = useState(false);
   
   const [selectedMovimiento, setSelectedMovimiento] = useState(null);
   const [movimientoForm, setMovimientoForm] = useState({});
   const [editCajaForm, setEditCajaForm] = useState({});
-  const [liquidarForm, setLiquidarForm] = useState({});
 
   // Snackbar
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -231,29 +229,6 @@ const AdminCajaChicaDetalle = () => {
     }
   };
 
-  const handleLiquidarCaja = async () => {
-    try {
-      const { fechaLiquidacion, saldoFinal } = liquidarForm;
-      
-      if (!fechaLiquidacion || !saldoFinal) {
-        setSnackbar({ open: true, message: 'Fecha de liquidación y saldo final son requeridos', severity: 'error' });
-        return;
-      }
-
-      await cajaChicaService.cerrar(data.id, {
-        fechaLiquidacion: fechaLiquidacion.format('YYYY-MM-DD'),
-        saldoFinal: parseFloat(saldoFinal)
-      });
-
-      setSnackbar({ open: true, message: 'Caja chica liquidada exitosamente', severity: 'success' });
-      setOpenLiquidarModal(false);
-      navigate('/admin/caja-chica');
-    } catch (error) {
-      console.error('Error al liquidar caja:', error);
-      setSnackbar({ open: true, message: 'Error al liquidar la caja chica', severity: 'error' });
-    }
-  };
-
   const handleEliminarCaja = async () => {
     try {
       await cajaChicaService.eliminar(data.id);
@@ -347,9 +322,6 @@ const AdminCajaChicaDetalle = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">Datos de la caja chica</Typography>
             <Box>
-                {data.estado === 'Abierta' && (
-                  <Button variant="contained" color="primary" sx={{ mr: 1 }} onClick={() => setOpenLiquidarModal(true)}>LIQUIDAR CAJA</Button>
-                )}
                 <Button variant="outlined" color="primary" sx={{ mr: 1 }} onClick={handleOpenEditModal}>EDITAR</Button>
                 <Button variant="outlined" color="error" onClick={() => setOpenDeleteModal(true)}>ELIMINAR</Button>
             </Box>
@@ -369,9 +341,7 @@ const AdminCajaChicaDetalle = () => {
       <Paper elevation={0} sx={{ p: 2, border: '1px solid #e0e0e0' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">Movimientos</Typography>
-            {data.estado === 'Abierta' && (
-              <Button variant="contained" color="primary" startIcon={<Add />} onClick={() => handleOpenMovimientoModal()}>NUEVO MOVIMIENTO</Button>
-            )}
+            <Button variant="contained" color="primary" startIcon={<Add />} onClick={() => handleOpenMovimientoModal()}>NUEVO MOVIMIENTO</Button>
         </Box>
         <Divider sx={{ mb: 2 }}/>
         
@@ -475,39 +445,6 @@ const AdminCajaChicaDetalle = () => {
         <DialogActions>
           <Button onClick={() => setOpenDeleteModal(false)}>CANCELAR</Button>
           <Button onClick={handleEliminarCaja} color="error" variant="contained">ELIMINAR</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Liquidar Caja Modal */}
-      <Dialog open={openLiquidarModal} onClose={() => setOpenLiquidarModal(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Liquidar Caja Chica</DialogTitle>
-        <DialogContent>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12}>
-                <DatePicker
-                  label="Fecha de liquidación"
-                  value={liquidarForm.fechaLiquidacion || null}
-                  onChange={(date) => setLiquidarForm({...liquidarForm, fechaLiquidacion: date})}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  label="Saldo final"
-                  type="number"
-                  value={liquidarForm.saldoFinal || ''}
-                  onChange={(e) => setLiquidarForm({...liquidarForm, saldoFinal: e.target.value})}
-                  fullWidth
-                  inputProps={{ step: 0.01, min: 0 }}
-                />
-              </Grid>
-            </Grid>
-          </LocalizationProvider>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenLiquidarModal(false)}>CANCELAR</Button>
-          <Button onClick={handleLiquidarCaja} color="primary" variant="contained">LIQUIDAR</Button>
         </DialogActions>
       </Dialog>
 

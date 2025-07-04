@@ -15,17 +15,28 @@ import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 
 const drawerWidth = 260;
 
-const menuItems = [
-  { text: 'Venta', icon: <PointOfSaleIcon />, path: '/admin/venta' },
-  { text: 'Clientes', icon: <PeopleAltIcon />, path: '/admin/clientes' },
-  { text: 'Caja chica', icon: <AccountBalanceWalletIcon />, path: '/admin/caja-chica' },
-  { text: 'Reportes', icon: <AssessmentIcon />, path: '/admin/reportes' },
-  { text: 'Cuentas bancarias', icon: <AccountBalanceIcon />, path: '/admin/cuentas-bancarias' },
-  { text: 'Productos', icon: <WidgetsIcon />, path: '/admin/productos' },
-  { text: 'Programación del menú', icon: <RestaurantMenuIcon />, path: '/admin/programacion-menu' },
-  { text: 'Quejas y sugerencias', icon: <ChatBubbleOutlineIcon />, path: '/admin/quejas-sugerencias' },
-  { text: 'Crear usuario', icon: <AdminPanelSettingsIcon />, path: '/admin/usuarios/crear' },
-];
+const getMenuItemsByRol = (rol) => {
+  if (rol === 'admin_caja') {
+    return [
+      { text: 'Venta', icon: <PointOfSaleIcon />, path: '/admin/venta' },
+      { text: 'Clientes', icon: <PeopleAltIcon />, path: '/admin/clientes' },
+      { text: 'Caja chica', icon: <AccountBalanceWalletIcon />, path: '/admin/caja-chica' },
+      { text: 'Programación del menú', icon: <RestaurantMenuIcon />, path: '/admin/programacion-menu' },
+      { text: 'Quejas y sugerencias', icon: <ChatBubbleOutlineIcon />, path: '/admin/quejas-sugerencias' },
+    ];
+  }
+  // Por defecto, menú completo para admin
+  return [
+    { text: 'Venta', icon: <PointOfSaleIcon />, path: '/admin/venta' },
+    { text: 'Clientes', icon: <PeopleAltIcon />, path: '/admin/clientes' },
+    { text: 'Caja chica', icon: <AccountBalanceWalletIcon />, path: '/admin/caja-chica' },
+    { text: 'Cuentas bancarias', icon: <AccountBalanceIcon />, path: '/admin/cuentas-bancarias' },
+    { text: 'Productos', icon: <WidgetsIcon />, path: '/admin/productos' },
+    { text: 'Programación del menú', icon: <RestaurantMenuIcon />, path: '/admin/programacion-menu' },
+    { text: 'Quejas y sugerencias', icon: <ChatBubbleOutlineIcon />, path: '/admin/quejas-sugerencias' },
+    { text: 'Crear usuario', icon: <AdminPanelSettingsIcon />, path: '/admin/usuarios/crear' },
+  ];
+};
 
 const AdminLayout = ({ onLogout }) => {
   const theme = useTheme();
@@ -33,6 +44,8 @@ const AdminLayout = ({ onLogout }) => {
   const [navValue, setNavValue] = React.useState(0);
   const navigate = useNavigate();
   const location = useLocation();
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const menuItems = getMenuItemsByRol(user.rol);
 
   React.useEffect(() => {
     const idx = menuItems.findIndex(item => item.path === location.pathname);
