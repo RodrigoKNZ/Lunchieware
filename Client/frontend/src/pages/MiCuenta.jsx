@@ -197,7 +197,7 @@ const MiCuenta = () => {
 
   // Estados iniciales para filtros
   const filtrosInicialesConsumo = { producto: 'todos', desde: null, hasta: null };
-  const filtrosInicialesAbonos = { desde: null, hasta: null, montoMin: '', montoMax: '', medio: 'todos' };
+  const filtrosInicialesAbonos = { desde: null, hasta: null, montoMin: '', montoMax: '' };
   // Determinar si los filtros están en su estado inicial
   const filtrosEnEstadoInicialConsumo =
     filtroProducto === filtrosInicialesConsumo.producto &&
@@ -207,8 +207,7 @@ const MiCuenta = () => {
     !filtroDesdeComp &&
     !filtroHastaComp &&
     filtroMontoMin === '' &&
-    filtroMontoMax === '' &&
-    filtroMedioPago === filtrosInicialesAbonos.medio;
+    filtroMontoMax === '';
   // Handlers filtros consumo
   const handleAplicarFiltrosConsumo = () => {
     setFiltrosConsumo({
