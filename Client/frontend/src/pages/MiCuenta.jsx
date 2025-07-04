@@ -188,7 +188,6 @@ const MiCuenta = () => {
   const [filtroHastaComp, setFiltroHastaComp] = React.useState(null);
   const [filtroMontoMin, setFiltroMontoMin] = React.useState('');
   const [filtroMontoMax, setFiltroMontoMax] = React.useState('');
-  const [filtroMedioPago, setFiltroMedioPago] = React.useState('todos');
 
   // Paginación
   const [pageConsumo, setPageConsumo] = React.useState(0);
@@ -235,7 +234,6 @@ const MiCuenta = () => {
     setFiltroHastaComp(filtrosInicialesAbonos.hasta);
     setFiltroMontoMin(filtrosInicialesAbonos.montoMin);
     setFiltroMontoMax(filtrosInicialesAbonos.montoMax);
-    setFiltroMedioPago(filtrosInicialesAbonos.medio);
     setFiltrosAplicadosAbonos(false);
   };
 
@@ -313,15 +311,9 @@ const MiCuenta = () => {
         const montoMax = parseFloat(filtroMontoMax);
         match = match && montoRow <= montoMax;
       }
-      // Filtro por medio de pago
-      if (filtroMedioPago !== 'todos') {
-        const medioRow = (row.medioDePago || row.medio || '').toLowerCase();
-        const medioFiltro = filtroMedioPago.toLowerCase();
-        match = match && medioRow === medioFiltro;
-      }
       return match;
     });
-  }, [filtrosAplicadosAbonos, abonos, filtroDesdeComp, filtroHastaComp, filtroMontoMin, filtroMontoMax, filtroMedioPago]);
+  }, [filtrosAplicadosAbonos, abonos, filtroDesdeComp, filtroHastaComp, filtroMontoMin, filtroMontoMax]);
 
   // Estado para el modal de recarga
   const [openRecarga, setOpenRecarga] = React.useState(false);
@@ -634,20 +626,6 @@ const MiCuenta = () => {
               helperText={errorMontoMax}
               inputProps={{ inputMode: 'decimal', pattern: '^\\d*(\\.\\d{0,2})?$' }}
             />
-            <TextField
-              select
-              label="Medio de pago"
-              value={filtroMedioPago}
-              onChange={e => setFiltroMedioPago(e.target.value)}
-              size="small"
-              sx={{ minWidth: isMobile ? 'unset' : 120, maxWidth: 140, width: isMobile ? '100%' : undefined }}
-              InputProps={{ sx: { height: 36, fontSize: 14 } }}
-              InputLabelProps={{ sx: { fontSize: 14 } }}
-              fullWidth={isMobile}
-              disabled={filtrosAplicadosAbonos}
-            >
-              {mediosPago.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
-            </TextField>
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, mb: 2, width: '100%', maxWidth: 900 }}>
             <Button variant="contained" color="primary" sx={{ fontWeight: 600 }}
