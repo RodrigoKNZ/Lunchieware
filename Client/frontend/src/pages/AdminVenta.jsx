@@ -448,6 +448,27 @@ const AdminVenta = () => {
     }
   };
 
+  // Handler para cancelar venta y restaurar estado inicial
+  const handleCancelarVenta = () => {
+    setCliente({ codigo: '', nombre: '' });
+    setClienteSeleccionado(null);
+    setInfoContrato({ abonos: undefined, consumos: undefined, saldo: undefined });
+    setIdContratoVigente(null);
+    setErrorCliente(false);
+    setFormaPago('cuenta');
+    setMedioPago('efectivo');
+    setMontoRecibido('');
+    // Restaurar detalleVenta a un solo producto MEN001 o el primero disponible
+    const menu = productosDisponibles.find(p => p.codigoProducto === 'MEN001');
+    if (menu) {
+      setDetalleVenta([{ codigo: menu.codigoProducto, cantidad: 1 }]);
+    } else if (productosDisponibles.length > 0) {
+      setDetalleVenta([{ codigo: productosDisponibles[0].codigoProducto, cantidad: 1 }]);
+    } else {
+      setDetalleVenta([]);
+    }
+  };
+
   return (
     <React.Fragment>
       <Box>
@@ -676,7 +697,7 @@ const AdminVenta = () => {
           <Button variant="contained" color="primary" fullWidth sx={{ fontWeight: 600, mb: 1 }} disabled={!puedeConfirmar} onClick={handleConfirmarVenta}>
             ✓ Confirmar venta
           </Button>
-          <Button variant="outlined" color="primary" fullWidth sx={{ fontWeight: 600 }}>
+          <Button variant="outlined" color="primary" fullWidth sx={{ fontWeight: 600 }} onClick={handleCancelarVenta}>
             Cancelar
           </Button>
         </Paper>
