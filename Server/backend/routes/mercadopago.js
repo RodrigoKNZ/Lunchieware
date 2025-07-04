@@ -264,10 +264,10 @@ router.post('/create-preference', async (req, res) => {
       },
       external_reference: externalRef,
       // Incluir notification_url solo en producción
-      ...(process.env.VERCEL_URL
-        ? { notification_url: `${process.env.VERCEL_URL.startsWith('http') ? process.env.VERCEL_URL : 'https://' + process.env.VERCEL_URL}/api/mercadopago/webhook` }
+      ...(process.env.PUBLIC_BACKEND_URL
+        ? { notification_url: `${process.env.PUBLIC_BACKEND_URL}/api/mercadopago/webhook` }
         : process.env.NGROK_URL
-          ? { notification_url: `${process.env.NGROK_URL.startsWith('http') ? process.env.NGROK_URL : 'https://' + process.env.NGROK_URL}/api/mercadopago/webhook` }
+          ? { notification_url: `${process.env.NGROK_URL}/api/mercadopago/webhook` }
           : {})
     };
 
